@@ -403,7 +403,7 @@ Fill in the following required information:
 2. Click "Add Method" button
 3. Select payment method type:
    - **Bank Transfer**: Direct deposit to bank account
-   - **Mobile Money**: MTN Mobile Money, Vodafone Cash, etc.
+   - **Mobile Money**: MTN Mobile Money, Telecel Cash, etc.
    - **PayPal**: International payment option
 
 #### Required Information

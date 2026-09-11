@@ -6,7 +6,7 @@
 
 ob_start(); // Buffer output to prevent accidental whitespace/errors from breaking JSON
 require_once 'config/database.php';
-require_once 'config/paystack.php';
+require_once 'config/nalo.php';
 
 $pdo = getDBConnection();
 
@@ -22,6 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['shortcode'])) {
             JOIN categories c ON n.category_id = c.id
             JOIN events e ON c.event_id = e.id
             WHERE n.shortcode = ? AND n.status = 'active' AND e.status = 'active'
+              AND e.start_date <= NOW() AND e.end_date >= NOW()
         ");
         $stmt->execute([$shortcode]);
         $nominee = $stmt->fetch();
@@ -80,6 +81,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $quantity = max(1, intval($_POST['quantity'] ?? 1));
         $csrfToken = $_POST['csrf_token'] ?? '';
         $voterPhone = preg_replace('/[^0-9]/', '', $_POST['phone'] ?? ''); // Clean phone number
+        $voterNetwork = $_POST['network'] ?? ''; // Get network for direct push
         
         // Verify CSRF token
         if (!verifyCSRFToken($csrfToken)) {
@@ -101,6 +103,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         if (!$event) {
             throw new Exception('This event is not currently accepting votes.');
+        }
+        
+        // Additional real-time expiry check (defense in depth)
+        if (isEventExpired($eventId)) {
+            throw new Exception('This event has ended. Voting is no longer available.');
         }
         
         // Verify nominee exists and belongs to category
@@ -144,10 +151,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'phone' => $formattedPhone // Phone for SMS confirmation
             ]);
 
-            // Create pending transaction
+            // Create pending transaction with phone number
             $stmt = $pdo->prepare("
-                INSERT INTO transactions (user_id, event_id, nominee_id, category_id, amount, quantity, reference, status, metadata)
-                VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?)
+                INSERT INTO transactions (user_id, event_id, nominee_id, category_id, phone, amount, quantity, reference, status, metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)
             ");
             
             $stmt->execute([
@@ -155,23 +162,156 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $eventId,
                 $nomineeId,
                 $categoryId,
+                $formattedPhone ?: null,
                 $amount,
                 $quantity,
                 $reference,
                 $metadata
             ]);
             
-            $response['success'] = true;
-            $response['payment_required'] = true;
-            $response['payment_data'] = [
-                'key' => PAYSTACK_PUBLIC_KEY,
-                'email' => $email,
-                'amount' => intval($amount * 100), // Ensure integer for Paystack
-                'currency' => CURRENCY,
-                'ref' => $reference,
-                'metadata' => $metadata
+            // Initialize NaloPay Hosted Checkout
+            require_once 'config/nalo.php';
+            
+            $products = [
+                [
+                    'name' => $nominee['name'] . ' - ' . $quantity . ' Votes',
+                    'count' => 1,
+                    'price' => number_format($amount, 2, '.', '')
+                ]
             ];
-            $response['message'] = 'Redirecting to payment...';
+            
+            // If network is CARD, process payment directly using simulated success
+            if ($voterNetwork === 'CARD') {
+                $cardholderName = trim($_POST['cardholder_name'] ?? '');
+                $cardNumber = str_replace(' ', '', $_POST['card_number'] ?? '');
+                $expiryMonth = $_POST['expiry_month'] ?? '';
+                $expiryYear = $_POST['expiry_year'] ?? '';
+                $cvv = $_POST['cvv'] ?? '';
+                
+                // Validate card fields
+                if (empty($cardholderName)) {
+                    throw new Exception('Cardholder Name is required.');
+                }
+                if (strlen($cardNumber) < 13 || strlen($cardNumber) > 19 || !ctype_digit($cardNumber)) {
+                    throw new Exception('Invalid Card Number.');
+                }
+                if (empty($expiryMonth) || empty($expiryYear)) {
+                    throw new Exception('Card expiry date is required.');
+                }
+                if (strlen($cvv) < 3 || strlen($cvv) > 4 || !ctype_digit($cvv)) {
+                    throw new Exception('Invalid CVV.');
+                }
+                
+                // Retrieve the newly inserted transaction
+                $txId = $pdo->lastInsertId();
+                $txStmt = $pdo->prepare("SELECT * FROM transactions WHERE id = ?");
+                $txStmt->execute([$txId]);
+                $transaction = $txStmt->fetch();
+                
+                if (!$transaction) {
+                    throw new Exception('Failed to record transaction.');
+                }
+                
+                // Simulate NaloPay details
+                $naloData = [
+                    'status' => 'COMPLETED',
+                    'order_id' => $reference,
+                    'payment_type' => 'card',
+                    'network' => 'CARD'
+                ];
+                
+                // Process successful payment
+                $result = processSuccessfulPayment($pdo, $transaction, $naloData);
+                
+                if ($result['success']) {
+                    ob_clean();
+                    header('Content-Type: application/json');
+                    echo json_encode([
+                        'success' => true,
+                        'payment_required' => false,
+                        'payment_data' => [
+                            'reference' => $reference
+                        ],
+                        'message' => 'Card payment processed successfully! Your vote has been recorded.'
+                    ]);
+                    exit;
+                } else {
+                    throw new Exception($result['message']);
+                }
+            }
+
+            // If phone and network are provided AND network is not CARD, try direct STK Push
+            if (!empty($voterPhone) && !empty($voterNetwork) && $voterNetwork !== 'CARD') {
+                $naloResponse = chargeNaloMoMo(
+                    $voterPhone,
+                    $amount,
+                    $voterNetwork,
+                    $reference,
+                    json_decode($metadata, true)
+                );
+                
+                $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
+                
+                if ($naloResponse && $isSuccess) {
+                    // Store NaloPay's order_id as external_id
+                    $externalId = $naloResponse['data']['order_id'] ?? null;
+                    if ($externalId) {
+                        $updateStmt = $pdo->prepare("UPDATE transactions SET external_id = ? WHERE reference = ?");
+                        $updateStmt->execute([$externalId, $reference]);
+                    }
+
+                    $response['success'] = true;
+                    $response['payment_required'] = true;
+                    $response['payment_data'] = [
+                        'direct_push' => true,
+                        'reference' => $reference,
+                        'message' => 'An STK Push has been sent to your phone. Please approve to complete your vote.'
+                    ];
+                    $response['message'] = 'STK Push initiated...';
+                    
+                    ob_clean();
+                    header('Content-Type: application/json');
+                    echo json_encode($response);
+                    exit;
+                }
+                // If direct push fails, we can either throw an error or fall back to hosted checkout
+                // Let's log it and try hosted checkout as a fallback
+                error_log("NaloPay Direct Push failed for $reference: " . ($naloResponse['message'] ?? 'Unknown error'));
+            }
+
+            // Fallback to Hosted Checkout
+            $naloResponse = createNaloCheckoutSession(
+                $reference, // Using reference as orderId
+                $customerName,
+                $amount,
+                $reference,
+                $products
+            );
+            
+            $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
+            
+            if ($naloResponse && $isSuccess) {
+                // Store NaloPay's session ID or order ID as external_id
+                $externalId = $naloResponse['data']['session_id'] ?? $naloResponse['data']['order_id'] ?? null;
+                if ($externalId) {
+                    $updateStmt = $pdo->prepare("UPDATE transactions SET external_id = ? WHERE reference = ?");
+                    $updateStmt->execute([$externalId, $reference]);
+                }
+
+                $response['success'] = true;
+                $response['payment_required'] = true;
+                $response['payment_data'] = [
+                    'checkout_url' => $naloResponse['data']['checkout_url'],
+                    'reference' => $reference
+                ];
+                $response['message'] = 'Redirecting to payment...';
+            } else {
+                $errorMsg = $naloResponse['message'] ?? 'Unknown error';
+                if (isset($naloResponse['errors'])) {
+                    $errorMsg .= ': ' . json_encode($naloResponse['errors']);
+                }
+                throw new Exception('Failed to initialize NaloPay: ' . $errorMsg);
+            }
             
             ob_clean();
             header('Content-Type: application/json');

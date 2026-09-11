@@ -5,6 +5,7 @@
  */
 
 require_once 'config/database.php';
+require_once 'includes/auth-functions.php';
 
 // Redirect if already logged in
 if (isLoggedIn()) {
@@ -44,6 +45,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Please enter a valid email address.';
         }
 
+        // Phone number is required: admins use it to reach organizers about
+        // approval, and payouts are settled on a mobile money number.
+        $phoneDigits = preg_replace('/\D/', '', $phone);
+        if (empty($phone)) {
+            $errors[] = 'Phone number is required.';
+        } elseif (strlen($phoneDigits) < 9 || strlen($phoneDigits) > 15) {
+            $errors[] = 'Please enter a valid phone number, e.g. 0244000000 or +233244000000.';
+        }
+
         if (empty($password)) {
             $errors[] = 'Password is required.';
         } elseif (strlen($password) < 8) {
@@ -69,25 +79,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if ($stmt->fetch()) {
                     $errors[] = 'Email address is already registered.';
                 } else {
-                    // Insert new user as ORGANIZER
+                    // New organizers must be approved by an administrator before
+                    // they can sign in (unless approval has been switched off).
+                    $needsApproval = isOrganizerApprovalRequired();
+                    $approvalStatus = $needsApproval ? 'pending' : 'approved';
+
                     $hashed_password = password_hash($password, PASSWORD_DEFAULT);
-                    $stmt = $pdo->prepare("INSERT INTO users (fullname, email, phone, password, role, status) VALUES (?, ?, ?, ?, 'organizer', 'active')");
-                    
-                    if ($stmt->execute([$fullname, $email, $phone, $hashed_password])) {
+                    $stmt = $pdo->prepare("INSERT INTO users (fullname, email, phone, password, role, status, approval_status, approved_at)
+                                           VALUES (?, ?, ?, ?, 'organizer', 'active', ?, ?)");
+
+                    if ($stmt->execute([
+                        $fullname,
+                        $email,
+                        $phone ?: null,
+                        $hashed_password,
+                        $approvalStatus,
+                        $needsApproval ? null : date('Y-m-d H:i:s')
+                    ])) {
                         $user_id = $pdo->lastInsertId();
-                        
+
                         // Log the action
                         $logStmt = $pdo->prepare("INSERT INTO audit_logs (user_id, action, ip_address, user_agent) VALUES (?, 'register', ?, ?)");
-                        $logStmt->execute([$user_id, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT']]);
+                        $logStmt->execute([$user_id, $_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null]);
 
-                        // Notify Admin
-                        createNotification(
-                            1, // Admin ID
-                            "New User Registered",
-                            "A new user ($fullname) has registered as an organizer.",
-                            "info",
-                            "admin/users.php"
-                        );
+                        $newUser = [
+                            'id'         => $user_id,
+                            'fullname'   => $fullname,
+                            'email'      => $email,
+                            'phone'      => $phone,
+                            'created_at' => date('Y-m-d H:i:s'),
+                        ];
+
+                        // In-app notification for every administrator
+                        $adminStmt = $pdo->query("SELECT id FROM users WHERE role = 'admin' AND status = 'active'");
+                        foreach ($adminStmt->fetchAll() as $admin) {
+                            createNotification(
+                                $admin['id'],
+                                $needsApproval ? 'Organizer Approval Needed' : 'New Organizer Registered',
+                                $needsApproval
+                                    ? "$fullname ($email) registered as an organizer and is waiting for approval."
+                                    : "$fullname ($email) registered as an organizer.",
+                                $needsApproval ? 'warning' : 'info',
+                                'admin/organizer-approvals.php'
+                            );
+                        }
+
+                        if ($needsApproval) {
+                            // Email the admins so they can approve, and confirm to the organizer
+                            notifyAdminsOfPendingOrganizer($newUser);
+                            sendOrganizerPendingEmail($newUser);
+
+                            $_SESSION['pending_approval_user'] = [
+                                'id'       => $user_id,
+                                'fullname' => $fullname,
+                                'email'    => $email,
+                            ];
+                            redirect('pending-approval.php');
+                        }
 
                         setFlash('success', 'Account created successfully! You can now login.');
                         redirect('login.php');
@@ -124,9 +172,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
 </head>
-<body>
+<body class="auth-body">
     <div class="auth-page">
         <div class="container">
             <div class="auth-card">
@@ -142,6 +190,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div>
                                 <h6 class="fw-bold mb-1">Organizer Registration Only</h6>
                                 <p class="small text-muted mb-0">Voters do not need an account to vote. This registration is strictly for event organizers.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-warning border-0 shadow-sm rounded-4 p-3 mb-4 text-start">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="icon-box bg-warning bg-opacity-25 text-warning-emphasis rounded-circle p-2">
+                                <i class="bi bi-shield-check fs-4"></i>
+                            </div>
+                            <div>
+                                <h6 class="fw-bold mb-1">Accounts are approved by an admin</h6>
+                                <p class="small text-muted mb-0">
+                                    After you sign up, an administrator reviews your account before you can log in.
+                                    You will get an email as soon as it is approved &mdash; or reach us on WhatsApp at
+                                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener" class="fw-semibold text-decoration-none"><?php echo WHATSAPP_NUMBER; ?></a>
+                                    to speed things up.
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -189,16 +254,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
 
                     <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number (Optional)</label>
+                        <label for="phone" class="form-label">Phone Number</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-phone"></i></span>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="phone" 
-                                   name="phone" 
+                            <input type="tel"
+                                   class="form-control"
+                                   id="phone"
+                                   name="phone"
                                    value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>"
-                                   placeholder="e.g. +233XXXXXXXXX">
+                                   placeholder="e.g. 0244000000"
+                                   inputmode="tel"
+                                   autocomplete="tel"
+                                   required>
                         </div>
+                        <div class="form-text">We use this to reach you about your account approval.</div>
                     </div>
 
                     <div class="row">

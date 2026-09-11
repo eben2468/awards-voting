@@ -149,7 +149,7 @@ include 'includes/header.php';
                             </h2>
                             <div id="faq8" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
                                 <div class="accordion-body text-muted">
-                                    For paid voting, we accept Mobile Money (MTN, Vodafone, AirtelTigo) and Debit/Credit Cards through our secure payment partner, Paystack.
+                                    For paid voting, we accept Mobile Money (MTN, Telecel, AT) and Debit/Credit Cards through our secure payment partner, NaloPay.
                                 </div>
                             </div>
                         </div>

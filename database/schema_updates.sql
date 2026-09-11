@@ -35,6 +35,8 @@ CREATE TABLE IF NOT EXISTS organizer_payouts (
     INDEX idx_status (status)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 5. Insert sample organizer user
 INSERT INTO users (fullname, email, phone, password, role, status) VALUES
 ('Sample Organizer', 'organizer@example.com', '+233123456789', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'organizer', 'active');
+
+-- 6. Add results access control to categories
+ALTER TABLE categories ADD COLUMN allow_results BOOLEAN DEFAULT FALSE;

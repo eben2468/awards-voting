@@ -5,6 +5,7 @@
  */
 
 require_once '../config/database.php';
+require_once '../includes/profile-email.php';
 
 // Require admin login
 if (!isLoggedIn() || !isAdmin()) {
@@ -83,6 +84,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $errors[] = 'Failed to update profile.';
                 }
             }
+        } elseif (in_array($action, ['request_email_change', 'confirm_email_change', 'cancel_email_change'], true)) {
+            // Changing the account email address (verified by a code sent to the new inbox)
+            $errors = array_merge($errors, processProfileEmailAction($pdo, $user, $action, 'admin/profile.php'));
         } elseif ($action === 'change_password') {
             $currentPassword = $_POST['current_password'] ?? '';
             $newPassword = $_POST['new_password'] ?? '';
@@ -110,7 +114,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt = $pdo->prepare("UPDATE users SET password = ?, updated_at = NOW() WHERE id = ?");
                     $stmt->execute([$hashedPassword, $userId]);
                     
-                    setFlash('success', 'Password changed successfully!');
+                    sendPasswordChangedEmail($user);
+
+                    setFlash('success', 'Password changed successfully! A confirmation email has been sent to you.');
                     redirect('admin/profile.php');
                 } catch (PDOException $e) {
                     $errors[] = 'Failed to change password.';
@@ -141,7 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -253,9 +259,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="col-md-6">
                                         <label for="email" class="form-label fw-bold">Email Address</label>
-                                        <input type="email" class="form-control bg-light" id="email" 
+                                        <input type="email" class="form-control bg-light" id="email"
                                                value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
-                                        <div class="form-text">Email address cannot be changed.</div>
+                                        <div class="form-text">
+                                            <a href="#emailCard" class="text-primary text-decoration-none fw-semibold">
+                                                <i class="bi bi-pencil-square me-1"></i>Change your email address
+                                            </a> &mdash; we will email a code to confirm it.
+                                        </div>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label fw-bold">Phone Number</label>
@@ -272,6 +282,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </form>
                         </div>
                     </div>
+
+                    <!-- Email Address Card -->
+                    <div id="emailCard"></div>
+                    <?php renderEmailChangeCard($pdo, $user); ?>
 
                     <!-- Change Password Form -->
                     <div class="card border-0 shadow-sm">
@@ -313,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
     <script>
         function previewAvatar(input) {
             if (input.files && input.files[0]) {

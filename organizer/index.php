@@ -79,8 +79,8 @@ $topNominees = $topNomineesStmt->fetchAll();
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -288,6 +288,6 @@ $topNominees = $topNomineesStmt->fetchAll();
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
 </body>
 </html>

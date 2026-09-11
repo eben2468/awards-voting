@@ -89,6 +89,30 @@ if (isset($_GET['export'])) {
                 fputcsv($output, [$rank, $n['name'], $n['shortcode'], $n['category'], $n['event'], $n['vote_count'], $pct . '%']);
             }
             break;
+            
+        case 'tickets':
+            fputcsv($output, ['Ticket ID', 'Ticket Code', 'Event', 'Category', 'Quantity', 'Phone', 'Amount (GHS)', 'Date']);
+            $sql = "
+                SELECT t.id, t.ticket_code, e.title as event, tc.name as category, t.quantity, t.phone, tr.amount, t.created_at
+                FROM tickets t
+                JOIN events e ON t.event_id = e.id
+                JOIN ticket_categories tc ON t.ticket_category_id = tc.id
+                LEFT JOIN transactions tr ON t.transaction_id = tr.id
+                WHERE e.organizer_id = ?
+            ";
+            $params = [$organizer_id];
+            if ($eventId > 0) {
+                $sql .= " AND t.event_id = ?";
+                $params[] = $eventId;
+            }
+            $sql .= " ORDER BY t.created_at DESC";
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+            $tickets = $stmt->fetchAll();
+            foreach ($tickets as $t) {
+                fputcsv($output, [$t['id'], $t['ticket_code'], $t['event'], $t['category'], $t['quantity'], $t['phone'], $t['amount'], $t['created_at']]);
+            }
+            break;
     }
     
     fclose($output);
@@ -113,8 +137,8 @@ $events = $eventsStmt->fetchAll();
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -137,7 +161,7 @@ $events = $eventsStmt->fetchAll();
 
             <div class="row g-4">
                 <!-- Votes Report -->
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-5">
                             <div class="icon-box bg-primary bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
@@ -161,7 +185,7 @@ $events = $eventsStmt->fetchAll();
                 </div>
 
                 <!-- Results Report -->
-                <div class="col-md-6">
+                <div class="col-md-4">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-5">
                             <div class="icon-box bg-success bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
@@ -183,11 +207,35 @@ $events = $eventsStmt->fetchAll();
                         </div>
                     </div>
                 </div>
+
+                <!-- Tickets Report -->
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center py-5">
+                            <div class="icon-box bg-warning bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
+                                <i class="bi bi-ticket-perforated text-warning fs-3"></i>
+                            </div>
+                            <h5>Tickets Report</h5>
+                            <p class="text-muted small mb-4">Export purchased tickets with categories, codes, quantity and phone.</p>
+                            <form action="" method="GET" class="d-grid gap-2">
+                                <select name="event" class="form-select form-select-sm">
+                                    <option value="">All My Events</option>
+                                    <?php foreach ($events as $e): ?>
+                                        <option value="<?php echo $e['id']; ?>"><?php echo htmlspecialchars($e['title']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" name="export" value="tickets" class="btn btn-warning text-white">
+                                    <i class="bi bi-download me-2"></i>Export CSV
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
 </body>
 </html>

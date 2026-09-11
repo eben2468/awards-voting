@@ -30,7 +30,14 @@ if (ini_get("session.use_cookies")) {
 
 session_destroy();
 
-// Redirect to home with message
+// Redirect with an appropriate message
 session_start();
+
+// ?cancel=1 is used to abandon a half-finished two-step verification
+if (isset($_GET['cancel'])) {
+    setFlash('info', 'Sign-in cancelled. You can log in with a different account.');
+    redirect('login.php');
+}
+
 setFlash('success', 'You have been successfully logged out.');
 redirect('');

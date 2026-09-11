@@ -98,13 +98,74 @@ function initVoteModal() {
     const modalCategoryId = document.getElementById('modalCategoryId');
     const modalEventId = document.getElementById('modalEventId');
 
+    // New sections
+    const stkPushBanner = document.getElementById('stkPushBanner');
+    const stkPendingSection = document.getElementById('stkPendingSection');
+    const voteFormSection = document.getElementById('voteFormSection');
+    const cardDetailsSection = document.getElementById('cardDetailsSection');
+    const phoneInputSection = document.getElementById('phoneInputSection');
+
     let currentPrice = 0;
     let currentForm = null;
     let nomineeData = null;
 
+    // Function to get initials from name
+    function getInitials(name) {
+        return name
+            .split(' ')
+            .map(word => word[0])
+            .join('')
+            .toUpperCase()
+            .substring(0, 2);
+    }
+
+    // Reset modal to initial state
+    function resetModalState() {
+        // Show form, hide pending
+        form.classList.remove('d-none');
+        if (voteFormSection) voteFormSection.classList.remove('d-none');
+        if (stkPendingSection) stkPendingSection.classList.add('d-none');
+        if (stkPushBanner) stkPushBanner.classList.add('d-none');
+        if (cardDetailsSection) cardDetailsSection.classList.add('d-none');
+        if (phoneInputSection) phoneInputSection.style.display = 'block';
+
+        // Reset card fields
+        const cardFields = ['cardholderName', 'cardNumber', 'cardExpiryMonth', 'cardExpiryYear', 'cardCvv'];
+        cardFields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.value = el.tagName === 'SELECT' ? '' : '';
+        });
+
+        // Reset network select
+        const voterNetworkSelect = document.getElementById('voterNetwork');
+        if (voterNetworkSelect) voterNetworkSelect.value = '';
+
+        // Reset phone
+        const voterPhoneInput = document.getElementById('voterPhone');
+        if (voterPhoneInput) {
+            voterPhoneInput.value = '';
+            voterPhoneInput.setAttribute('required', 'required');
+        }
+
+        // Reset submit button
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = 'Proceed to Payment';
+        }
+
+        // Remove any card payment iframe
+        const existingIframe = document.getElementById('cardPaymentIframe');
+        if (existingIframe) existingIframe.remove();
+    }
+
+    // Listen for modal hidden event to reset state
+    modal.addEventListener('hidden.bs.modal', resetModalState);
+
     // Open modal on "Vote" button click (from cards)
     document.querySelectorAll('.btn-buy-votes').forEach(btn => {
         btn.addEventListener('click', function () {
+            resetModalState();
             currentForm = this.closest('form');
             nomineeData = null;
             const nomineeName = this.dataset.nomineeName;
@@ -112,10 +173,28 @@ function initVoteModal() {
 
             // Find nominee photo from the card
             const card = this.closest('.card') || this.closest('.nominee-card');
-            const photo = card.querySelector('.nominee-photo').src;
+            const photoImg = card.querySelector('.nominee-photo');
+            const photo = photoImg ? photoImg.src : '';
 
             nomineeNameSpan.textContent = nomineeName;
-            nomineePhotoImg.src = photo;
+
+            // Handle initials and photo
+            const initialsDiv = document.getElementById('modalNomineeInitials');
+            if (initialsDiv) {
+                initialsDiv.textContent = getInitials(nomineeName);
+                if (photo && !photo.includes('ui-avatars.com')) {
+                    nomineePhotoImg.src = photo;
+                    nomineePhotoImg.classList.remove('d-none');
+                    initialsDiv.classList.add('d-none');
+                } else {
+                    nomineePhotoImg.classList.add('d-none');
+                    initialsDiv.classList.remove('d-none');
+                }
+            } else {
+                nomineePhotoImg.src = photo;
+                nomineePhotoImg.classList.remove('d-none');
+            }
+
             unitPriceSpan.textContent = currentPrice.toFixed(2);
             quantityInput.value = 1;
             updateTotal();
@@ -126,12 +205,30 @@ function initVoteModal() {
 
     // Function to open modal from shortcode search
     window.openVoteModal = function (data) {
+        resetModalState();
         currentForm = null;
         nomineeData = data;
         currentPrice = parseFloat(data.vote_price);
 
         nomineeNameSpan.textContent = data.name;
-        nomineePhotoImg.src = data.photo;
+
+        // Handle initials and photo
+        const initialsDiv = document.getElementById('modalNomineeInitials');
+        if (initialsDiv) {
+            initialsDiv.textContent = getInitials(data.name);
+            if (data.photo && !data.photo.includes('ui-avatars.com')) {
+                nomineePhotoImg.src = data.photo;
+                nomineePhotoImg.classList.remove('d-none');
+                initialsDiv.classList.add('d-none');
+            } else {
+                nomineePhotoImg.classList.add('d-none');
+                initialsDiv.classList.remove('d-none');
+            }
+        } else {
+            nomineePhotoImg.src = data.photo;
+            nomineePhotoImg.classList.remove('d-none');
+        }
+
         unitPriceSpan.textContent = currentPrice.toFixed(2);
 
         if (modalNomineeId) modalNomineeId.value = data.id;
@@ -164,17 +261,287 @@ function initVoteModal() {
 
     quantityInput.addEventListener('input', updateTotal);
 
+    // Payment method switching logic
+    const voterNetworkSelect = document.getElementById('voterNetwork');
+    const voterPhoneInput = document.getElementById('voterPhone');
+
+    if (voterNetworkSelect) {
+        voterNetworkSelect.addEventListener('change', function () {
+            const phoneLabel = phoneInputSection ? phoneInputSection.querySelector('label') : null;
+            const phoneHelp = phoneInputSection ? phoneInputSection.querySelector('.form-text') : null;
+            
+            if (this.value === 'CARD') {
+                // Keep phone input visible, update label/help text
+                if (phoneInputSection) phoneInputSection.style.display = 'block';
+                if (cardDetailsSection) cardDetailsSection.classList.remove('d-none');
+                if (voterPhoneInput) voterPhoneInput.setAttribute('required', 'required');
+                if (phoneLabel) {
+                    phoneLabel.innerHTML = 'Phone Number <span class="text-muted fw-normal">(for Vote SMS)</span>';
+                }
+                if (phoneHelp) {
+                    phoneHelp.textContent = 'Enter your phone number to receive your vote confirmation via SMS.';
+                }
+                // Set card fields as required
+                setCardFieldsRequired(true);
+            } else {
+                // Show phone input, hide card form, reset labels
+                if (phoneInputSection) phoneInputSection.style.display = 'block';
+                if (cardDetailsSection) cardDetailsSection.classList.add('d-none');
+                if (voterPhoneInput) voterPhoneInput.setAttribute('required', 'required');
+                if (phoneLabel) {
+                    phoneLabel.innerHTML = 'MoMo Number <span class="text-muted fw-normal">(for STK Push)</span>';
+                }
+                if (phoneHelp) {
+                    phoneHelp.textContent = 'Enter your mobile money number to receive a payment prompt.';
+                }
+                // Remove card fields required
+                setCardFieldsRequired(false);
+            }
+        });
+
+        // Trigger change event to set initial state if needed
+        if (voterNetworkSelect.value) {
+            voterNetworkSelect.dispatchEvent(new Event('change'));
+        }
+    }
+
+    function setCardFieldsRequired(required) {
+        const cardFields = ['cardholderName', 'cardNumber', 'cardExpiryMonth', 'cardExpiryYear', 'cardCvv'];
+        cardFields.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) {
+                if (required) {
+                    el.setAttribute('required', 'required');
+                } else {
+                    el.removeAttribute('required');
+                }
+            }
+        });
+    }
+
+    /**
+     * Show the STK Pending state inside the modal
+     */
+    function showStkPendingState(nomineeName, nomineePhoto, shortcode, phoneNumber) {
+        // Hide the form
+        form.classList.add('d-none');
+        if (voteFormSection) voteFormSection.classList.add('d-none');
+
+        // Show banner
+        if (stkPushBanner) {
+            const bannerText = stkPushBanner.querySelector('.stk-push-text');
+            if (bannerText) {
+                bannerText.textContent = `An STK Push has been sent to your phone. Please approve to complete your vote.`;
+            }
+            stkPushBanner.classList.remove('d-none');
+        }
+
+        // Show pending section
+        if (stkPendingSection) {
+            // Set nominee info
+            const pendingName = document.getElementById('pendingNomineeName');
+            const pendingInitials = document.getElementById('pendingNomineeInitials');
+            const pendingPhoto = document.getElementById('pendingNomineePhoto');
+            const pendingShortcodeBadge = document.getElementById('pendingShortcodeBadge');
+            const pendingShortcodeText = document.getElementById('pendingShortcodeText');
+
+            if (pendingName) pendingName.textContent = nomineeName || 'Nominee';
+
+            if (pendingInitials && pendingPhoto) {
+                if (nomineePhoto && !nomineePhoto.includes('ui-avatars.com')) {
+                    pendingPhoto.src = nomineePhoto;
+                    pendingPhoto.classList.remove('d-none');
+                    pendingInitials.classList.add('d-none');
+                } else {
+                    pendingInitials.textContent = getInitials(nomineeName || 'NA');
+                    pendingInitials.classList.remove('d-none');
+                    pendingPhoto.classList.add('d-none');
+                }
+            }
+
+            if (pendingShortcodeBadge && pendingShortcodeText && shortcode) {
+                pendingShortcodeText.textContent = shortcode;
+                pendingShortcodeBadge.classList.remove('d-none');
+            } else if (pendingShortcodeBadge) {
+                pendingShortcodeBadge.classList.add('d-none');
+            }
+
+            stkPendingSection.classList.remove('d-none');
+        }
+    }
+
+    /**
+     * Validate card details before submission
+     */
+    function validateCardDetails() {
+        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
+        const expiryMonth = document.getElementById('cardExpiryMonth').value;
+        const expiryYear = document.getElementById('cardExpiryYear').value;
+        const cvv = document.getElementById('cardCvv').value;
+        const cardholderName = document.getElementById('cardholderName').value.trim();
+
+        if (!cardholderName) {
+            showToast('warning', 'Please enter the cardholder name.');
+            return false;
+        }
+
+        if (cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) {
+            showToast('warning', 'Please enter a valid card number.');
+            return false;
+        }
+
+        // Luhn check
+        if (!luhnCheck(cardNumber)) {
+            showToast('warning', 'Invalid card number. Please check and try again.');
+            return false;
+        }
+
+        if (!expiryMonth || !expiryYear) {
+            showToast('warning', 'Please select the card expiry date.');
+            return false;
+        }
+
+        // Check if card is not expired
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = parseInt(String(now.getFullYear()).slice(-2));
+        const expMonth = parseInt(expiryMonth);
+        const expYear = parseInt(expiryYear);
+
+        if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
+            showToast('warning', 'Your card has expired. Please use a different card.');
+            return false;
+        }
+
+        if (cvv.length < 3 || !/^\d+$/.test(cvv)) {
+            showToast('warning', 'Please enter a valid CVV (3-4 digits).');
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Luhn algorithm check for card numbers
+     */
+    function luhnCheck(num) {
+        let arr = (num + '').split('').reverse().map(x => parseInt(x));
+        let sum = arr.reduce((acc, val, i) => {
+            if (i % 2 !== 0) {
+                val *= 2;
+                if (val > 9) val -= 9;
+            }
+            return acc + val;
+        }, 0);
+        return sum % 10 === 0;
+    }
+
+    // ===== FORM SUBMISSION =====
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
 
         const submitBtn = form.querySelector('button[type="submit"]');
         const originalBtnText = submitBtn.innerHTML;
+
+        // Get phone number and network from modal
+        const phoneInput = document.getElementById('voterPhone');
+        const networkInput = document.getElementById('voterNetwork');
+        const phoneValue = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+        const networkValue = networkInput ? networkInput.value : '';
+
+        // ===== CARD PAYMENT FLOW =====
+        if (networkValue === 'CARD') {
+            if (!validateCardDetails()) return;
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Processing Card Payment...';
+
+            // Get nominee info for display
+            const nomineeName = nomineeNameSpan ? nomineeNameSpan.textContent : 'Nominee';
+            const nomineePhoto = nomineePhotoImg ? nomineePhotoImg.src : '';
+
+            try {
+                const formData = new FormData();
+
+                if (currentForm) {
+                    // Card-initiated vote from event page
+                    const hiddenInputs = currentForm.querySelectorAll('input[type="hidden"]');
+                    hiddenInputs.forEach(input => {
+                        formData.append(input.name, input.value);
+                    });
+                } else if (nomineeData) {
+                    // Shortcode-initiated vote
+                    formData.append('nominee_id', nomineeData.id);
+                    formData.append('category_id', nomineeData.category_id);
+                    formData.append('event_id', nomineeData.event_id);
+                }
+
+                formData.append('quantity', quantityInput.value);
+                formData.append('cardholder_name', document.getElementById('cardholderName').value.trim());
+                formData.append('card_number', document.getElementById('cardNumber').value.replace(/\s/g, ''));
+                formData.append('expiry_month', document.getElementById('cardExpiryMonth').value);
+                formData.append('expiry_year', document.getElementById('cardExpiryYear').value);
+                formData.append('cvv', document.getElementById('cardCvv').value);
+                formData.append('phone', phoneValue);
+                formData.append('network', networkValue);
+
+                // Get CSRF token
+                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
+                if (csrfToken) formData.append('csrf_token', csrfToken);
+
+                const response = await fetch(`${window.SITE_URL}/api/process-card.php`, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.payment_required && result.payment_data && result.payment_data.checkout_url) {
+                        // Show checkout in an iframe inside the modal
+                        handleCardPaymentInModal(result.payment_data, nomineeName, nomineePhoto);
+                    } else {
+                        // Card processed directly & successfully!
+                        if (bsModal) {
+                            try { bsModal.hide(); } catch (e) {}
+                        }
+                        showToast('success', result.message || 'Payment successful! Your vote has been recorded.');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 2000);
+                    }
+                } else {
+                    showToast('danger', result.message || 'Card payment failed. Please try again.');
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            } catch (error) {
+                console.error('Card payment error:', error);
+                showToast('danger', 'An error occurred processing your card payment. Please try again.');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+            return;
+        }
+
+        // ===== MOBILE MONEY / STK PUSH FLOW =====
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="loading"></span> Processing...';
 
-        // Get phone number from modal
-        const phoneInput = document.getElementById('voterPhone');
-        const phoneValue = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
+        // Get nominee info for pending state
+        const currentNomineeName = nomineeNameSpan ? nomineeNameSpan.textContent : 'Nominee';
+        const currentNomineePhoto = nomineePhotoImg && !nomineePhotoImg.classList.contains('d-none') ? nomineePhotoImg.src : '';
+
+        // Get shortcode if available from card
+        let shortcode = '';
+        if (currentForm) {
+            const card = currentForm.closest('.card') || currentForm.closest('.nominee-card');
+            const shortcodeEl = card ? card.querySelector('.shortcode') : null;
+            shortcode = shortcodeEl ? shortcodeEl.textContent.trim() : '';
+        }
 
         if (currentForm) {
             // Card-initiated vote
@@ -187,7 +554,7 @@ function initVoteModal() {
             }
             qtyInput.value = quantityInput.value;
 
-            // Add phone number to form if provided
+            // Add phone number to form
             let phoneHiddenInput = currentForm.querySelector('input[name="phone"]');
             if (!phoneHiddenInput) {
                 phoneHiddenInput = document.createElement('input');
@@ -197,16 +564,62 @@ function initVoteModal() {
             }
             phoneHiddenInput.value = phoneValue;
 
-            const submitEvent = new Event('submit', { cancelable: true, bubbles: true });
-            currentForm.dispatchEvent(submitEvent);
+            // Add network to form
+            let networkHiddenInput = currentForm.querySelector('input[name="network"]');
+            if (!networkHiddenInput) {
+                networkHiddenInput = document.createElement('input');
+                networkHiddenInput.type = 'hidden';
+                networkHiddenInput.name = 'network';
+                currentForm.appendChild(networkHiddenInput);
+            }
+            networkHiddenInput.value = networkValue;
 
-            setTimeout(() => {
-                bsModal.hide();
+            // Instead of dispatching submit event and hiding modal immediately,
+            // we intercept the AJAX response to show pending state
+            try {
+                const formData = new FormData(currentForm);
+                const response = await fetch(currentForm.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    if (result.payment_required && result.payment_data) {
+                        if (result.payment_data.direct_push) {
+                            // STK Push was sent - show pending state IN the modal
+                            showStkPendingState(currentNomineeName, currentNomineePhoto, shortcode, phoneValue);
+                            showToast('success', result.payment_data.message || 'Payment prompt sent! Please check your phone.');
+
+                            if (result.payment_data.reference) {
+                                startPaymentPolling(result.payment_data.reference, bsModal);
+                            }
+                        } else if (result.payment_data.checkout_url) {
+                            // Fallback to hosted checkout - show in iframe
+                            handleCardPaymentInModal(result.payment_data, currentNomineeName, currentNomineePhoto);
+                        }
+                    } else {
+                        // Free vote success
+                        bsModal.hide();
+                        showToast('success', result.message);
+                        setTimeout(() => window.location.reload(), 2000);
+                    }
+                } else {
+                    showToast('danger', result.message);
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalBtnText;
+                }
+            } catch (error) {
+                console.error('Vote submission error:', error);
+                showToast('danger', 'An error occurred. Please try again.');
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = originalBtnText;
-                // Clear phone input for next use
-                if (phoneInput) phoneInput.value = '';
-            }, 500);
+            }
+
         } else if (nomineeData) {
             // Shortcode-initiated vote
             try {
@@ -215,9 +628,9 @@ function initVoteModal() {
                 formData.append('category_id', nomineeData.category_id);
                 formData.append('event_id', nomineeData.event_id);
                 formData.append('quantity', quantityInput.value);
-                formData.append('phone', phoneValue); // Add phone for SMS confirmation
+                formData.append('phone', phoneValue);
+                formData.append('network', networkValue);
 
-                // Get CSRF token from a hidden input if available, or fetch it
                 const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
                 if (csrfToken) formData.append('csrf_token', csrfToken);
 
@@ -232,11 +645,21 @@ function initVoteModal() {
                 const result = await response.json();
 
                 if (result.success) {
-                    bsModal.hide();
-                    // Handle payment or success
-                    if (result.payment_required) {
-                        handlePayment(result.payment_data, null);
+                    if (result.payment_required && result.payment_data) {
+                        if (result.payment_data.direct_push) {
+                            // STK Push sent - show pending state IN the modal
+                            showStkPendingState(currentNomineeName, currentNomineePhoto, shortcode, phoneValue);
+                            showToast('success', result.payment_data.message || 'Payment prompt sent! Please check your phone.');
+
+                            if (result.payment_data.reference) {
+                                startPaymentPolling(result.payment_data.reference, bsModal);
+                            }
+                        } else if (result.payment_data.checkout_url) {
+                            // Fallback to hosted checkout - show in iframe
+                            handleCardPaymentInModal(result.payment_data, currentNomineeName, currentNomineePhoto);
+                        }
                     } else {
+                        bsModal.hide();
                         showToast('success', result.message);
                         setTimeout(() => window.location.reload(), 2000);
                     }
@@ -252,10 +675,57 @@ function initVoteModal() {
             }
         }
     });
+
+    /**
+     * Handle card payment by showing NaloPay checkout in an iframe inside the modal
+     */
+    function handleCardPaymentInModal(paymentData, nomineeName, nomineePhoto) {
+        if (!paymentData.checkout_url) {
+            showToast('danger', 'Payment initialization failed.');
+            return;
+        }
+
+        // Hide the form and show a loading/iframe state
+        form.classList.add('d-none');
+        if (voteFormSection) voteFormSection.classList.add('d-none');
+
+        // Create iframe container
+        const iframeContainer = document.createElement('div');
+        iframeContainer.id = 'cardPaymentIframeContainer';
+        iframeContainer.className = 'card-payment-iframe-container';
+        iframeContainer.innerHTML = `
+            <div class="text-center mb-3">
+                <p class="fw-semibold text-dark mb-1">Complete your card payment</p>
+                <p class="text-muted small mb-0">Enter your card details in the secure form below</p>
+            </div>
+            <div class="iframe-wrapper">
+                <iframe id="cardPaymentIframe" src="${paymentData.checkout_url}" frameborder="0" allowpaymentrequest="true"></iframe>
+            </div>
+            <div class="text-center mt-3">
+                <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill" id="cancelCardPayment">
+                    <i class="bi bi-arrow-left"></i> Go Back
+                </button>
+            </div>
+        `;
+
+        // Insert after the form
+        form.parentNode.insertBefore(iframeContainer, form.nextSibling);
+
+        // Cancel button handler
+        document.getElementById('cancelCardPayment').addEventListener('click', () => {
+            iframeContainer.remove();
+            resetModalState();
+        });
+
+        // Start polling for payment completion
+        if (paymentData.reference) {
+            startPaymentPolling(paymentData.reference, bsModal);
+        }
+    }
 }
 
 /**
- * Initialize Voting Forms with AJAX and Paystack Integration
+ * Initialize Voting Forms with AJAX and NaloPay Integration
  */
 function initVotingForms() {
     const voteForms = document.querySelectorAll('.vote-form');
@@ -317,73 +787,76 @@ function initVotingForms() {
 }
 
 /**
- * Handle Paystack Payment
+ * Handle NaloPay Payment Redirect (fallback for forms outside the modal)
  */
 function handlePayment(paymentData, btn, originalText) {
-    let metadata = paymentData.metadata;
-    if (typeof metadata === 'string') {
-        try {
-            metadata = JSON.parse(metadata);
-        } catch (e) {
-            metadata = {};
+    if (paymentData.checkout_url) {
+        // Start polling in background before redirecting
+        if (paymentData.reference) {
+            startPaymentPolling(paymentData.reference);
+        }
+        // Redirect to NaloPay Hosted Checkout page
+        window.location.href = paymentData.checkout_url;
+    } else if (paymentData.direct_push) {
+        // Direct STK Push initiated
+        showToast('success', paymentData.message || 'Payment prompt sent! Please check your phone.');
+
+        if (paymentData.reference) {
+            startPaymentPolling(paymentData.reference);
+        }
+
+        if (btn) {
+            btn.innerHTML = '<i class="bi bi-clock"></i> Pending...';
+            btn.disabled = true;
+        }
+    } else {
+        showToast('danger', 'Payment initialization failed. Please try again.');
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     }
+}
 
-    const handler = PaystackPop.setup({
-        key: paymentData.key,
-        email: paymentData.email,
-        amount: paymentData.amount,
-        currency: paymentData.currency,
-        ref: paymentData.ref,
-        metadata: metadata,
-        callback: function (response) {
-            if (btn) btn.innerHTML = '<span class="loading"></span> Verifying...';
+/**
+ * Poll the server to check if payment is successful
+ */
+function startPaymentPolling(reference, bsModal) {
+    console.log('Starting polling for reference:', reference);
 
-            (async () => {
-                try {
-                    const verifyResponse = await fetch(`${window.SITE_URL}/verify-payment.php`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-Requested-With': 'XMLHttpRequest'
-                        },
-                        body: `reference=${response.reference}`
-                    });
-                    const verifyResult = await verifyResponse.json();
+    let pollCount = 0;
+    const maxPolls = 120; // Poll for 10 minutes (5s * 120)
 
-                    if (verifyResult.success) {
-                        showToast('success', verifyResult.message);
-                        if (btn) {
-                            btn.innerHTML = '<i class="bi bi-check-circle"></i> Voted';
-                            btn.classList.add('btn-success');
-                            btn.disabled = true;
-                        }
-                        setTimeout(() => window.location.reload(), 2000);
-                    } else {
-                        showToast('danger', verifyResult.message);
-                        if (btn) {
-                            btn.disabled = false;
-                            btn.innerHTML = originalText;
-                        }
-                    }
-                } catch (err) {
-                    showToast('danger', 'Verification failed.');
-                    if (btn) {
-                        btn.disabled = false;
-                        btn.innerHTML = originalText;
-                    }
-                }
-            })();
-        },
-        onClose: function () {
-            showToast('warning', 'Payment cancelled.');
-            if (btn) {
-                btn.disabled = false;
-                btn.innerHTML = originalText;
-            }
+    const pollInterval = setInterval(async () => {
+        pollCount++;
+        if (pollCount > maxPolls) {
+            clearInterval(pollInterval);
+            console.log('Polling timed out');
+            showToast('warning', 'Payment verification timed out. If you completed the payment, please refresh the page.');
+            return;
         }
-    });
-    handler.openIframe();
+
+        try {
+            const response = await fetch(`${window.SITE_URL}/api/check-payment.php?reference=${reference}`);
+            const result = await response.json();
+
+            if (result.success && result.status === 'COMPLETED') {
+                clearInterval(pollInterval);
+
+                // Hide the modal if it's open
+                if (bsModal) {
+                    try { bsModal.hide(); } catch (e) { }
+                }
+
+                showToast('success', 'Payment successful! Your vote has been recorded.');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        } catch (error) {
+            console.error('Polling error:', error);
+        }
+    }, 5000); // Poll every 5 seconds
 }
 
 /**

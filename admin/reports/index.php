@@ -74,6 +74,23 @@ if (isset($_GET['export'])) {
                 fputcsv($output, [$u['id'], $u['fullname'], $u['email'], $u['phone'], $u['role'], $u['status'], $u['vote_count'], $u['created_at']]);
             }
             break;
+            
+        case 'tickets':
+            fputcsv($output, ['Ticket ID', 'Ticket Code', 'Event', 'Category', 'Quantity', 'Phone', 'Amount (GHS)', 'Date']);
+            $sql = "
+                SELECT t.id, t.ticket_code, e.title as event, tc.name as category, t.quantity, t.phone, tr.amount, t.created_at
+                FROM tickets t
+                JOIN events e ON t.event_id = e.id
+                JOIN ticket_categories tc ON t.ticket_category_id = tc.id
+                LEFT JOIN transactions tr ON t.transaction_id = tr.id
+            ";
+            if ($eventId > 0) $sql .= " WHERE t.event_id = $eventId";
+            $sql .= " ORDER BY t.created_at DESC";
+            $tickets = $pdo->query($sql)->fetchAll();
+            foreach ($tickets as $t) {
+                fputcsv($output, [$t['id'], $t['ticket_code'], $t['event'], $t['category'], $t['quantity'], $t['phone'], $t['amount'], $t['created_at']]);
+            }
+            break;
     }
     
     fclose($output);
@@ -96,8 +113,8 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -113,7 +130,7 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
 
             <div class="row g-4">
                 <!-- Votes Report -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-5">
                             <div class="icon-box bg-primary bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
@@ -137,7 +154,7 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                 </div>
 
                 <!-- Results Report -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-5">
                             <div class="icon-box bg-success bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
@@ -160,8 +177,32 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                     </div>
                 </div>
 
+                <!-- Tickets Report -->
+                <div class="col-md-3">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body text-center py-5">
+                            <div class="icon-box bg-warning bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
+                                <i class="bi bi-ticket-perforated text-warning fs-3"></i>
+                            </div>
+                            <h5>Tickets Report</h5>
+                            <p class="text-muted small mb-4">Export purchased tickets with categories, codes, quantity and phone.</p>
+                            <form action="" method="GET" class="d-grid gap-2">
+                                <select name="event" class="form-select form-select-sm">
+                                    <option value="">All Events</option>
+                                    <?php foreach ($events as $e): ?>
+                                        <option value="<?php echo $e['id']; ?>"><?php echo htmlspecialchars($e['title']); ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                                <button type="submit" name="export" value="tickets" class="btn btn-warning text-white">
+                                    <i class="bi bi-download me-2"></i>Export CSV
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Users Report -->
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body text-center py-5">
                             <div class="icon-box bg-info bg-opacity-10 rounded-circle p-4 mx-auto mb-3" style="width: 80px; height: 80px;">
@@ -169,8 +210,8 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                             </div>
                             <h5>Users Report</h5>
                             <p class="text-muted small mb-4">Export all registered users with their voting activity.</p>
-                            <div class="d-grid">
-                                <a href="?export=users" class="btn btn-info">
+                            <div class="d-grid mt-auto">
+                                <a href="?export=users" class="btn btn-info text-white">
                                     <i class="bi bi-download me-2"></i>Export CSV
                                 </a>
                             </div>
@@ -182,6 +223,6 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
 </body>
 </html>

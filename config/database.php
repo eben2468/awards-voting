@@ -27,6 +27,9 @@ function getDBConnection() {
 
 // Site Configuration
 define('SITE_NAME', 'VoteHubGH');
+define('CURRENCY', 'GHS');
+define('VOTE_PRICE', 1.00); // Default price per vote if not set on event
+
 // Auto-detect SITE_URL to prevent broken CSS and links on live server
 if (isset($_SERVER['HTTP_HOST'])) {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
@@ -47,10 +50,38 @@ define('UPLOAD_PATH', __DIR__ . '/../uploads/');
 define('ADMIN_EMAIL', 'support@votehubgh.com');
 define('WHATSAPP_NUMBER', '+233548811774');
 define('WHATSAPP_LINK', 'https://wa.me/233548811774');
+define('SUPPORT_PHONE', '+233548811774');
+define('SUPPORT_PHONE_ALT', '+233245849246');
+
+// Security / verification settings
+define('LOGIN_CODE_TTL_MINUTES', 10);   // How long a login 2FA code stays valid
+define('LOGIN_CODE_MAX_ATTEMPTS', 5);   // Wrong-code attempts before the code is voided
+define('RESET_TOKEN_TTL_MINUTES', 60);  // How long a password reset link stays valid
+define('EMAIL_CHANGE_TTL_MINUTES', 30); // How long an email-change code stays valid
 
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
+}
+
+/**
+ * Build a URL for a static asset with a cache-busting version stamp.
+ *
+ * Browsers (and most hosts' caches) hold on to CSS and JS for a long time, so
+ * without this a visitor keeps the old stylesheet after an update and the site
+ * looks broken or unchanged. The stamp is the file's modification time, so it
+ * only changes when the file actually changes.
+ *
+ * @param string $relativePath Path from the project root, e.g. 'assets/css/admin.css'
+ * @return string
+ */
+function assetUrl($relativePath) {
+    $relativePath = ltrim($relativePath, '/');
+    $fsPath = __DIR__ . '/../' . $relativePath;
+
+    $version = is_file($fsPath) ? filemtime($fsPath) : null;
+
+    return SITE_URL . '/' . $relativePath . ($version ? '?v=' . $version : '');
 }
 
 // CSRF Token Generation
@@ -117,6 +148,101 @@ function getCurrentUserId() {
 }
 
 /**
+ * Get a setting value from the database
+ * @param string $key - Setting key
+ * @param mixed $default - Default value if not found
+ * @return mixed
+ */
+function getSetting($key, $default = null) {
+    // Per-request cache: a page can read a dozen settings, and each miss used to
+    // open a brand new database connection. clearSettingCache() bumps the
+    // generation counter, which drops everything cached here.
+    static $cache = [];
+    static $generation = -1;
+
+    $currentGeneration = $GLOBALS['__settings_generation'] ?? 0;
+    if ($generation !== $currentGeneration) {
+        $cache = [];
+        $generation = $currentGeneration;
+    }
+
+    if (array_key_exists($key, $cache)) {
+        return $cache[$key] === null ? $default : $cache[$key];
+    }
+
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ? ORDER BY id DESC LIMIT 1");
+        $stmt->execute([$key]);
+        $result = $stmt->fetch();
+
+        $cache[$key] = $result ? $result['setting_value'] : null;
+        return $result ? $result['setting_value'] : $default;
+    } catch (Exception $e) {
+        error_log("Get Setting Error: " . $e->getMessage());
+        return $default;
+    }
+}
+
+/**
+ * Write a single setting and confirm it actually landed in the database.
+ *
+ * Deliberately avoids "INSERT ... ON DUPLICATE KEY UPDATE setting_value =
+ * VALUES(setting_value)": the VALUES() function is deprecated from MySQL 8.0.20
+ * and removed in later versions, so on some hosts that form fails and settings
+ * silently never save. UPDATE-then-INSERT works on every MySQL/MariaDB version
+ * and also copes with a settings table that is missing its UNIQUE index.
+ *
+ * @param string $key
+ * @param string $value
+ * @return bool True when the stored value matches what was requested
+ */
+function saveSetting($key, $value) {
+    $value = (string) $value;
+
+    try {
+        $pdo = getDBConnection();
+
+        $update = $pdo->prepare("UPDATE settings SET setting_value = ? WHERE setting_key = ?");
+        $update->execute([$value, $key]);
+
+        $check = $pdo->prepare("SELECT COUNT(*) FROM settings WHERE setting_key = ?");
+        $check->execute([$key]);
+
+        if ((int) $check->fetchColumn() === 0) {
+            $insert = $pdo->prepare("INSERT INTO settings (setting_key, setting_value) VALUES (?, ?)");
+            $insert->execute([$key, $value]);
+        }
+
+        // Read it back so a silent failure cannot be reported as success
+        $verify = $pdo->prepare("SELECT setting_value FROM settings WHERE setting_key = ? ORDER BY id DESC LIMIT 1");
+        $verify->execute([$key]);
+        $stored = $verify->fetchColumn();
+
+        clearSettingCache();
+
+        if ((string) $stored !== $value) {
+            error_log("Save Setting mismatch for '$key': wanted '" . substr($value, 0, 40)
+                . "', stored '" . substr((string) $stored, 0, 40) . "'");
+            return false;
+        }
+
+        return true;
+    } catch (Exception $e) {
+        error_log("Save Setting Error for '$key': " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Forget every cached setting so the next getSetting() re-reads the database.
+ * Called automatically by saveSetting().
+ */
+function clearSettingCache() {
+    $GLOBALS['__settings_generation'] = ($GLOBALS['__settings_generation'] ?? 0) + 1;
+}
+
+/**
  * Log an action to the audit_logs table
  */
 function logAudit($user_id, $action, $table_name = null, $record_id = null, $old_values = null, $new_values = null) {
@@ -159,61 +285,125 @@ function createNotification($user_id, $title, $message, $type = 'info', $link = 
 }
 
 /**
- * Send email using PHP's built-in mail function
- * 
+ * Send email.
+ *
+ * Delivery goes through Gmail/SMTP when it has been configured in
+ * Admin > Settings > Email (SMTP) Settings, otherwise it falls back to PHP's
+ * built-in mail() function.
+ *
  * @param string $to - Recipient email address
  * @param string $subject - Email subject
- * @param string $message - Email body content
- * @param array $headers - Additional headers (optional)
+ * @param string $message - Email body content (HTML)
+ * @param array $headers - Additional raw headers, e.g. ["Reply-To: Name <a@b.com>"]
  * @return bool - Success status
  */
 function sendEmail($to, $subject, $message, $headers = []) {
-    $fromEmail = ADMIN_EMAIL; // Using support@votehubgh.com
-    $fromName = 'VoteHubGH Support';
-    
-    // Set default headers
-    $defaultHeaders = [
-        "From: $fromName <$fromEmail>",
-        "X-Mailer: PHP/" . phpversion(),
-        "MIME-Version: 1.0",
-        "Content-Type: text/html; charset=UTF-8"
-    ];
-    
-    // Merge custom headers with defaults
-    // If a header exists in both, the one from $headers will be used (if we handle it correctly)
-    $finalHeaders = $defaultHeaders;
+    require_once __DIR__ . '/mailer.php';
+
+    $options = [];
+
+    // Translate the legacy raw-header array into mailer options
     foreach ($headers as $customHeader) {
-        // Check if this header already exists in defaultHeaders (basic check)
-        $headerName = explode(':', $customHeader)[0];
-        $found = false;
-        foreach ($finalHeaders as $key => $existingHeader) {
-            if (stripos($existingHeader, $headerName . ':') === 0) {
-                $finalHeaders[$key] = $customHeader;
-                $found = true;
-                break;
+        if (stripos($customHeader, 'Reply-To:') === 0) {
+            $value = trim(substr($customHeader, strlen('Reply-To:')));
+            if (preg_match('/^(.*?)<([^>]+)>$/', $value, $m)) {
+                $options['replyToName'] = trim($m[1]);
+                $options['replyTo'] = trim($m[2]);
+            } else {
+                $options['replyTo'] = $value;
+            }
+        } elseif (stripos($customHeader, 'Cc:') === 0) {
+            $options['cc'] = array_map('trim', explode(',', trim(substr($customHeader, 3))));
+        } elseif (stripos($customHeader, 'Bcc:') === 0) {
+            $options['bcc'] = array_map('trim', explode(',', trim(substr($customHeader, 4))));
+        }
+    }
+
+    return sendMailMessage($to, $subject, $message, $options);
+}
+
+/**
+ * Generate a numeric one-time verification code.
+ *
+ * @param int $length
+ * @return string
+ */
+function generateVerificationCode($length = 6) {
+    $code = '';
+    for ($i = 0; $i < $length; $i++) {
+        $code .= random_int(0, 9);
+    }
+    return $code;
+}
+
+/**
+ * Hash a one-time code before storing it in the database.
+ */
+function hashVerificationCode($code) {
+    return hash('sha256', $code . '|' . DB_NAME);
+}
+
+/**
+ * Get the email addresses of every administrator who should be notified.
+ *
+ * @return array
+ */
+function getAdminNotificationEmails() {
+    $emails = [];
+
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->query("SELECT email FROM users WHERE role = 'admin' AND status = 'active'");
+        foreach ($stmt->fetchAll() as $row) {
+            if (filter_var($row['email'], FILTER_VALIDATE_EMAIL)) {
+                $emails[] = strtolower($row['email']);
             }
         }
-        if (!$found) {
-            $finalHeaders[] = $customHeader;
-        }
+    } catch (Exception $e) {
+        error_log('getAdminNotificationEmails error: ' . $e->getMessage());
     }
-    
-    // Convert headers array to string
-    $headerString = implode("\r\n", $finalHeaders);
-    
-    // Send email with -f parameter for better deliverability (sets the envelope sender)
-    // This is often required by mail servers to prevent spoofing
-    $result = @mail($to, $subject, $message, $headerString, "-f $fromEmail");
-    
-    // Log the email attempt
-    if ($result) {
-        error_log("Email sent successfully to: $to | Subject: $subject");
-    } else {
-        $lastError = error_get_last();
-        error_log("Failed to send email to: $to | Subject: $subject | Error: " . ($lastError['message'] ?? 'Unknown error'));
+
+    $configured = getSetting('admin_email', ADMIN_EMAIL);
+    if (filter_var($configured, FILTER_VALIDATE_EMAIL)) {
+        $emails[] = strtolower($configured);
     }
-    
-    return $result;
+
+    $notifyTo = getSetting('approval_notify_email', '');
+    if (filter_var($notifyTo, FILTER_VALIDATE_EMAIL)) {
+        $emails[] = strtolower($notifyTo);
+    }
+
+    return array_values(array_unique($emails));
+}
+
+/**
+ * Number of organizer accounts awaiting admin approval.
+ *
+ * @return int
+ */
+function getPendingOrganizerCount() {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'organizer' AND approval_status = 'pending'");
+        return (int) $stmt->fetchColumn();
+    } catch (Exception $e) {
+        // Column may not exist yet (migration not run)
+        return 0;
+    }
+}
+
+/**
+ * Purge expired login/email verification codes and password resets.
+ */
+function purgeExpiredVerificationCodes() {
+    try {
+        $pdo = getDBConnection();
+        $pdo->exec("DELETE FROM login_verification_codes WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)");
+        $pdo->exec("DELETE FROM email_change_requests WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)");
+        $pdo->exec("DELETE FROM password_resets WHERE expires_at < DATE_SUB(NOW(), INTERVAL 1 DAY)");
+    } catch (Exception $e) {
+        // Tables may not exist yet; ignore
+    }
 }
 
 /**
@@ -294,4 +484,162 @@ function sendContactMessage($name, $email, $subject, $message) {
     $supportEmail = ADMIN_EMAIL;
     
     return sendEmail($supportEmail, $emailSubject, $emailBody, $headers);
+}
+
+/**
+ * Check if an event has expired (past its end_date)
+ * Real-time check against the database
+ * 
+ * @param int $eventId - The event ID to check
+ * @return bool - True if the event has expired
+ */
+function isEventExpired($eventId) {
+    try {
+        $pdo = getDBConnection();
+        $stmt = $pdo->prepare("SELECT id, end_date, status FROM events WHERE id = ?");
+        $stmt->execute([$eventId]);
+        $event = $stmt->fetch();
+        
+        if (!$event) {
+            return true; // Event doesn't exist, treat as expired
+        }
+        
+        // Check if event end_date has passed
+        if (strtotime($event['end_date']) < time()) {
+            // Auto-update status to 'completed' if still 'active'
+            if ($event['status'] === 'active') {
+                $updateStmt = $pdo->prepare("UPDATE events SET status = 'completed', updated_at = NOW() WHERE id = ? AND status = 'active'");
+                $updateStmt->execute([$eventId]);
+                error_log("Event #$eventId auto-deactivated: end_date has passed.");
+            }
+            return true;
+        }
+        
+        // Also check if status is not active
+        if ($event['status'] !== 'active') {
+            return true;
+        }
+        
+        return false;
+    } catch (Exception $e) {
+        error_log("isEventExpired Error: " . $e->getMessage());
+        return false; // Fail open to avoid blocking legitimate votes on DB errors
+    }
+}
+
+/**
+ * Deactivate all expired events and their associated nominee codes.
+ * This should be called by a cron job or scheduled task.
+ * 
+ * @return array - Summary of deactivated events and nominees
+ */
+function deactivateExpiredEvents() {
+    try {
+        $pdo = getDBConnection();
+        $results = ['events_deactivated' => 0, 'nominees_deactivated' => 0, 'events' => []];
+        
+        // 1. Find all active events whose end_date has passed
+        $stmt = $pdo->prepare("
+            SELECT id, title, end_date, created_by 
+            FROM events 
+            WHERE status = 'active' AND end_date < NOW()
+        ");
+        $stmt->execute();
+        $expiredEvents = $stmt->fetchAll();
+        
+        if (empty($expiredEvents)) {
+            return $results;
+        }
+        
+        foreach ($expiredEvents as $event) {
+            $pdo->beginTransaction();
+            
+            try {
+                // 2. Update event status to 'completed'
+                $updateEvent = $pdo->prepare("
+                    UPDATE events SET status = 'completed', updated_at = NOW() 
+                    WHERE id = ? AND status = 'active'
+                ");
+                $updateEvent->execute([$event['id']]);
+                
+                if ($updateEvent->rowCount() > 0) {
+                    $results['events_deactivated']++;
+                    
+                    // 3. Deactivate all nominees belonging to this event's categories
+                    $deactivateNominees = $pdo->prepare("
+                        UPDATE nominees n
+                        JOIN categories c ON n.category_id = c.id
+                        SET n.status = 'inactive', n.updated_at = NOW()
+                        WHERE c.event_id = ? AND n.status = 'active'
+                    ");
+                    $deactivateNominees->execute([$event['id']]);
+                    $nomineesAffected = $deactivateNominees->rowCount();
+                    $results['nominees_deactivated'] += $nomineesAffected;
+                    
+                    // 4. Cancel any pending transactions for this event
+                    $cancelPending = $pdo->prepare("
+                        UPDATE transactions SET status = 'failed', updated_at = NOW()
+                        WHERE event_id = ? AND status = 'pending'
+                    ");
+                    $cancelPending->execute([$event['id']]);
+                    
+                    // 5. Log the deactivation
+                    $logStmt = $pdo->prepare("
+                        INSERT INTO audit_logs (user_id, action, table_name, record_id, new_values, ip_address)
+                        VALUES (NULL, 'event_auto_deactivated', 'events', ?, ?, 'SYSTEM')
+                    ");
+                    $logStmt->execute([
+                        $event['id'],
+                        json_encode([
+                            'event_title' => $event['title'],
+                            'end_date' => $event['end_date'],
+                            'nominees_deactivated' => $nomineesAffected,
+                            'deactivated_at' => date('Y-m-d H:i:s')
+                        ])
+                    ]);
+                    
+                    // 6. Notify the event organizer
+                    if ($event['created_by']) {
+                        createNotification(
+                            $event['created_by'],
+                            "Event Ended: " . $event['title'],
+                            "Your event '" . $event['title'] . "' has ended and voting has been automatically closed. All nominee codes have been deactivated.",
+                            "warning",
+                            "organizer/events/index.php"
+                        );
+                    }
+                    
+                    // 7. Notify admin
+                    createNotification(
+                        1,
+                        "Event Auto-Deactivated: " . $event['title'],
+                        "Event '" . $event['title'] . "' has been automatically deactivated. $nomineesAffected nominee(s) were set to inactive.",
+                        "info",
+                        "admin/events.php"
+                    );
+                    
+                    $results['events'][] = [
+                        'id' => $event['id'],
+                        'title' => $event['title'],
+                        'end_date' => $event['end_date'],
+                        'nominees_deactivated' => $nomineesAffected
+                    ];
+                }
+                
+                $pdo->commit();
+                
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) {
+                    $pdo->rollBack();
+                }
+                error_log("Error deactivating event #{$event['id']}: " . $e->getMessage());
+            }
+        }
+        
+        return $results;
+        
+    } catch (Exception $e) {
+        error_log("deactivateExpiredEvents Error: " . $e->getMessage());
+        return ['error' => $e->getMessage()];
+    }
 }

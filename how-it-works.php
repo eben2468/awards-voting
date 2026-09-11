@@ -137,10 +137,89 @@ include 'includes/header.php';
                         Shortcodes are displayed on each nominee's card
                     </small>
                 </div>
+</section>
+
+<!-- Event Ticketing Flow Section -->
+<section class="py-5 bg-light border-top border-bottom">
+    <div class="container">
+        <div class="text-center mb-5">
+            <span class="text-primary fw-bold text-uppercase small" style="letter-spacing: 1px;"><i class="bi bi-ticket-perforated-fill me-1"></i> Hassle-Free Bookings</span>
+            <h2 class="fw-bold mt-2">How Event Ticketing Works</h2>
+            <p class="text-muted">Simple pathways to purchase and validate tickets for your favorite events</p>
+        </div>
+        
+        <div class="row g-5 align-items-center">
+            <div class="col-lg-6">
+                <div class="timeline-ticketing">
+                    <!-- Step 1 -->
+                    <div class="d-flex mb-4">
+                        <div class="ticketing-step-num me-3">
+                            <span>1</span>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Select Event & Ticket Tier</h5>
+                            <p class="text-muted mb-0">Browse ticketed events on our homepage or the dedicated Ticketing page. Click "Buy Ticket" and choose your preferred tier (Regular, VIP, VVIP, etc.) and number of tickets.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 2 -->
+                    <div class="d-flex mb-4">
+                        <div class="ticketing-step-num me-3">
+                            <span>2</span>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Provide Phone & Pay</h5>
+                            <p class="text-muted mb-0">Select your payment method (Mobile Money or Debit/Credit Card). If using Mobile Money, enter your number to receive an instant STK Push prompt on your phone to authorize payment.</p>
+                        </div>
+                    </div>
+                    
+                    <!-- Step 3 -->
+                    <div class="d-flex">
+                        <div class="ticketing-step-num me-3">
+                            <span>3</span>
+                        </div>
+                        <div>
+                            <h5 class="fw-bold">Receive Instant SMS Ticket</h5>
+                            <p class="text-muted mb-0">Once the payment is successful, you will instantly receive a confirmation SMS containing your unique Ticket Code (e.g., TKT-XXXXXX) and details about the event.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-6">
+                <!-- USSD Flow Card -->
+                <div class="ussd-flow-card p-4 rounded-4 text-white h-100" style="background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%); border: 1px solid rgba(255, 255, 255, 0.1);">
+                    <h5 class="fw-bold mb-3"><i class="bi bi-phone-vibrate me-2 text-warning"></i>USSD Ticket Purchases</h5>
+                    <p class="text-gray-300 small mb-4">No internet? You can buy tickets offline using our USSD shortcode service by following these simple steps:</p>
+                    
+                    <ul class="list-unstyled ussd-steps-list small text-gray-300 mb-0">
+                        <li class="mb-3 d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">1</span>
+                            <span>Dial our official USSD code on your mobile phone.</span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">2</span>
+                            <span>Choose **Option 2 (Buy ticket)** from the main menu.</span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">3</span>
+                            <span>Enter the unique event shortcode (e.g., **CONCERT26**) found on the event card.</span>
+                        </li>
+                        <li class="mb-3 d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">4</span>
+                            <span>Select your category tier, input quantity, confirm the details, and approve the payment push.</span>
+                        </li>
+                        <li class="d-flex align-items-start">
+                            <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">5</span>
+                            <span>A confirmation SMS with your unique ticket code will be sent to your phone.</span>
+                        </li>
+                    </ul>
+                </div>
             </div>
         </div>
     </div>
 </section>
+
 
 <!-- Features Section -->
 <section class="py-5">
@@ -420,6 +499,21 @@ include 'includes/header.php';
     .shortcode-demo {
         margin-top: 2rem;
     }
+}
+
+.ticketing-step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--gradient-primary);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    margin-top: 2px;
 }
 </style>
 

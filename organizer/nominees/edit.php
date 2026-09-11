@@ -5,6 +5,8 @@
  */
 
 require_once '../../config/database.php';
+require_once '../../includes/image-upload.php';
+require_once '../../includes/image-cropper.php';
 
 // Require organizer
 if (!isLoggedIn() || !isOrganizer()) {
@@ -81,23 +83,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Shortcode already exists.';
         }
         
-        // Handle photo upload
+        // Handle photo upload (cropped in the browser, or a plain file upload).
+        // storeImageFromForm() derives the stored extension from the image bytes
+        // rather than the uploaded filename, so "photo.php" cannot be planted.
         $photo = $nominee['photo'];
-        if (isset($_FILES['photo']) && $_FILES['photo']['error'] === UPLOAD_ERR_OK) {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            if (in_array($_FILES['photo']['type'], $allowedTypes)) {
-                $extension = pathinfo($_FILES['photo']['name'], PATHINFO_EXTENSION);
-                $photo = $nominee['slug'] . '-' . time() . '.' . $extension;
-                
-                if (!is_dir('../../uploads/nominees/')) mkdir('../../uploads/nominees/', 0755, true);
-                
-                if (move_uploaded_file($_FILES['photo']['tmp_name'], '../../uploads/nominees/' . $photo)) {
-                    // Delete old photo
-                    if ($nominee['photo'] && file_exists('../../uploads/nominees/' . $nominee['photo'])) {
-                        unlink('../../uploads/nominees/' . $nominee['photo']);
-                    }
-                }
+        $photoError = '';
+        $storedPhoto = storeImageFromForm('photo', '../../uploads/nominees', $nominee['slug'], $photoError);
+        if ($storedPhoto !== null) {
+            $photo = $storedPhoto;
+            // Remove the image this one replaces
+            if (!empty($nominee['photo']) && $nominee['photo'] !== $storedPhoto) {
+                deleteStoredImage('../../uploads/nominees', $nominee['photo']);
             }
+        } elseif ($photoError !== '') {
+            $errors[] = $photoError;
         }
         
         if (empty($errors)) {
@@ -130,8 +129,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -192,13 +191,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
-                                    <label class="form-label">Photo</label>
-                                    <?php if ($nominee['photo']): ?>
-                                        <div class="mb-2">
-                                            <img src="../../uploads/nominees/<?php echo $nominee['photo']; ?>" class="img-fluid rounded" id="photoPreview">
-                                        </div>
-                                    <?php endif; ?>
-                                    <input type="file" name="photo" class="form-control" accept="image/*" onchange="previewImage(this, 'photoPreview')">
+                                    <?php renderImageCropField([
+                                        'name'     => 'photo',
+                                        'label'    => 'Nominee Photo',
+                                        'existing' => !empty($nominee['photo']) ? '../../uploads/nominees/' . $nominee['photo'] : null,
+                                        'help'     => 'Choose a new photo, or press Re-crop to reframe the current one.',
+                                    ]); ?>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Status</label>
@@ -227,6 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
+    <?php renderImageCropperAssets(); ?>
 </body>
 </html>

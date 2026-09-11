@@ -14,6 +14,7 @@ if (empty($slug)) {
 }
 
 $pdo = getDBConnection();
+$show_vote_counts = getSetting('show_vote_counts', '1') === '1';
 
 // Fetch event details
 $stmt = $pdo->prepare("
@@ -47,7 +48,7 @@ $categoriesStmt = $pdo->prepare("
            COUNT(n.id) as nominee_count,
            COALESCE(SUM(n.vote_count), 0) as total_votes
     FROM categories c
-    LEFT JOIN nominees n ON c.id = n.category_id AND n.status = 'active'
+    LEFT JOIN nominees n ON c.id = n.category_id
     WHERE c.event_id = ? AND c.status = 'active'
     GROUP BY c.id
     ORDER BY c.display_order ASC, c.name ASC
@@ -104,6 +105,11 @@ include 'includes/header.php';
                         <span class="badge bg-primary px-3 py-2 rounded-pill fs-6">
                             <i class="bi bi-phone me-1"></i> Dial *920*137# to Vote
                         </span>
+                        <?php if (!$show_vote_counts): ?>
+                            <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm d-inline-flex align-items-center">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Live Results Portal
+                            </a>
+                        <?php endif; ?>
                     </div>
                     <p class="text-white-75 lead mb-5 fs-4"><?php echo htmlspecialchars($event['description']); ?></p>
                     
@@ -144,12 +150,14 @@ include 'includes/header.php';
                 <div class="col-lg-4 d-none d-lg-block">
                     <div class="event-stats-card rounded-4 p-5">
                         <div class="row g-4">
+                            <?php if ($show_vote_counts): ?>
                             <div class="col-6">
                                 <div class="stat-box text-center">
                                     <h2 class="text-white fw-bold mb-1"><?php echo number_format($event['total_votes']); ?></h2>
                                     <p class="text-white-50 small text-uppercase mb-0">Total Votes</p>
                                 </div>
                             </div>
+                            <?php endif; ?>
                             <div class="col-6">
                                 <div class="stat-box text-center">
                                     <h2 class="text-white fw-bold mb-1"><?php echo $event['category_count']; ?></h2>
@@ -205,7 +213,9 @@ include 'includes/header.php';
                                         <h5 class="fw-bold mb-1"><?php echo htmlspecialchars($category['name']); ?></h5>
                                         <div class="d-flex gap-3 small text-muted">
                                             <span><i class="bi bi-people me-1"></i><?php echo $category['nominee_count']; ?> Nominees</span>
-                                            <span><i class="bi bi-check2-square me-1"></i><?php echo number_format($category['total_votes']); ?> Total Votes</span>
+                                            <?php if ($show_vote_counts): ?>
+                                                <span><i class="bi bi-check2-square me-1"></i><?php echo number_format($category['total_votes']); ?> Total Votes</span>
+                                            <?php endif; ?>
                                         </div>
                                     </div>
                                     <?php if (isset($userVotes[$category['id']])): ?>
@@ -229,7 +239,7 @@ include 'includes/header.php';
                                 // Fetch nominees for this category
                                 $nomineesStmt = $pdo->prepare("
                                     SELECT * FROM nominees 
-                                    WHERE category_id = ? AND status = 'active'
+                                    WHERE category_id = ?
                                     ORDER BY vote_count DESC
                                 ");
                                 $nomineesStmt->execute([$category['id']]);
@@ -272,8 +282,12 @@ include 'includes/header.php';
                                                     
                                                     <div class="vote-progress mb-3">
                                                         <div class="d-flex justify-content-between small text-muted mb-1">
-                                                            <span><?php echo number_format($nominee['vote_count']); ?> votes</span>
-                                                            <span><?php echo round($percentage); ?>%</span>
+                                                            <?php if ($show_vote_counts): ?>
+                                                                <span><?php echo number_format($nominee['vote_count']); ?> votes</span>
+                                                                <span><?php echo round($percentage); ?>%</span>
+                                                            <?php else: ?>
+                                                                <span>Voting in progress</span>
+                                                            <?php endif; ?>
                                                         </div>
                                                         <div class="progress rounded-pill" style="height: 6px;">
                                                             <div class="progress-bar bg-gradient-primary" style="width: <?php echo $percentage; ?>%"></div>
@@ -376,10 +390,21 @@ include 'includes/header.php';
     background-color: var(--primary) !important;
     color: #fff !important;
 }
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.vote-form button:disabled,
+.btn-buy-votes:disabled {
+    cursor: not-allowed !important;
+    opacity: 0.65;
+}
 </style>
 
 <script>
-// Countdown Timer Logic
+// Countdown Timer Logic with Auto-Disable Voting
 function updateCountdown() {
     const timerElement = document.getElementById('countdown-timer');
     if (!timerElement) return;
@@ -387,13 +412,55 @@ function updateCountdown() {
     const endTimeStr = timerElement.getAttribute('data-endtime');
     const endTime = new Date(endTimeStr).getTime();
     
+    function disableAllVoting() {
+        // Disable all vote forms and buttons
+        document.querySelectorAll('.vote-form button[type="submit"], .btn-buy-votes').forEach(function(btn) {
+            btn.disabled = true;
+            btn.classList.remove('btn-outline-primary', 'btn-primary');
+            btn.classList.add('btn-light', 'text-muted');
+            btn.innerHTML = '<i class="bi bi-lock me-1"></i>Voting Ended';
+            btn.style.pointerEvents = 'none';
+        });
+        
+        // Disable vote forms
+        document.querySelectorAll('.vote-form').forEach(function(form) {
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                alert('This event has ended. Voting is no longer available.');
+                return false;
+            });
+        });
+        
+        // Update status badges
+        const activeBadges = document.querySelectorAll('.badge.bg-success');
+        activeBadges.forEach(function(badge) {
+            if (badge.textContent.includes('Active')) {
+                badge.classList.remove('bg-success');
+                badge.classList.add('bg-secondary');
+                badge.innerHTML = '<i class="bi bi-check-circle me-1"></i>Ended';
+            }
+        });
+        
+        // Update the timer text
+        if (timerElement) {
+            timerElement.innerHTML = '<span class="text-danger">Voting Ended</span>';
+        }
+    }
+    
+    // Check immediately if already ended
+    if (endTime - new Date().getTime() < 0) {
+        disableAllVoting();
+        return;
+    }
+    
     const interval = setInterval(function() {
         const now = new Date().getTime();
         const distance = endTime - now;
         
         if (distance < 0) {
             clearInterval(interval);
-            timerElement.innerHTML = "Voting Ended";
+            disableAllVoting();
             return;
         }
         
@@ -409,6 +476,12 @@ function updateCountdown() {
                        seconds.toString().padStart(2, '0') + "s";
         
         timerElement.innerHTML = countdownStr;
+        
+        // Warn when less than 5 minutes remaining
+        if (distance < 300000 && distance > 0) {
+            timerElement.classList.add('text-danger');
+            timerElement.style.animation = 'pulse 1s ease-in-out infinite';
+        }
     }, 1000);
 }
 

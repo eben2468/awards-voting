@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * VoteHub - Home Page
  * Awards Voting System
@@ -9,8 +9,9 @@ require_once 'config/database.php';
 $page_title = 'Home';
 $page_description = 'VoteHubGH - Your trusted online awards voting platform. Vote for your favorite nominees in various award categories.';
 
-// Fetch featured events
+// Fetch featured events (voting component only)
 $pdo = getDBConnection();
+$show_vote_counts = getSetting('show_vote_counts', '1') === '1';
 $stmt = $pdo->prepare("
     SELECT e.*, 
            COUNT(DISTINCT c.id) as category_count,
@@ -19,21 +20,39 @@ $stmt = $pdo->prepare("
     FROM events e
     LEFT JOIN categories c ON e.id = c.event_id
     LEFT JOIN nominees n ON c.id = n.category_id
-    WHERE e.status = 'active' AND e.end_date >= NOW()
+    WHERE e.event_type != 'ticketing'
     GROUP BY e.id
-    ORDER BY e.is_featured DESC, e.start_date ASC
+    ORDER BY (e.status = 'active' AND e.end_date >= NOW()) DESC, e.is_featured DESC, e.created_at DESC
     LIMIT 6
 ");
 $stmt->execute();
 $events = $stmt->fetchAll();
 
+// Fetch active ticketed events for ticketing section
+$tktStmt = $pdo->prepare("
+    SELECT e.*, 
+           u.fullname as organizer_name,
+           (SELECT MIN(tc.price) FROM ticket_categories tc WHERE tc.event_id = e.id) as min_price,
+           (SELECT MAX(tc.price) FROM ticket_categories tc WHERE tc.event_id = e.id) as max_price,
+           (SELECT COUNT(*) FROM ticket_categories tc WHERE tc.event_id = e.id) as category_count,
+           (SELECT COALESCE(SUM(t.quantity), 0) FROM tickets t WHERE t.event_id = e.id) as tickets_sold
+    FROM events e
+    LEFT JOIN users u ON e.organizer_id = u.id
+    WHERE e.status = 'active' AND e.end_date >= NOW() AND e.event_type IN ('ticketing', 'both')
+    GROUP BY e.id
+    ORDER BY e.is_featured DESC, e.created_at DESC
+    LIMIT 3
+");
+$tktStmt->execute();
+$ticketEvents = $tktStmt->fetchAll();
+
 // Fetch site statistics
 $statsStmt = $pdo->query("
     SELECT 
-        (SELECT COUNT(*) FROM events WHERE status = 'active') as total_events,
-        (SELECT COUNT(*) FROM nominees WHERE status = 'active') as total_nominees,
+        (SELECT COUNT(*) FROM events) as total_events,
+        (SELECT COUNT(*) FROM nominees) as total_nominees,
         (SELECT COALESCE(SUM(vote_count), 0) FROM nominees) as total_votes,
-        (SELECT COUNT(*) FROM users WHERE role = 'user') as total_users
+        (SELECT COUNT(*) FROM categories) as total_categories
 ");
 $stats = $statsStmt->fetch();
 
@@ -53,86 +72,108 @@ $topNominees = $topNomineesStmt->fetchAll();
 include 'includes/header.php';
 ?>
 
-<!-- Hero Section -->
-<section class="hero-section">
-    <!-- Background Animation Elements -->
-    <div class="hero-bg-elements">
-        <div class="hero-circle hero-circle-1"></div>
-        <div class="hero-circle hero-circle-2"></div>
-        <div class="hero-circle hero-circle-3"></div>
+<!-- Hero Section with Image Slider -->
+<section class="hero-home" id="heroHome">
+    <!-- Slider Images -->
+    <div class="hero-slider">
+        <div class="hero-slide active" style="background-image: url('uploads/home/home (2).jpg')"></div>
+        <div class="hero-slide" style="background-image: url('uploads/home/home (3).jpg')"></div>
+        <div class="hero-slide" style="background-image: url('uploads/home/home (4).jpg')"></div>
     </div>
     
-    <div class="container">
-        <div class="row align-items-center min-vh-100">
-            <div class="col-lg-6">
-                <div class="hero-content">
-                    <span class="badge bg-primary bg-opacity-25 text-white px-3 py-2 rounded-pill mb-2 fs-6">
-                        <i class="bi bi-stars me-1"></i> #1 Trusted Voting Platform
-                    </span>
-                    <h1 class="hero-title">
-                        Make Your <span class="highlight">Vote</span> Count
-                    </h1>
-                    <p class="hero-subtitle">
-                        Join millions in celebrating excellence. Vote for your favorite nominees across hundreds of award categories with complete transparency and security.
-                    </p>
-                    <div class="hero-buttons d-flex flex-wrap gap-3">
-                        <a href="events.php" class="btn btn-primary btn-lg">
-                            <i class="bi bi-trophy me-2"></i>Explore Events
-                        </a>
-                        <a href="how-it-works.php" class="btn btn-outline-light btn-lg">
-                            <i class="bi bi-play-circle me-2"></i>How It Works
-                        </a>
-                    </div>
-                    
-                    <!-- Shortcode Search -->
-                    <div class="shortcode-search mt-4">
-                        <form action="vote.php" method="GET" class="d-flex gap-2">
-                            <div class="input-group" style="max-width: 350px;">
-                                <span class="input-group-text bg-white border-0">
-                                    <i class="bi bi-search text-muted"></i>
-                                </span>
-                                <input type="text" name="shortcode" class="form-control border-0" placeholder="Enter shortcode to vote..." style="border-radius: 0 50px 50px 0;">
-                            </div>
-                            <button type="submit" class="btn btn-primary rounded-pill px-4">Vote Now</button>
-                        </form>
-                    </div>
-                    
-                    <!-- Hero Stats -->
-                    <div class="hero-stats">
-                        <div class="stat-item">
-                            <span class="stat-number counter" data-target="<?php echo $stats['total_votes']; ?>"><?php echo number_format($stats['total_votes']); ?></span>
-                            <span class="stat-label">Total Votes</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number counter" data-target="<?php echo $stats['total_events']; ?>"><?php echo $stats['total_events']; ?></span>
-                            <span class="stat-label">Active Events</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number counter" data-target="<?php echo $stats['total_nominees']; ?>"><?php echo $stats['total_nominees']; ?></span>
-                            <span class="stat-label">Nominees</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number counter" data-target="<?php echo $stats['total_users']; ?>"><?php echo $stats['total_users']; ?></span>
-                            <span class="stat-label">Voters</span>
-                        </div>
-                    </div>
+    <!-- Gradient Overlay -->
+    <div class="hero-overlay"></div>
+    
+    <!-- Hero Content -->
+    <div class="hero-home-content">
+        <div class="container">
+            <div class="hero-center-content">
+                <span class="hero-badge-pill">
+                    <i class="bi bi-stars"></i> #1 Trusted Voting Platform
+                </span>
+                <h1 class="hero-main-title">
+                    Make Your <span>Vote</span> Count
+                </h1>
+                <p class="hero-desc">
+                    Join millions in celebrating excellence. Vote for your favorite nominees across hundreds of award categories with complete transparency and security.
+                </p>
+                <div class="hero-actions">
+                    <a href="events.php" class="btn-hero-primary">
+                        <i class="bi bi-trophy me-2"></i>Explore Events <span class="btn-dots">•••</span>
+                    </a>
+                    <a href="how-it-works.php" class="btn-hero-outline">
+                        <i class="bi bi-play-circle me-2"></i>How It Works
+                    </a>
                 </div>
-            </div>
-            <div class="col-lg-6 d-none d-lg-block">
-                <div class="hero-image-wrapper text-center">
-                    <div class="hero-image-container">
-                        <img src="assets/images/hero-trophy.png" alt="Awards Trophy" class="hero-image pulse" onerror="this.src='https://cdn-icons-png.flaticon.com/512/548/548427.png'; this.style.maxHeight='400px';">
-                    </div>
+                
+                <!-- Shortcode Search -->
+                <div class="hero-search-box">
+                    <form action="vote.php" method="GET" class="hero-search-form">
+                        <div class="search-input-wrap">
+                            <i class="bi bi-search"></i>
+                            <input type="text" name="shortcode" placeholder="Enter shortcode to vote...">
+                        </div>
+                        <button type="submit" class="btn-search-submit">Vote Now</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Scroll Indicator -->
-    <div class="scroll-indicator text-center">
-        <a href="#featured-events" class="text-white">
-            <i class="bi bi-chevron-down" style="font-size: 2rem; animation: bounce 2s infinite;"></i>
-        </a>
+    <!-- Slider Navigation Dots -->
+    <div class="slider-dots">
+        <span class="dot active" data-slide="0"></span>
+        <span class="dot" data-slide="1"></span>
+        <span class="dot" data-slide="2"></span>
+    </div>
+    
+    <!-- Slider Arrows -->
+    <button class="slider-arrow slider-prev"><i class="bi bi-chevron-left"></i></button>
+    <button class="slider-arrow slider-next"><i class="bi bi-chevron-right"></i></button>
+    
+    <!-- Wave Bottom -->
+    <div class="hero-wave">
+        <svg viewBox="0 0 1440 120" preserveAspectRatio="none">
+            <path d="M0,64 C360,120 720,0 1080,64 C1260,96 1380,80 1440,64 L1440,120 L0,120 Z" fill="#ffffff"/>
+        </svg>
+    </div>
+</section>
+
+<!-- Stats Counter Bar -->
+<section class="stats-bar">
+    <div class="container">
+        <div class="stats-bar-inner">
+            <?php if ($show_vote_counts): ?>
+            <div class="stat-bar-item">
+                <div class="stat-bar-icon"><i class="bi bi-hand-thumbs-up-fill"></i></div>
+                <div>
+                    <span class="stat-bar-number counter" data-target="<?php echo $stats['total_votes']; ?>"><?php echo number_format($stats['total_votes']); ?></span>
+                    <span class="stat-bar-label">Total Votes</span>
+                </div>
+            </div>
+            <?php endif; ?>
+            <div class="stat-bar-item">
+                <div class="stat-bar-icon"><i class="bi bi-calendar-event-fill"></i></div>
+                <div>
+                    <span class="stat-bar-number counter" data-target="<?php echo $stats['total_events']; ?>"><?php echo $stats['total_events']; ?></span>
+                    <span class="stat-bar-label">Events</span>
+                </div>
+            </div>
+            <div class="stat-bar-item">
+                <div class="stat-bar-icon"><i class="bi bi-people-fill"></i></div>
+                <div>
+                    <span class="stat-bar-number counter" data-target="<?php echo $stats['total_nominees']; ?>"><?php echo $stats['total_nominees']; ?></span>
+                    <span class="stat-bar-label">Nominees</span>
+                </div>
+            </div>
+            <div class="stat-bar-item">
+                <div class="stat-bar-icon"><i class="bi bi-grid-fill"></i></div>
+                <div>
+                    <span class="stat-bar-number counter" data-target="<?php echo $stats['total_categories']; ?>"><?php echo $stats['total_categories']; ?></span>
+                    <span class="stat-bar-label">Categories</span>
+                </div>
+            </div>
+        </div>
     </div>
 </section>
 
@@ -156,54 +197,82 @@ include 'includes/header.php';
                 </div>
             <?php else: ?>
                 <?php foreach ($events as $index => $event): ?>
+                    <?php
+                        $isEnded = strtotime($event['end_date']) < time();
+                        $isUpcoming = strtotime($event['start_date']) > time();
+                        $daysLeft = floor((strtotime($event['end_date']) - time()) / (60 * 60 * 24));
+                    ?>
                     <div class="col-md-6 col-lg-4">
-                        <div class="card event-card">
-                            <div class="event-image-wrapper">
+                        <div class="card ticket-event-card h-100 bg-white">
+                            <div class="ticket-image-wrapper">
                                 <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" 
-                                     alt="<?php echo htmlspecialchars($event['title']); ?>">
+                                     alt="<?php echo htmlspecialchars($event['title']); ?>"
+                                     class="card-img-top">
                                 
-                                <div class="event-overlay">
-                                    <div class="d-flex gap-2">
-                                        <span class="glass-badge">
-                                            <i class="bi bi-collection"></i><?php echo $event['category_count']; ?>
-                                        </span>
-                                        <span class="glass-badge">
-                                            <i class="bi bi-people"></i><?php echo $event['nominee_count']; ?>
-                                        </span>
-                                    </div>
+                                <div class="ticket-overlay">
+                                    <?php if ($show_vote_counts): ?>
+                                        <span class="ticket-badge-price"><?php echo number_format($event['total_votes']); ?> votes</span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <?php if ($event['is_featured']): ?>
-                                    <span class="status-badge bg-warning text-dark">
+                                    <span class="ticket-badge-featured">
                                         <i class="bi bi-star-fill me-1"></i>Featured
                                     </span>
+                                <?php endif; ?>
+
+                                <?php if ($isEnded): ?>
+                                    <span class="ticket-badge-code bg-secondary text-white">
+                                        <i class="bi bi-check-circle me-1"></i>Ended
+                                    </span>
+                                <?php elseif ($isUpcoming): ?>
+                                    <span class="ticket-badge-code bg-info text-white">
+                                        <i class="bi bi-calendar-event me-1"></i>Upcoming
+                                    </span>
                                 <?php else: ?>
-                                    <span class="status-badge bg-success text-white">Active</span>
+                                    <span class="ticket-badge-code bg-success text-white">
+                                        <i class="bi bi-lightning-fill me-1"></i>Active
+                                    </span>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="event-card-body">
-                                <h4 class="card-title"><?php echo htmlspecialchars($event['title']); ?></h4>
-                                <p class="card-text">
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="card-title fw-bold mb-2 text-dark"><?php echo htmlspecialchars($event['title']); ?></h5>
+                                <p class="card-text text-muted small flex-grow-1">
                                     <?php echo strlen($event['description']) > 100 ? substr(htmlspecialchars($event['description']), 0, 100) . '...' : htmlspecialchars($event['description']); ?>
                                 </p>
                                 
-                                <div class="event-stats-grid">
-                                    <div class="stat-box">
-                                        <span class="label">Ends On</span>
-                                        <span class="value"><?php echo date('M d, Y', strtotime($event['end_date'])); ?></span>
+                                <div class="ticket-meta mb-3">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                                        <span><i class="bi bi-calendar3 me-1"></i><?php echo date('M d, Y', strtotime($event['start_date'])); ?></span>
+                                        <span>
+                                            <i class="bi bi-clock me-1"></i>
+                                            <?php if (!$isEnded && !$isUpcoming && $daysLeft >= 0): ?>
+                                                <?php echo $daysLeft; ?> days left
+                                            <?php elseif ($isEnded): ?>
+                                                Completed
+                                            <?php elseif ($isUpcoming): ?>
+                                                Starts <?php echo date('M d', strtotime($event['start_date'])); ?>
+                                            <?php else: ?>
+                                                Ended
+                                            <?php endif; ?>
+                                        </span>
                                     </div>
-                                    <div class="stat-box">
-                                        <span class="label">Total Votes</span>
-                                        <span class="value"><?php echo number_format($event['total_votes']); ?></span>
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <span><i class="bi bi-collection me-1"></i><?php echo $event['category_count']; ?> Category<?php echo $event['category_count'] > 1 ? 'ies' : ''; ?></span>
+                                        <span><i class="bi bi-people me-1"></i><?php echo $event['nominee_count']; ?> Nominee<?php echo $event['nominee_count'] > 1 ? 's' : ''; ?></span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="event-card-footer">
-                                <a href="event-details.php?slug=<?php echo $event['slug']; ?>" class="btn btn-primary btn-modern">
-                                    Vote Now
-                                    <i class="bi bi-arrow-right"></i>
+                            <div class="card-footer bg-transparent border-0 pb-4 px-4">
+                                <a href="event-details.php?slug=<?php echo $event['slug']; ?>" class="btn btn-ticket-buy w-100 rounded-pill py-2.5 fw-bold text-center text-white d-block">
+                                    <?php 
+                                        if ($isEnded) echo 'View Results';
+                                        elseif ($isUpcoming) echo 'View Details';
+                                        else echo 'Vote Now';
+                                    ?>
+                                    <i class="bi bi-arrow-right ms-2"></i>
                                 </a>
                             </div>
                         </div>
@@ -222,47 +291,193 @@ include 'includes/header.php';
     </div>
 </section>
 
-<!-- How It Works Section -->
-<section class="how-it-works py-5">
+<!-- Event Ticketing Section -->
+<section class="ticketing-section py-5" style="background: #f8fafc; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
     <div class="container">
-        <div class="section-header">
-            <span class="subtitle">Simple & Secure</span>
-            <h2>How It Works</h2>
-            <p>Vote for your favorites in just a few simple steps</p>
+        <div class="section-header text-center mb-5">
+            <span class="subtitle text-primary" style="font-weight: 700; text-transform: uppercase; letter-spacing: 1px; font-size: 0.85rem;">
+                <i class="bi bi-ticket-perforated-fill me-1"></i> Fast & Secure Entry
+            </span>
+            <h2 class="fw-bold mb-3" style="color: #0f172a;">Event Ticketing</h2>
+            <p class="text-muted col-lg-6 mx-auto">Purchase tickets directly from your device using Mobile Money or Debit/Credit Cards. Instant confirmation codes sent via SMS.</p>
         </div>
         
         <div class="row g-4">
-            <div class="col-md-6 col-lg-3">
-                <div class="step-card card h-100 text-center p-4">
-                    <div class="step-number">1</div>
-                    <h4>Find an Event</h4>
-                    <p class="text-muted mb-0">Browse active events and select your preferred category</p>
+            <?php if (empty($ticketEvents)): ?>
+                <div class="col-12 text-center py-5">
+                    <div class="empty-state">
+                        <i class="bi bi-ticket-perforated display-1 text-muted mb-3 d-block"></i>
+                        <h4>No Upcoming Ticketed Events</h4>
+                        <p class="text-muted">Stay tuned! Exciting ticketed events will be posted here soon.</p>
+                    </div>
+                </div>
+            <?php else: ?>
+                <?php foreach ($ticketEvents as $event): ?>
+                    <?php
+                        $daysLeft = floor((strtotime($event['end_date']) - time()) / (60 * 60 * 24));
+                        
+                        // Fetch ticket categories for this event
+                        $catStmt = $pdo->prepare("SELECT * FROM ticket_categories WHERE event_id = ? ORDER BY price ASC");
+                        $catStmt->execute([$event['id']]);
+                        $categories = $catStmt->fetchAll();
+                        
+                        $priceRange = '';
+                        if ($event['min_price'] == $event['max_price']) {
+                            $priceRange = 'GHS ' . number_format($event['min_price'], 2);
+                        } else {
+                            $priceRange = 'GHS ' . number_format($event['min_price'], 2) . ' - ' . number_format($event['max_price'], 2);
+                        }
+                    ?>
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card ticket-event-card h-100 bg-white">
+                            <div class="ticket-image-wrapper">
+                                <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" 
+                                     alt="<?php echo htmlspecialchars($event['title']); ?>"
+                                     class="card-img-top">
+                                
+                                <div class="ticket-overlay">
+                                    <span class="ticket-badge-price"><?php echo $priceRange; ?></span>
+                                </div>
+
+                                <?php if ($event['is_featured']): ?>
+                                    <span class="ticket-badge-featured">
+                                        <i class="bi bi-star-fill me-1"></i>Featured
+                                    </span>
+                                <?php endif; ?>
+
+                                <?php if ($event['event_code']): ?>
+                                    <span class="ticket-badge-code">
+                                        <i class="bi bi-qr-code me-1"></i><?php echo htmlspecialchars($event['event_code']); ?>
+                                    </span>
+                                <?php endif; ?>
+                            </div>
+
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="card-title fw-bold mb-2 text-dark"><?php echo htmlspecialchars($event['title']); ?></h5>
+                                <p class="card-text text-muted small flex-grow-1">
+                                    <?php echo strlen($event['description']) > 100 ? substr(htmlspecialchars($event['description']), 0, 100) . '...' : htmlspecialchars($event['description']); ?>
+                                </p>
+                                
+                                <div class="ticket-meta mb-3">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                                        <span><i class="bi bi-calendar3 me-1"></i><?php echo date('M d, Y', strtotime($event['start_date'])); ?></span>
+                                        <span><i class="bi bi-clock me-1"></i><?php echo $daysLeft; ?> days left</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <span><i class="bi bi-tags me-1"></i><?php echo $event['category_count']; ?> tier<?php echo $event['category_count'] > 1 ? 's' : ''; ?></span>
+                                        <span><i class="bi bi-ticket me-1"></i><?php echo number_format($event['tickets_sold']); ?> sold</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="card-footer bg-transparent border-0 pb-4 px-4">
+                                <button type="button" class="btn btn-ticket-buy w-100 rounded-pill py-2.5 fw-bold"
+                                        data-event-id="<?php echo $event['id']; ?>"
+                                        data-event-title="<?php echo htmlspecialchars($event['title']); ?>"
+                                        data-event-banner="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>"
+                                        data-categories='<?php echo json_encode($categories); ?>'>
+                                    <i class="bi bi-ticket-perforated me-2"></i>Buy Ticket
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+        
+        <?php if (!empty($ticketEvents)): ?>
+            <div class="text-center mt-5">
+                <a href="ticketing.php" class="btn btn-outline-primary btn-lg rounded-pill px-4">
+                    Browse All Tickets <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+            </div>
+        <?php endif; ?>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="how-it-works-v2 py-5">
+    <div class="container">
+        <div class="section-header text-center mb-5">
+            <span class="subtitle">Simple & Secure</span>
+            <h2>How It Works</h2>
+            <p>Support nominees or secure event tickets in just a few simple steps</p>
+        </div>
+
+        <!-- Tab Pills Switcher -->
+        <div class="d-flex justify-content-center mb-5">
+            <div class="nav nav-pills bg-light rounded-pill p-1 shadow-sm" id="how-pills-tab" role="tablist">
+                <button class="nav-link active rounded-pill px-4 py-2 fw-bold" id="pills-voting-tab" data-bs-toggle="pill" data-bs-target="#pills-voting" type="button" role="tab" aria-controls="pills-voting" aria-selected="true">
+                    <i class="bi bi-award me-1"></i>Awards Voting
+                </button>
+                <button class="nav-link rounded-pill px-4 py-2 fw-bold" id="pills-ticketing-tab" data-bs-toggle="pill" data-bs-target="#pills-ticketing" type="button" role="tab" aria-controls="pills-ticketing" aria-selected="false">
+                    <i class="bi bi-ticket-perforated me-1"></i>Event Tickets
+                </button>
+            </div>
+        </div>
+
+        <div class="tab-content" id="how-pills-tabContent">
+            <!-- Awards Voting Flow -->
+            <div class="tab-pane fade show active" id="pills-voting" role="tabpanel" aria-labelledby="pills-voting-tab">
+                <div class="steps-timeline">
+                    <div class="step-v2" data-aos="fade-up">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>1</span></div></div>
+                        <h4>Find an Event</h4>
+                        <p>Browse active events and select your preferred category</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="100">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>2</span></div></div>
+                        <h4>Select Nominee</h4>
+                        <p>Choose your favorite nominee in each category</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="200">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>3</span></div></div>
+                        <h4>Pay & Vote</h4>
+                        <p>Complete payment to cast your vote(s) for multiple nominees</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="300">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>4</span></div></div>
+                        <h4>Multiple Votes</h4>
+                        <p>Vote for multiple nominees across categories in the same event</p>
+                    </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="step-card card h-100 text-center p-4">
-                    <div class="step-number">2</div>
-                    <h4>Select Nominee</h4>
-                    <p class="text-muted mb-0">Choose your favorite nominee in each category</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="step-card card h-100 text-center p-4">
-                    <div class="step-number">3</div>
-                    <h4>Pay & Vote</h4>
-                    <p class="text-muted mb-0">Complete payment to cast your vote(s) for multiple nominees</p>
-                </div>
-            </div>
-            <div class="col-md-6 col-lg-3">
-                <div class="step-card card h-100 text-center p-4">
-                    <div class="step-number">4</div>
-                    <h4>Multiple Votes</h4>
-                    <p class="text-muted mb-0">Vote for multiple nominees across categories in the same event</p>
+
+            <!-- Event Tickets Flow -->
+            <div class="tab-pane fade" id="pills-ticketing" role="tabpanel" aria-labelledby="pills-ticketing-tab">
+                <div class="steps-timeline">
+                    <div class="step-v2" data-aos="fade-up">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>1</span></div></div>
+                        <h4>Select Event</h4>
+                        <p>Browse active ticketed events on the homepage or ticketing page</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="100">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>2</span></div></div>
+                        <h4>Choose Tier</h4>
+                        <p>Pick your preferred ticket category (Regular, VIP, etc.) and quantity</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="200">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>3</span></div></div>
+                        <h4>Pay Securely</h4>
+                        <p>Complete transaction using Mobile Money (MoMo Push) or Debit/Credit Cards</p>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step-v2" data-aos="fade-up" data-aos-delay="300">
+                        <div class="step-icon-wrap"><div class="step-icon-circle"><span>4</span></div></div>
+                        <h4>Receive Ticket</h4>
+                        <p>Get your unique ticket reference code instantly via SMS to present at entry</p>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
+
 
 <!-- Live Results Preview Section -->
 <?php if (!empty($topNominees)): ?>
@@ -292,12 +507,14 @@ include 'includes/header.php';
                             <div>
                                 <h5 class="mb-0 text-white"><?php echo htmlspecialchars($nominee['name']); ?></h5>
                                 <small class="text-white-50">
-                                    <?php echo htmlspecialchars($nominee['category_name']); ?> â€¢ <?php echo htmlspecialchars($nominee['event_title']); ?>
+                                    <?php echo htmlspecialchars($nominee['category_name']); ?> • <?php echo htmlspecialchars($nominee['event_title']); ?>
                                 </small>
                             </div>
+                            <?php if ($show_vote_counts): ?>
                             <span class="ms-auto vote-count fs-4 fw-bold text-white">
                                 <?php echo number_format($nominee['vote_count']); ?>
                             </span>
+                            <?php endif; ?>
                         </div>
                         <div class="progress">
                             <div class="progress-bar" role="progressbar" style="width: <?php echo $percentage; ?>%"></div>
@@ -309,6 +526,13 @@ include 'includes/header.php';
                     <a href="results.php" class="btn btn-outline-light btn-lg">
                         View Full Results <i class="bi bi-arrow-right ms-2"></i>
                     </a>
+                    <?php if (!$show_vote_counts): ?>
+                        <div class="mt-3">
+                            <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm">
+                                <i class="bi bi-graph-up-arrow me-2"></i>Nominee Results Portal
+                            </a>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -317,7 +541,7 @@ include 'includes/header.php';
 <?php endif; ?>
 
 <!-- Features Section -->
-<section class="features-section py-5 bg-white">
+<section class="features-v2 py-5">
     <div class="container">
         <div class="section-header">
             <span class="subtitle">Why Choose Us</span>
@@ -327,57 +551,57 @@ include 'includes/header.php';
         
         <div class="row g-4">
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #6366f1, #818cf8); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-shield-check text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #6366f1, #818cf8);">
+                        <i class="bi bi-shield-check"></i>
                     </div>
                     <h4>Secure Voting</h4>
-                    <p class="text-muted mb-0">Advanced encryption and verification ensures every vote is protected and counted accurately.</p>
+                    <p>Advanced encryption and verification ensures every vote is protected and counted accurately.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #ec4899, #f472b6); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-graph-up-arrow text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #ec4899, #f472b6);">
+                        <i class="bi bi-graph-up-arrow"></i>
                     </div>
                     <h4>Real-Time Results</h4>
-                    <p class="text-muted mb-0">Watch votes count up in real-time with our live dashboard and analytics.</p>
+                    <p>Watch votes count up in real-time with our live dashboard and analytics.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #10b981, #34d399); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-phone text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #10b981, #34d399);">
+                        <i class="bi bi-phone"></i>
                     </div>
                     <h4>Mobile Friendly</h4>
-                    <p class="text-muted mb-0">Vote from anywhere using your smartphone, tablet, or computer with ease.</p>
+                    <p>Vote from anywhere using your smartphone, tablet, or computer with ease.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #f59e0b, #fbbf24); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-lightning-charge text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #f59e0b, #fbbf24);">
+                        <i class="bi bi-lightning-charge"></i>
                     </div>
                     <h4>Fast & Easy</h4>
-                    <p class="text-muted mb-0">Simple shortcode voting makes casting your vote quick and effortless.</p>
+                    <p>Simple shortcode voting makes casting your vote quick and effortless.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #3b82f6, #60a5fa); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-people text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #3b82f6, #60a5fa);">
+                        <i class="bi bi-ticket-perforated"></i>
                     </div>
-                    <h4>Unlimited Voting</h4>
-                    <p class="text-muted mb-0">Vote for your favorite nominees as many times as you wish to show your support.</p>
+                    <h4>Seamless Ticketing</h4>
+                    <p>Secure tickets online or via USSD using Mobile Money or Card. Receive instant SMS confirmations.</p>
                 </div>
             </div>
             <div class="col-md-6 col-lg-4">
-                <div class="card h-100 p-4 text-center">
-                    <div class="feature-icon mx-auto mb-3" style="width: 80px; height: 80px; background: linear-gradient(135deg, #8b5cf6, #a78bfa); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                        <i class="bi bi-headset text-white" style="font-size: 2rem;"></i>
+                <div class="feature-card-v2">
+                    <div class="feature-icon-v2" style="--icon-gradient: linear-gradient(135deg, #8b5cf6, #a78bfa);">
+                        <i class="bi bi-headset"></i>
                     </div>
                     <h4>24/7 Support</h4>
-                    <p class="text-muted mb-0">Our dedicated support team is always ready to help with any questions.</p>
+                    <p>Our dedicated support team is always ready to help with any questions.</p>
                 </div>
             </div>
         </div>
@@ -385,162 +609,71 @@ include 'includes/header.php';
 </section>
 
 <!-- CTA Section -->
-<section class="cta-section">
+<section class="cta-section-v2">
     <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-lg-8 text-center">
-                <h2>Ready to Make Your Voice Heard?</h2>
-                <p>Join thousands of voters and support your favorite nominees today. Every vote matters!</p>
-                <div class="d-flex flex-wrap justify-content-center gap-3">
-                    <a href="register.php" class="btn btn-light btn-lg">
-                        <i class="bi bi-person-plus me-2"></i>Create Free Account
-                    </a>
-                    <a href="events.php" class="btn btn-outline-light btn-lg">
-                        <i class="bi bi-trophy me-2"></i>Browse Events
-                    </a>
-                </div>
+        <div class="cta-inner">
+            <h2>Ready to Make Your Voice Heard?</h2>
+            <p>Join thousands of supporters and support your favorite nominees today. Every vote matters!</p>
+            <div class="cta-buttons">
+                <a href="register.php" class="btn-cta-light">
+                    <i class="bi bi-person-plus me-2"></i>Create Free Account
+                </a>
+                <a href="events.php" class="btn-cta-outline">
+                    <i class="bi bi-trophy me-2"></i>Browse Events
+                </a>
             </div>
         </div>
     </div>
 </section>
 
-<style>
-/* Additional Hero Styles */
-.hero-bg-elements {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    overflow: hidden;
-    pointer-events: none;
-}
+<!-- Hero Slider Script -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const slides = document.querySelectorAll('.hero-slide');
+    const dots = document.querySelectorAll('.slider-dots .dot');
+    const prevBtn = document.querySelector('.slider-prev');
+    const nextBtn = document.querySelector('.slider-next');
+    let current = 0;
+    let interval;
 
-.hero-circle {
-    position: absolute;
-    border-radius: 50%;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(236, 72, 153, 0.3));
-    filter: blur(60px);
-}
+    function goToSlide(n) {
+        slides[current].classList.remove('active');
+        dots[current].classList.remove('active');
+        current = (n + slides.length) % slides.length;
+        slides[current].classList.add('active');
+        dots[current].classList.add('active');
+    }
 
-.hero-circle-1 {
-    width: 350px;
-    height: 350px;
-    top: -200px;
-    right: -100px;
-    animation: float-slow 20s ease-in-out infinite;
-}
+    function nextSlide() { goToSlide(current + 1); }
+    function prevSlide() { goToSlide(current - 1); }
 
-.hero-circle-2 {
-    width: 250px;
-    height: 250px;
-    bottom: -100px;
-    left: -100px;
-    animation: float-slow 15s ease-in-out infinite reverse;
-}
+    function startAuto() { interval = setInterval(nextSlide, 5000); }
+    function stopAuto() { clearInterval(interval); }
 
-.hero-circle-3 {
-    width: 200px;
-    height: 200px;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    animation: float-slow 25s ease-in-out infinite;
-}
+    if (prevBtn) prevBtn.addEventListener('click', function() { stopAuto(); prevSlide(); startAuto(); });
+    if (nextBtn) nextBtn.addEventListener('click', function() { stopAuto(); nextSlide(); startAuto(); });
+    dots.forEach(dot => {
+        dot.addEventListener('click', function() {
+            stopAuto();
+            goToSlide(parseInt(this.dataset.slide));
+            startAuto();
+        });
+    });
 
-@keyframes float-slow {
-    0%, 100% { transform: translate(0, 0); }
-    25% { transform: translate(30px, -30px); }
-    50% { transform: translate(-20px, 20px); }
-    75% { transform: translate(20px, 30px); }
-}
+    startAuto();
 
-.hero-image-container {
-    position: relative;
-    display: inline-block;
-}
-
-.hero-image {
-    max-height: 320px;
-    filter: drop-shadow(0 20px 50px rgba(99, 102, 241, 0.4));
-}
-
-.scroll-indicator {
-    position: absolute;
-    bottom: 30px;
-    left: 50%;
-    transform: translateX(-50%);
-}
-
-@keyframes bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-20px); }
-    60% { transform: translateY(-10px); }
-}
-
-.shortcode-search .input-group {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 50px;
-    backdrop-filter: blur(10px);
-    padding: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.shortcode-search .form-control {
-    background: transparent !important;
-    color: white !important;
-    padding: 0.4rem 0.8rem;
-    height: auto;
-}
-
-.shortcode-search .form-control::placeholder {
-    color: rgba(255, 255, 255, 0.5);
-}
-
-.shortcode-search .input-group-text {
-    background: transparent !important;
-    padding-left: 1.25rem;
-}
-
-.shortcode-search .btn {
-    padding: 0.4rem 1.25rem;
-    font-size: 0.9rem;
-}
-
-/* Event Card Hover Effects */
-.event-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(236, 72, 153, 0.2));
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.event-card:hover::before {
-    opacity: 1;
-}
-
-/* Animated Elements */
-.animate-on-scroll {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.6s ease;
-}
-
-.animate-on-scroll.animated {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-/* Empty State */
-.empty-state i {
-    opacity: 0.3;
-}
-</style>
+    // Animate on scroll
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('animated');
+            }
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.animate-on-scroll, .feature-card-v2, .step-v2, .stat-bar-item').forEach(el => observer.observe(el));
+});
+</script>
 
 <?php include 'includes/vote-modal.php'; ?>
+<?php include 'includes/ticket-modal.php'; ?>
 <?php include 'includes/footer.php'; ?>

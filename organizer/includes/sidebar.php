@@ -49,6 +49,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticket-analytics.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/organizer/ticket-analytics.php">
+                    <i class="bi bi-ticket-perforated me-2"></i><span>Ticket Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], '/payouts/') !== false ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/organizer/payouts/">
                     <i class="bi bi-cash-stack me-2"></i><span>Payouts</span>
                 </a>

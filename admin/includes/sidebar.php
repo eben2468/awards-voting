@@ -49,6 +49,16 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticket-analytics.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/ticket-analytics.php">
+                    <i class="bi bi-ticket-perforated me-2"></i><span>Ticket Analytics</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'pending-notifications.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/pending-notifications.php">
+                    <i class="bi bi-bell-fill me-2"></i><span>Pending Notifications</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], '/results/') !== false ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/results/">
                     <i class="bi bi-graph-up me-2"></i><span>Results</span>
                 </a>
@@ -65,6 +75,15 @@
                     <i class="bi bi-people me-2"></i><span>Users</span>
                 </a>
             </li>
+            <?php $pendingOrganizers = function_exists('getPendingOrganizerCount') ? getPendingOrganizerCount() : 0; ?>
+            <li class="nav-item">
+                <a class="nav-link d-flex align-items-center <?php echo basename($_SERVER['PHP_SELF']) == 'organizer-approvals.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/organizer-approvals.php">
+                    <i class="bi bi-person-check me-2"></i><span>Organizer Approvals</span>
+                    <?php if ($pendingOrganizers > 0): ?>
+                        <span class="badge rounded-pill bg-warning text-dark ms-auto"><?php echo $pendingOrganizers; ?></span>
+                    <?php endif; ?>
+                </a>
+            </li>
             <li class="nav-item">
                 <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], '/reports/') !== false ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/reports/">
                     <i class="bi bi-file-earmark-bar-graph me-2"></i><span>Reports</span>
@@ -73,6 +92,11 @@
             <li class="nav-item">
                 <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'subscribers.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/subscribers.php">
                     <i class="bi bi-envelope-check me-2"></i><span>Subscribers</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'contact-messages.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/contact-messages.php">
+                    <i class="bi bi-chat-left-text me-2"></i><span>Messages</span>
                 </a>
             </li>
             
@@ -86,6 +110,11 @@
             <li class="nav-item">
                 <a class="nav-link <?php echo strpos($_SERVER['PHP_SELF'], '/settings') !== false ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/settings.php">
                     <i class="bi bi-gear me-2"></i><span>Settings</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'diagnostics.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/diagnostics.php">
+                    <i class="bi bi-activity me-2"></i><span>Diagnostics</span>
                 </a>
             </li>
             <li class="nav-item">

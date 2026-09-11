@@ -1,188 +1,171 @@
 <?php
 /**
  * Payment Verification Script
- * Handles Paystack callback and records votes
+ * Handles NaloPay callback and records votes
  */
 
 ob_start();
 require_once 'config/database.php';
-require_once 'config/paystack.php';
 require_once 'config/nalo.php';
 
 $pdo = getDBConnection();
 
-// Get reference from GET (callback) or POST (webhook/AJAX)
-$reference = $_GET['reference'] ?? $_POST['reference'] ?? '';
+// Get order_id from GET (redirect) or POST (webhook)
+// Nalo uses order_id, which we mapped to our reference
+$reference = $_GET['order_id'] ?? $_GET['reference'] ?? $_GET['id'] ?? $_GET['session_id'] ?? '';
+
+// Log incoming request
+error_log("Payment Callback Received: " . $_SERVER['REQUEST_METHOD'] . " - GET: " . json_encode($_GET) . " - POST: " . file_get_contents('php://input'));
+
+$isWebhook = false;
+$webhookStatus = '';
+$webhookData = [];
+
+// Check for POST data (Webhook)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $isWebhook = true;
+    $input = file_get_contents('php://input');
+    $payload = json_decode($input, true);
+    
+    if (!empty($payload)) {
+        $reference = $payload['order_id'] ?? $payload['reference'] ?? $payload['id'] ?? $payload['session_id'] ?? $reference;
+        $webhookStatus = $payload['status'] ?? $payload['success'] ?? $payload['sucess'] ?? '';
+        $webhookData = $payload;
+    } else {
+        $reference = $_POST['order_id'] ?? $_POST['reference'] ?? $_POST['id'] ?? $_POST['session_id'] ?? $reference;
+        $webhookStatus = $_POST['status'] ?? $_POST['success'] ?? $_POST['sucess'] ?? '';
+        $webhookData = $_POST;
+    }
+}
 
 if (empty($reference)) {
     ob_clean();
-    die(json_encode(['success' => false, 'message' => 'No reference provided.']));
+    die(json_encode(['success' => false, 'message' => 'No reference/order_id provided.']));
 }
 
 try {
-    // 1. Verify transaction with Paystack
-    $paystackResponse = verifyPaystack($reference);
-    
-    if (!$paystackResponse['status'] || $paystackResponse['data']['status'] !== 'success') {
-        throw new Exception('Payment verification failed or payment not successful.');
-    }
-    
-    $data = $paystackResponse['data'];
-    
-    // 2. Check if transaction exists in our database
-    $stmt = $pdo->prepare("SELECT * FROM transactions WHERE reference = ?");
-    $stmt->execute([$reference]);
+    // 1. Check if transaction exists in our database
+    $stmt = $pdo->prepare("SELECT * FROM transactions WHERE reference = ? OR external_id = ?");
+    $stmt->execute([$reference, $reference]);
     $transaction = $stmt->fetch();
     
     if (!$transaction) {
         throw new Exception('Transaction record not found in database.');
     }
-    
-    if ($transaction['status'] === 'success') {
-        // Already processed
-        if (isset($_GET['reference'])) {
-            setFlash('success', 'Your vote has already been recorded.');
-            ob_end_clean();
-            redirect('events.php');
+
+    // Handle Redirect (GET)
+    if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+        $isTicket = !empty($transaction['ticket_category_id']);
+
+        // If it's a redirect and transaction is already successful (from webhook), show success immediately
+        if ($transaction['status'] === 'success') {
+            if ($isTicket) {
+                setFlash('success', 'Thank you! Your ticket purchase was successful. Your ticket code has been sent via SMS.');
+                ob_end_clean();
+                redirect('ticketing.php');
+            } else {
+                setFlash('success', 'Thank you! Your vote has been recorded successfully.');
+                $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+                $eventStmt->execute([$transaction['event_id']]);
+                $eventSlug = $eventStmt->fetchColumn();
+                ob_end_clean();
+                redirect('event-details.php?slug=' . $eventSlug);
+            }
         }
-        ob_clean();
-        echo json_encode(['success' => true, 'message' => 'Already processed.']);
-        exit;
-    }
-    
-    // 3. Start database transaction to record vote and update status
-    $pdo->beginTransaction();
-    
-    // Update transaction status
-    $updateTxStmt = $pdo->prepare("
-        UPDATE transactions 
-        SET status = 'success', 
-            payment_method = ?, 
-            provider = ?, 
-            updated_at = NOW() 
-        WHERE id = ?
-    ");
-    $updateTxStmt->execute([
-        $data['channel'],
-        $data['authorization']['brand'] ?? $data['channel'],
-        $transaction['id']
-    ]);
-    
-    // Record the vote
-    $insertVoteStmt = $pdo->prepare("
-        INSERT INTO votes (user_id, nominee_id, category_id, event_id, transaction_id, vote_count, ip_address, user_agent, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
-    ");
-    $insertVoteStmt->execute([
-        $transaction['user_id'],
-        $transaction['nominee_id'],
-        $transaction['category_id'],
-        $transaction['event_id'],
-        $transaction['id'],
-        $transaction['quantity'],
-        $_SERVER['REMOTE_ADDR'],
-        $_SERVER['HTTP_USER_AGENT']
-    ]);
-    
-    $voteId = $pdo->lastInsertId();
-    
-    // Update nominee vote count
-    $updateNomineeStmt = $pdo->prepare("
-        UPDATE nominees SET vote_count = vote_count + ? WHERE id = ?
-    ");
-    $updateNomineeStmt->execute([$transaction['quantity'], $transaction['nominee_id']]);
-    
-    // Update event total votes
-    $updateEventStmt = $pdo->prepare("
-        UPDATE events SET total_votes = total_votes + ? WHERE id = ?
-    ");
-    $updateEventStmt->execute([$transaction['quantity'], $transaction['event_id']]);
-    
-    // Log the action
-    $logStmt = $pdo->prepare("
-        INSERT INTO audit_logs (user_id, action, table_name, record_id, ip_address, user_agent)
-        VALUES (?, 'paid_vote_cast', 'votes', ?, ?, ?)
-    ");
-    $logStmt->execute([
-        $transaction['user_id'],
-        $voteId,
-        $_SERVER['REMOTE_ADDR'],
-        $_SERVER['HTTP_USER_AGENT']
-    ]);
-    
-    $pdo->commit();
-    
-    // 4. Send Confirmation SMS via Nalo Solutions
-    // Get nominee, event, and category details for SMS
-    $detailsStmt = $pdo->prepare("
-        SELECT n.name as nominee_name, e.title as event_title, c.name as category_name
-        FROM nominees n
-        JOIN categories c ON n.category_id = c.id
-        JOIN events e ON c.event_id = e.id
-        WHERE n.id = ?
-    ");
-    $detailsStmt->execute([$transaction['nominee_id']]);
-    $details = $detailsStmt->fetch();
-    
-    // Extract phone number from Paystack data
-    $phoneNumber = null;
-    $metadata = $data['metadata'] ?? [];
-    
-    // Decode metadata if it's a JSON string
-    if (is_string($metadata)) {
-        $metadata = json_decode($metadata, true);
-    }
-    
-    if (isset($metadata['phone'])) {
-        $phoneNumber = $metadata['phone'];
-    } elseif (isset($metadata['msisdn'])) {
-        $phoneNumber = $metadata['msisdn'];
-    }
-    
-    // Fallback: Get from database transaction if still empty
-    if (empty($phoneNumber) && !empty($transaction['metadata'])) {
-        $dbMeta = is_string($transaction['metadata']) ? json_decode($transaction['metadata'], true) : $transaction['metadata'];
-        $phoneNumber = $dbMeta['msisdn'] ?? $dbMeta['phone'] ?? null;
-    }
-    
-    // Final fallbacks from Paystack customer/authorization data
-    if (empty($phoneNumber)) {
-        if (isset($data['customer']['phone']) && !empty($data['customer']['phone'])) {
-            $phoneNumber = $data['customer']['phone'];
-        } elseif (isset($data['authorization']['mobile_money_number'])) {
-            $phoneNumber = $data['authorization']['mobile_money_number'];
-        }
-    }
-    
-    // Send SMS if we have a phone number
-    if ($phoneNumber && $details) {
-        $amount = $transaction['amount'];
-        $currency = CURRENCY; // From paystack.php
         
-        sendVoteConfirmationSMS(
-            $phoneNumber,
-            $amount,
-            $currency,
-            $details['nominee_name'],
-            $details['event_title'],
-            $details['category_name'],
-            $transaction['quantity'],
-            $reference
-        );
+        // If not successful yet, we can try to verify with Nalo API 
+        // Note: works for MoMo STK push but may fail for Nalo hosted checkout sessions
+        try {
+            $naloResponse = verifyNaloTransaction($reference);
+            $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
+            if ($isSuccess) {
+                $paymentStatus = $naloResponse['data']['status'] ?? '';
+                if ($paymentStatus === 'COMPLETED' || $paymentStatus === 'SUCCESS') {
+                    // It actually worked! Let's process it
+                    $result = processSuccessfulPayment($pdo, $transaction, $naloResponse['data']);
+                    if ($result['success']) {
+                        if ($isTicket) {
+                            setFlash('success', 'Thank you! Your ticket purchase was successful. Your ticket code has been sent via SMS.');
+                            ob_end_clean();
+                            redirect('ticketing.php');
+                        } else {
+                            setFlash('success', 'Thank you! Your vote has been recorded successfully.');
+                            $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+                            $eventStmt->execute([$transaction['event_id']]);
+                            $eventSlug = $eventStmt->fetchColumn();
+                            ob_end_clean();
+                            redirect('event-details.php?slug=' . $eventSlug);
+                        }
+                    }
+                }
+            }
+        } catch (Throwable $t) {
+            // Ignore API error on GET since it might be a checkout session
+        }
+        
+        // Still pending?
+        if ($isTicket) {
+            setFlash('warning', 'Your payment is still being processed. Please check your SMS or ticket analytics in a moment.');
+            ob_end_clean();
+            redirect('ticketing.php');
+        } else {
+            $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+            $eventStmt->execute([$transaction['event_id']]);
+            $eventSlug = $eventStmt->fetchColumn();
+            
+            setFlash('warning', 'Your payment is still being processed. Please refresh in a moment to see your vote.');
+            ob_end_clean();
+            redirect('event-details.php?slug=' . $eventSlug);
+        }
+    }
+
+    // Handle Webhook (POST)
+    $isSuccess = false;
+    $paymentStatus = '';
+    $data = [];
+
+    // Nalo webhook status values can vary
+    $isWebhookStatusSuccess = ($webhookStatus === 'SUCCESS' || $webhookStatus === 'COMPLETED' || $webhookStatus === '100' || $webhookStatus === 'success' || $webhookStatus === true || strtolower((string)$webhookStatus) === 'true');
+
+    if ($isWebhook && $isWebhookStatusSuccess) {
+        $isSuccess = true;
+        $paymentStatus = 'SUCCESS';
+        $data = $webhookData;
+    } else {
+        // Fallback to verifying with NaloPay directly if webhook isn't definitive
+        $naloResponse = verifyNaloTransaction($reference);
+        $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
+        
+        if (!$isSuccess) {
+            throw new Exception('Payment verification failed or connection error.');
+        }
+        
+        $data = $naloResponse['data'] ?? [];
+        $paymentStatus = $data['status'] ?? '';
     }
     
-    // If it's a redirect callback
-    if (isset($_GET['reference'])) {
-        setFlash('success', 'Thank you! Your vote has been recorded successfully.');
-        // Redirect to event page
-        $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
-        $eventStmt->execute([$transaction['event_id']]);
-        $eventSlug = $eventStmt->fetchColumn();
-        ob_end_clean();
-        redirect('event-details.php?slug=' . $eventSlug);
+    // Check if status is one of the definitive success strings
+    if ($paymentStatus !== 'COMPLETED' && $paymentStatus !== 'SUCCESS') {
+        throw new Exception('Payment not successful. Status: ' . $paymentStatus);
     }
     
-    // If it's an AJAX call
+    // Real-time check: Block vote recording if event has expired (skip for tickets)
+    $isTicket = !empty($transaction['ticket_category_id']);
+    if (!$isTicket && isEventExpired($transaction['event_id'])) {
+        // Mark transaction as failed
+        $failStmt = $pdo->prepare("UPDATE transactions SET status = 'failed', updated_at = NOW() WHERE id = ? AND status = 'pending'");
+        $failStmt->execute([$transaction['id']]);
+        throw new Exception('Event has ended. Voting is closed.');
+    }
+    
+    // Process the successful payment
+    $result = processSuccessfulPayment($pdo, $transaction, $data);
+    
+    if (!$result['success']) {
+        throw new Exception($result['message']);
+    }
+    
+    // Respond to Webhook accurately
     ob_clean();
     echo json_encode(['success' => true, 'message' => 'Vote recorded successfully!']);
     
@@ -191,11 +174,7 @@ try {
         $pdo->rollBack();
     }
     
-    if (isset($_GET['reference'])) {
-        setFlash('danger', 'Error: ' . $e->getMessage());
-        ob_end_clean();
-        redirect('events.php');
-    }
+    error_log("Payment Verification Error: " . $e->getMessage());
     
     ob_clean();
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);

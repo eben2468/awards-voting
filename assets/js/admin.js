@@ -4,9 +4,11 @@
 
 document.addEventListener('DOMContentLoaded', function () {
     initSidebar();
+    initSidebarAutoClose();
     initConfirmDialogs();
     initDataTables();
     initFormValidation();
+    initResponsiveTables();
 });
 
 /**
@@ -159,5 +161,88 @@ function generateSlug(text) {
 function copyToClipboard(text) {
     navigator.clipboard.writeText(text).then(() => {
         showToast('success', 'Copied to clipboard!');
+    });
+}
+
+/**
+ * Responsive Tables
+ *
+ * Admin tables are too wide for a phone. Rather than editing every one of the
+ * 24 pages that renders a table, this copies each column heading onto its cells
+ * as data-label and tags the table as .table-stacked. The CSS in admin.css then
+ * renders each row as a labelled card below 768px.
+ *
+ * Opt a table out with class="table-no-stack" (useful for narrow key/value
+ * tables, which already read fine on a phone).
+ */
+function initResponsiveTables() {
+    var tables = document.querySelectorAll('.admin-content table.table, .organizer-content table.table');
+
+    Array.prototype.forEach.call(tables, function (table) {
+        if (table.classList.contains('table-no-stack') ||
+            table.classList.contains('table-stacked')) {
+            return;
+        }
+
+        var headRow = table.querySelector('thead tr');
+        if (!headRow) return;
+
+        var headers = Array.prototype.map.call(
+            headRow.querySelectorAll('th, td'),
+            function (cell) {
+                // Strip any icons/badges that live inside the heading
+                return (cell.textContent || '').replace(/\s+/g, ' ').trim();
+            }
+        );
+
+        // Two-column tables (System Info, Database Stats...) already read fine
+        if (headers.length < 3) return;
+
+        var bodyRows = table.querySelectorAll('tbody tr');
+        if (!bodyRows.length) return;
+
+        Array.prototype.forEach.call(bodyRows, function (row) {
+            var cells = row.children;
+
+            // A full-width "no results" row: leave it unlabelled so the CSS
+            // can centre it across the card.
+            if (cells.length === 1 && cells[0].hasAttribute('colspan')) {
+                return;
+            }
+
+            var column = 0;
+            for (var i = 0; i < cells.length; i++) {
+                var cell = cells[i];
+
+                if (!cell.hasAttribute('data-label') && headers[column]) {
+                    cell.setAttribute('data-label', headers[column]);
+                }
+
+                // Respect colspan so later cells stay aligned with their heading
+                var span = parseInt(cell.getAttribute('colspan') || '1', 10);
+                column += (isNaN(span) || span < 1) ? 1 : span;
+            }
+        });
+
+        table.classList.add('table-stacked');
+    });
+}
+
+/**
+ * Close the mobile sidebar after tapping a link, so the next page does not
+ * load with the overlay still covering it on slow connections.
+ */
+function initSidebarAutoClose() {
+    var sidebar = document.getElementById('adminSidebar') || document.getElementById('organizerSidebar');
+    if (!sidebar) return;
+
+    sidebar.addEventListener('click', function (e) {
+        var link = e.target.closest ? e.target.closest('a.nav-link') : null;
+        if (!link) return;
+        if (window.innerWidth >= 992) return;
+
+        sidebar.classList.remove('show');
+        var overlay = document.querySelector('.sidebar-overlay');
+        if (overlay) overlay.classList.remove('show');
     });
 }

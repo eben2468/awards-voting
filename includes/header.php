@@ -1,5 +1,15 @@
 <?php
 require_once __DIR__ . '/../config/database.php';
+
+// Poor man's cron: Auto-deactivate expired events on page load (max once every 5 minutes)
+if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_check']) > 300) {
+    $_SESSION['last_event_check'] = time();
+    try {
+        deactivateExpiredEvents();
+    } catch (Exception $e) {
+        error_log("Auto-deactivate check error: " . $e->getMessage());
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -52,10 +62,8 @@ require_once __DIR__ . '/../config/database.php';
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     
     <!-- Custom CSS -->
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
+    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/../assets/css/style.css'); ?>">
     
-    <!-- Paystack Inline JS -->
-    <script src="https://js.paystack.co/v1/inline.js"></script>
     
     <script>
         window.SITE_URL = '<?php echo SITE_URL; ?>';
@@ -84,6 +92,9 @@ require_once __DIR__ . '/../config/database.php';
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'events.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/events.php">Events</a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticketing.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/ticketing.php">Ticketing</a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'results.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/results.php">Results</a>
                     </li>
                     <li class="nav-item">
@@ -93,7 +104,7 @@ require_once __DIR__ . '/../config/database.php';
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/contact.php">Contact</a>
                     </li>
                 </ul>
-                <ul class="navbar-nav">
+                <ul class="navbar-nav align-items-center">
                     <?php if (isLoggedIn()): ?>
                         <!-- Notifications Dropdown -->
                         <li class="nav-item dropdown me-3" id="notificationDropdownWrapper">
@@ -116,12 +127,12 @@ require_once __DIR__ . '/../config/database.php';
                                     </li>
                                 </div>
                                 <li><hr class="dropdown-divider m-0"></li>
-                                <li><a class="dropdown-item text-center py-3 fw-semibold text-primary" href="<?php echo SITE_URL; ?>/user/notifications.php">View All Notifications</a></li>
+                                <li><a class="dropdown-item text-center py-3 fw-semibold text-primary" href="<?php echo SITE_URL; ?>/notifications.php">View All Notifications</a></li>
                             </ul>
                         </li>
 
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 flex-nowrap" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                 <div class="user-avatar-sm">
                                     <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['user_name'] ?? 'User'); ?>&background=6366f1&color=fff" alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px;">
                                 </div>
@@ -151,6 +162,13 @@ require_once __DIR__ . '/../config/database.php';
                                                 <i class="bi bi-calendar-event me-2"></i> Organizer Portal
                                             </a>
                                         </li>
+                                    <?php endif; ?>
+                                    <?php if (getSetting('show_vote_counts', '1') !== '1'): ?>
+                                    <li>
+                                        <a class="dropdown-item py-2 px-3" href="<?php echo SITE_URL; ?>/nominee-results.php">
+                                            <i class="bi bi-person-badge me-2"></i> Live Results Portal
+                                        </a>
+                                    </li>
                                     <?php endif; ?>
                                     
                                     <li><hr class="dropdown-divider mx-3"></li>

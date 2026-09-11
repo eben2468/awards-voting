@@ -147,6 +147,16 @@ try {
     } catch (PDOException $e) {
         echo "⚠ Error creating contact_messages table: " . $e->getMessage() . "\n";
     }
+
+    // 7. Add allow_results column to categories table
+    echo "7. Adding allow_results column to categories table...\n";
+    try {
+        $stmt = $pdo->prepare("ALTER TABLE categories ADD COLUMN allow_results BOOLEAN DEFAULT FALSE");
+        $stmt->execute();
+        echo "✓ Added allow_results column to categories table\n";
+    } catch (PDOException $e) {
+        echo "⚠ Column allow_results already exists or error: " . $e->getMessage() . "\n";
+    }
     
     echo "\n✅ All database updates applied successfully!\n";
     echo "\nNext steps:\n";

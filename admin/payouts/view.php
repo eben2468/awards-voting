@@ -19,8 +19,10 @@ $id = intval($_GET['id'] ?? 0);
 $stmt = $pdo->prepare("
     SELECT p.*, u.fullname as organizer_name, u.email as organizer_email, 
            e.title as event_title, e.slug as event_slug,
-           (SELECT COALESCE(SUM(t.amount), 0) FROM transactions t WHERE t.event_id = e.id AND t.status = 'success') as total_event_earned,
-           (SELECT COUNT(*) FROM transactions t WHERE t.event_id = e.id AND t.status = 'success') as total_event_votes
+           (SELECT COALESCE(SUM(tr.amount), 0) FROM transactions tr WHERE tr.event_id = e.id AND tr.nominee_id IS NOT NULL AND tr.status = 'success') as total_votes_earned,
+           (SELECT COALESCE(SUM(tr.amount), 0) FROM transactions tr WHERE tr.event_id = e.id AND tr.ticket_category_id IS NOT NULL AND tr.status = 'success') as total_tickets_earned,
+           (SELECT COALESCE(SUM(tr.quantity), 0) FROM transactions tr WHERE tr.event_id = e.id AND tr.nominee_id IS NOT NULL AND tr.status = 'success') as total_votes_cast,
+           (SELECT COALESCE(SUM(tr.quantity), 0) FROM transactions tr WHERE tr.event_id = e.id AND tr.ticket_category_id IS NOT NULL AND tr.status = 'success') as total_tickets_sold
     FROM organizer_payouts p 
     JOIN users u ON p.organizer_id = u.id 
     JOIN events e ON p.event_id = e.id 
@@ -99,8 +101,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css">
-    <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/admin.css">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -192,13 +194,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                 <div class="col-md-4">
                                     <div class="p-3 bg-light rounded">
                                         <label class="text-muted small text-uppercase d-block mb-1">Total Earned</label>
-                                        <span class="h5 mb-0">GHS <?php echo number_format($payout['total_event_earned'], 2); ?></span>
+                                        <span class="h5 mb-0">GHS <?php echo number_format($payout['total_votes_earned'] + $payout['total_tickets_earned'], 2); ?></span>
+                                        <div class="small text-muted mt-1">
+                                            V: GHS <?php echo number_format($payout['total_votes_earned'], 2); ?> | T: GHS <?php echo number_format($payout['total_tickets_earned'], 2); ?>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
                                     <div class="p-3 bg-light rounded">
-                                        <label class="text-muted small text-uppercase d-block mb-1">Total Votes</label>
-                                        <span class="h5 mb-0"><?php echo number_format($payout['total_event_votes']); ?></span>
+                                        <label class="text-muted small text-uppercase d-block mb-1">Total Votes & Tickets</label>
+                                        <span class="h5 mb-0"><?php echo number_format($payout['total_votes_cast'] + $payout['total_tickets_sold']); ?></span>
+                                        <div class="small text-muted mt-1">
+                                            Votes: <?php echo number_format($payout['total_votes_cast']); ?> | Tkts: <?php echo number_format($payout['total_tickets_sold']); ?>
+                                        </div>
                                     </div>
                                 </div>
                                 <div class="col-md-4">
@@ -340,6 +348,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="<?php echo SITE_URL; ?>/assets/js/admin.js"></script>
+    <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
 </body>
 </html>

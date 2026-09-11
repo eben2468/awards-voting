@@ -88,12 +88,33 @@ if (empty($msisdn) && !empty($transaction['metadata'])) {
 }
 
 if ($status === 'success') {
+    // Real-time check: Verify event hasn't expired before recording vote
+    if (isEventExpired($transaction['event_id'])) {
+        // Event has ended - mark transaction as failed, don't record vote
+        $stmt = $pdo->prepare("UPDATE transactions SET status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'");
+        $stmt->execute([$transaction['id']]);
+        
+        error_log("USSD Callback: Vote blocked for expired event #{$transaction['event_id']}, transaction #{$transaction['id']}");
+        http_response_code(200);
+        echo json_encode(['status' => 'failed', 'message' => 'Event has ended. Voting is closed.']);
+        exit;
+    }
+
     try {
         $db->beginTransaction();
 
         // 1. Update Transaction
-        $stmt = $db->prepare("UPDATE transactions SET status = 'success', provider = 'paystack', updated_at = CURRENT_TIMESTAMP WHERE id = ?");
+        $stmt = $db->prepare("UPDATE transactions SET status = 'success', provider = 'paystack', updated_at = CURRENT_TIMESTAMP WHERE id = ? AND status = 'pending'");
+
         $stmt->execute([$transaction['id']]);
+
+        if ($stmt->rowCount() === 0) {
+            $db->rollBack();
+            http_response_code(200);
+            echo json_encode(['status' => 'success', 'message' => 'Already processed']);
+            exit;
+        }
+
 
         $quantity = $transaction['quantity'] ?? 1;
 

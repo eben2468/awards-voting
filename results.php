@@ -10,6 +10,7 @@ $page_title = 'Live Results';
 $page_description = 'View real-time voting results for all award events.';
 
 $pdo = getDBConnection();
+$show_vote_counts = getSetting('show_vote_counts', '1') === '1';
 
 // Get event filter
 $eventSlug = sanitize($_GET['event'] ?? '');
@@ -60,7 +61,7 @@ if ($selectedEvent) {
             SELECT n.*, c.name as category_name
             FROM nominees n
             JOIN categories c ON n.category_id = c.id
-            WHERE n.category_id = ? AND n.status = 'active'
+            WHERE n.category_id = ?
             ORDER BY n.vote_count DESC
         ");
         $resultsStmt->execute([$categoryId]);
@@ -72,7 +73,7 @@ if ($selectedEvent) {
             SELECT n.*, c.name as category_name
             FROM nominees n
             JOIN categories c ON n.category_id = c.id
-            WHERE n.category_id = ? AND n.status = 'active'
+            WHERE n.category_id = ?
             ORDER BY n.vote_count DESC
         ");
         $resultsStmt->execute([$categoryId]);
@@ -97,7 +98,12 @@ include 'includes/header.php';
                 <h1 class="text-white mb-3">
                     <i class="bi bi-broadcast me-2 text-danger pulse"></i>Live Results
                 </h1>
-                <p class="text-white-50 lead mb-0">Watch the votes count up in real-time. Results are updated every 10 seconds.</p>
+                <p class="text-white-50 lead mb-3">Watch the votes count up in real-time. Results are updated every 10 seconds.</p>
+                <?php if (!$show_vote_counts): ?>
+                    <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Live Results Portal
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
                 <div class="live-indicator d-inline-flex align-items-center bg-white bg-opacity-10 rounded-pill px-4 py-2">
@@ -112,6 +118,16 @@ include 'includes/header.php';
 <!-- Results Section -->
 <section class="results-section py-5 bg-light">
     <div class="container">
+        <?php if (!$show_vote_counts): ?>
+            <div class="alert alert-info border-0 shadow-sm mb-4 d-flex align-items-center">
+                <i class="bi bi-info-circle-fill fs-4 me-3"></i>
+                <div>
+                    <strong>Are you a nominee?</strong> Vote counts are currently hidden from the public, but you can view real-time statistics in the 
+                    <a href="nominee-results.php" class="alert-link">Live Results Portal</a> using your category's unique access code.
+                </div>
+            </div>
+        <?php endif; ?>
+
         <?php if (empty($events)): ?>
             <div class="text-center py-5">
                 <i class="bi bi-graph-up display-1 text-muted mb-3"></i>
@@ -135,9 +151,11 @@ include 'includes/header.php';
                                         <div class="text-truncate me-2">
                                             <?php echo htmlspecialchars($event['title']); ?>
                                         </div>
+                                        <?php if ($show_vote_counts): ?>
                                         <span class="badge bg-<?php echo ($selectedEvent && $selectedEvent['slug'] === $event['slug']) ? 'light text-primary' : 'primary'; ?> rounded-pill">
                                             <?php echo number_format($event['total_votes']); ?>
                                         </span>
+                                        <?php endif; ?>
                                     </a>
                                 <?php endforeach; ?>
                             </div>
@@ -177,9 +195,11 @@ include 'includes/header.php';
                                         <a href="?event=<?php echo $selectedEvent['slug']; ?>&category=<?php echo $cat['id']; ?>" 
                                            class="btn <?php echo $cat['id'] == $categoryId ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill flex-shrink-0">
                                             <?php echo htmlspecialchars($cat['name']); ?>
+                                            <?php if ($show_vote_counts): ?>
                                             <span class="badge bg-<?php echo $cat['id'] == $categoryId ? 'white text-primary' : 'primary'; ?> ms-1">
                                                 <?php echo number_format($cat['total_votes']); ?>
                                             </span>
+                                            <?php endif; ?>
                                         </a>
                                     <?php endforeach; ?>
                                 </div>
@@ -225,8 +245,12 @@ include 'includes/header.php';
                                                                 <small class="text-muted"><?php echo $nominee['shortcode']; ?></small>
                                                             </div>
                                                             <div class="text-end">
-                                                                <span class="vote-count fs-4 fw-bold text-primary"><?php echo number_format($nominee['vote_count']); ?></span>
-                                                                <small class="text-muted d-block"><?php echo number_format($percentage, 1); ?>%</small>
+                                                                <?php if ($show_vote_counts): ?>
+                                                                    <span class="vote-count fs-4 fw-bold text-primary"><?php echo number_format($nominee['vote_count']); ?></span>
+                                                                    <small class="text-muted d-block"><?php echo number_format($percentage, 1); ?>%</small>
+                                                                <?php else: ?>
+                                                                    <span class="badge bg-primary rounded-pill">Ranked #<?php echo $index + 1; ?></span>
+                                                                <?php endif; ?>
                                                             </div>
                                                         </div>
                                                         <div class="progress" style="height: 10px; border-radius: 10px;">
@@ -251,10 +275,12 @@ include 'includes/header.php';
                                                     <h3 class="mb-0"><?php echo count($results); ?></h3>
                                                     <small class="text-white-75">Nominees</small>
                                                 </div>
+                                                <?php if ($show_vote_counts): ?>
                                                 <div class="col-4">
                                                     <h3 class="mb-0"><?php echo number_format($totalVotes); ?></h3>
                                                     <small class="text-white-75">Total Votes</small>
                                                 </div>
+                                                <?php endif; ?>
                                                 <div class="col-4">
                                                     <h3 class="mb-0"><?php echo $results[0]['name'] ?? 'N/A'; ?></h3>
                                                     <small class="text-white-75">Leading</small>

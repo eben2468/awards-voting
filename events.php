@@ -10,14 +10,15 @@ $page_title = 'All Events';
 $page_description = 'Browse all award events and vote for your favorite nominees.';
 
 $pdo = getDBConnection();
+$show_vote_counts = getSetting('show_vote_counts', '1') === '1';
 
 // Get filter parameters
-$status = sanitize($_GET['status'] ?? 'active');
+$status = sanitize($_GET['status'] ?? 'all');
 $search = sanitize($_GET['search'] ?? '');
 $sort = sanitize($_GET['sort'] ?? 'newest');
 
 // Build query
-$whereConditions = [];
+$whereConditions = ["e.event_type != 'ticketing'"];
 $params = [];
 
 if ($status === 'active') {
@@ -34,7 +35,7 @@ if (!empty($search)) {
     $params[] = "%$search%";
 }
 
-$whereClause = !empty($whereConditions) ? 'WHERE ' . implode(' AND ', $whereConditions) : '';
+$whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
 
 // Sort order
 $orderBy = match($sort) {
@@ -77,7 +78,12 @@ include 'includes/header.php';
                     </ol>
                 </nav>
                 <h1 class="text-white mb-3">Award Events</h1>
-                <p class="text-white-50 lead mb-0">Discover exciting award events and support your favorite nominees</p>
+                <p class="text-white-50 lead mb-3">Discover exciting award events and support your favorite nominees</p>
+                <?php if (!$show_vote_counts): ?>
+                    <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Live Results Portal
+                    </a>
+                <?php endif; ?>
             </div>
             <div class="col-lg-6">
                 <div class="search-box mt-4 mt-lg-0">
@@ -107,6 +113,9 @@ include 'includes/header.php';
             <div class="row align-items-center">
                 <div class="col-md-6 mb-3 mb-md-0">
                     <div class="btn-group" role="group">
+                        <a href="?status=all" class="btn <?php echo $status === 'all' ? 'btn-primary' : 'btn-outline-primary'; ?>">
+                            <i class="bi bi-globe me-1"></i>All
+                        </a>
                         <a href="?status=active" class="btn <?php echo $status === 'active' ? 'btn-primary' : 'btn-outline-primary'; ?>">
                             <i class="bi bi-lightning-fill me-1"></i>Active
                         </a>
@@ -165,47 +174,52 @@ include 'includes/header.php';
                         $daysLeft = floor((strtotime($event['end_date']) - time()) / (60 * 60 * 24));
                     ?>
                     <div class="col-md-6 col-lg-4">
-                        <div class="card event-card">
-                            <div class="event-image-wrapper">
+                        <div class="card ticket-event-card h-100 bg-white">
+                            <div class="ticket-image-wrapper">
                                 <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" 
-                                     alt="<?php echo htmlspecialchars($event['title']); ?>">
+                                     alt="<?php echo htmlspecialchars($event['title']); ?>"
+                                     class="card-img-top">
                                 
-                                <div class="event-overlay">
-                                    <div class="d-flex gap-2">
-                                        <span class="glass-badge">
-                                            <i class="bi bi-collection"></i><?php echo $event['category_count']; ?>
-                                        </span>
-                                        <span class="glass-badge">
-                                            <i class="bi bi-people"></i><?php echo $event['nominee_count']; ?>
-                                        </span>
-                                    </div>
+                                <div class="ticket-overlay">
+                                    <?php if ($show_vote_counts): ?>
+                                        <span class="ticket-badge-price"><?php echo number_format($event['total_votes']); ?> votes</span>
+                                    <?php endif; ?>
                                 </div>
 
                                 <?php if ($event['is_featured']): ?>
-                                    <span class="status-badge bg-warning text-dark">
+                                    <span class="ticket-badge-featured">
                                         <i class="bi bi-star-fill me-1"></i>Featured
                                     </span>
-                                <?php elseif ($isEnded): ?>
-                                    <span class="status-badge bg-secondary text-white">Ended</span>
+                                <?php endif; ?>
+
+                                <?php if ($isEnded): ?>
+                                    <span class="ticket-badge-code bg-secondary text-white">
+                                        <i class="bi bi-check-circle me-1"></i>Ended
+                                    </span>
                                 <?php elseif ($isUpcoming): ?>
-                                    <span class="status-badge bg-info text-white">Upcoming</span>
+                                    <span class="ticket-badge-code bg-info text-white">
+                                        <i class="bi bi-calendar-event me-1"></i>Upcoming
+                                    </span>
                                 <?php else: ?>
-                                    <span class="status-badge bg-success text-white">Active</span>
+                                    <span class="ticket-badge-code bg-success text-white">
+                                        <i class="bi bi-lightning-fill me-1"></i>Active
+                                    </span>
                                 <?php endif; ?>
                             </div>
 
-                            <div class="event-card-body">
-                                <h4 class="card-title"><?php echo htmlspecialchars($event['title']); ?></h4>
-                                <p class="card-text">
+                            <div class="card-body d-flex flex-column p-4">
+                                <h5 class="card-title fw-bold mb-2 text-dark"><?php echo htmlspecialchars($event['title']); ?></h5>
+                                <p class="card-text text-muted small flex-grow-1">
                                     <?php echo strlen($event['description']) > 100 ? substr(htmlspecialchars($event['description']), 0, 100) . '...' : htmlspecialchars($event['description']); ?>
                                 </p>
                                 
-                                <div class="event-stats-grid">
-                                    <div class="stat-box">
-                                        <span class="label">Status / Remaining</span>
-                                        <span class="value">
+                                <div class="ticket-meta mb-3">
+                                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
+                                        <span><i class="bi bi-calendar3 me-1"></i><?php echo date('M d, Y', strtotime($event['start_date'])); ?></span>
+                                        <span>
+                                            <i class="bi bi-clock me-1"></i>
                                             <?php if (!$isEnded && !$isUpcoming && $daysLeft >= 0): ?>
-                                                <?php echo $daysLeft; ?> Days Left
+                                                <?php echo $daysLeft; ?> days left
                                             <?php elseif ($isEnded): ?>
                                                 Completed
                                             <?php elseif ($isUpcoming): ?>
@@ -215,21 +229,21 @@ include 'includes/header.php';
                                             <?php endif; ?>
                                         </span>
                                     </div>
-                                    <div class="stat-box">
-                                        <span class="label">Total Votes</span>
-                                        <span class="value"><?php echo number_format($event['total_votes']); ?></span>
+                                    <div class="d-flex justify-content-between align-items-center text-muted small">
+                                        <span><i class="bi bi-collection me-1"></i><?php echo $event['category_count']; ?> Category<?php echo $event['category_count'] > 1 ? 'ies' : ''; ?></span>
+                                        <span><i class="bi bi-people me-1"></i><?php echo $event['nominee_count']; ?> Nominee<?php echo $event['nominee_count'] > 1 ? 's' : ''; ?></span>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="event-card-footer">
-                                <a href="event-details.php?slug=<?php echo $event['slug']; ?>" class="btn btn-primary btn-modern">
+                            <div class="card-footer bg-transparent border-0 pb-4 px-4">
+                                <a href="event-details.php?slug=<?php echo $event['slug']; ?>" class="btn btn-ticket-buy w-100 rounded-pill py-2.5 fw-bold text-center text-white d-block">
                                     <?php 
                                         if ($isEnded) echo 'View Results';
                                         elseif ($isUpcoming) echo 'View Details';
                                         else echo 'Vote Now';
                                     ?>
-                                    <i class="bi bi-arrow-right"></i>
+                                    <i class="bi bi-arrow-right ms-2"></i>
                                 </a>
                             </div>
                         </div>
