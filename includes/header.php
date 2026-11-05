@@ -25,14 +25,14 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
     <meta property="og:url" content="<?php echo SITE_URL; ?>">
     <meta property="og:title" content="<?php echo $page_title ?? 'VoteHubGH - Online Awards Voting Platform'; ?>">
     <meta property="og:description" content="<?php echo $page_description ?? 'Your trusted online awards voting platform.'; ?>">
-    <meta property="og:image" content="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
+    <meta property="og:image" content="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="<?php echo SITE_URL; ?>">
     <meta property="twitter:title" content="<?php echo $page_title ?? 'VoteHubGH - Online Awards Voting Platform'; ?>">
     <meta property="twitter:description" content="<?php echo $page_description ?? 'Your trusted online awards voting platform.'; ?>">
-    <meta property="twitter:image" content="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
+    <meta property="twitter:image" content="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
 
     <!-- Schema.org for Google -->
     <script type="application/ld+json">
@@ -40,15 +40,15 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
       "@context": "https://schema.org",
       "@type": "Organization",
       "url": "<?php echo SITE_URL; ?>",
-      "logo": "<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png"
+      "logo": "<?php echo SITE_URL; ?>/assets/logo/share-image.png"
     }
     </script>
     
     <title><?php echo isset($page_title) ? $page_title . ' - ' . SITE_NAME : SITE_NAME . ' - Online Awards Voting Platform'; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -78,7 +78,7 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
     <nav class="navbar navbar-expand-lg navbar-dark fixed-top" id="mainNav">
         <div class="container">
             <a class="navbar-brand" href="<?php echo SITE_URL; ?>">
-                <i class="bi bi-trophy-fill me-2"></i>VoteHubGH
+                <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-chip">
             </a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>

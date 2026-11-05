@@ -2,7 +2,7 @@
 <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
         <a href="<?php echo SITE_URL; ?>/admin/" class="sidebar-brand">
-            <i class="bi bi-trophy-fill me-2"></i>
+            <img src="<?php echo assetUrl('assets/logo/favicon.png'); ?>" alt="" class="sidebar-logo me-2">
             <span>VoteHubGH</span>
         </a>
         <button class="btn btn-sm d-lg-none" id="closeSidebar">

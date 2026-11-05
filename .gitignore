@@ -21,3 +21,6 @@ debug-pending-sms.php
 .claude/
 .vscode/
 .idea/
+
+# Files uploaded through the website live only on the server
+uploads/

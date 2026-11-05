@@ -825,3 +825,11 @@
         transform: none;
     }
 }
+
+
+.sidebar-logo {
+    width: 34px;
+    height: 34px;
+    object-fit: contain;
+    flex-shrink: 0;
+}

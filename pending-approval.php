@@ -78,8 +78,8 @@ $contactContext = $isRejected
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
 
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/uploads/logo/VoteHubGH.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -118,7 +118,7 @@ $contactContext = $isRejected
 
                 <div class="text-center mb-4">
                     <a href="<?php echo SITE_URL; ?>" class="text-decoration-none">
-                        <h4 class="fw-bold mb-4"><i class="bi bi-trophy-fill me-2 text-primary"></i>VoteHubGH</h4>
+                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-sm">
                     </a>
 
                     <?php if ($isRejected): ?>

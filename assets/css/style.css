@@ -3656,3 +3656,34 @@ section {
         transform: none;
     }
 }
+
+
+/* Site logo. The logo has navy lettering, so it sits on white over dark areas. */
+.brand-logo {
+    display: block;
+    width: 240px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 0.75rem;
+}
+
+.brand-logo-sm {
+    width: 180px;
+    margin-bottom: 1.5rem;
+}
+
+.brand-logo-chip {
+    width: auto;
+    margin: 0;
+    padding: 4px 10px;
+    background: #fff;
+    border-radius: 10px;
+}
+
+#mainNav .brand-logo-chip {
+    height: 52px;
+}
+
+.footer-brand .brand-logo-chip {
+    height: 76px;
+}

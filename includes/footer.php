@@ -4,7 +4,7 @@
             <div class="row">
                 <div class="col-lg-4 mb-4 mb-lg-0">
                     <div class="footer-brand">
-                        <i class="bi bi-trophy-fill me-2"></i>VoteHubGH
+                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-chip">
                     </div>
                     <p class="mb-3">Your trusted platform for transparent and secure online voting. Making every vote count since 2024.</p>
                     <div class="mb-4">
