@@ -1,0 +1,48 @@
+# VoteHubGH URL and security rules.
+# Works at the domain root and in a subfolder such as /awards-voting.
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # --- Block sensitive files ---------------------------------------------
+    # Dotfiles such as .env and .git. /.well-known stays open for SSL renewal.
+    RewriteRule (^|/)\.(?!well-known(/|$)) - [F,L]
+
+    # Bundles, database dumps, backups and logs
+    RewriteRule \.(zip|sql|bak|log|ps1)$ - [F,L]
+
+    # Deployment copies and local-only scripts
+    RewriteRule ^(update_package|update_temp|scratch)(/|$) - [F,L]
+    RewriteRule ^(test-sms|test-nalo-live|debug-pending-sms)(\.php)?$ - [F,L]
+
+    # --- Hide .php from the address bar ------------------------------------
+    # Only browser page loads (GET and HEAD) are redirected. POST requests are
+    # left alone because a redirect would lose the submitted data, which keeps
+    # payment webhooks and form posts working on their existing .php URLs.
+    # Background endpoints are skipped because they never appear in the address
+    # bar and their callers may not follow redirects.
+    # THE_REQUEST is the URL the client asked for, so the rewrite below cannot
+    # trigger a redirect loop.
+    #
+    # These are 302 redirects so they are easy to undo. Once the site has run
+    # well for a week or two, change R=302 to R=301 in both rules for SEO.
+
+    # /index.php -> /  and  /admin/index.php -> /admin/
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s[^?\s]*/index\.php[?\s]
+    RewriteCond %{REQUEST_URI} !/(api|ussd|cron|database|admin/ajax)/
+    RewriteCond %{REQUEST_URI} ^(.*/)index\.php$
+    RewriteRule ^ %1 [R=302,L]
+
+    # /vote.php?shortcode=ABC -> /vote?shortcode=ABC
+    RewriteCond %{REQUEST_METHOD} ^(GET|HEAD)$
+    RewriteCond %{THE_REQUEST} \s[^?\s]*\.php[?\s]
+    RewriteCond %{REQUEST_URI} !/(api|ussd|cron|database|admin/ajax)/
+    RewriteCond %{REQUEST_URI} ^(.+)\.php$
+    RewriteRule ^ %1 [R=302,L]
+
+    # /vote is served by vote.php without changing the address
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME}\.php -f
+    RewriteRule ^(.+)$ $1.php [L]
+</IfModule>

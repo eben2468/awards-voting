@@ -295,7 +295,7 @@ include 'includes/header.php';
                                                     </div>
                                                     
                                                     <?php if ($isActive): ?>
-                                                        <form action="vote.php" method="POST" class="vote-form">
+                                                        <form action="vote" method="POST" class="vote-form">
                                                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                                             <input type="hidden" name="nominee_id" value="<?php echo $nominee['id']; ?>">
                                                             <input type="hidden" name="category_id" value="<?php echo $category['id']; ?>">

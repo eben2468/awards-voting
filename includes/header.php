@@ -89,19 +89,19 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                         <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'events.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/events.php">Events</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'events.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/events">Events</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticketing.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/ticketing.php">Ticketing</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticketing.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/ticketing">Ticketing</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'results.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/results.php">Results</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'results.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/results">Results</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'how-it-works.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/how-it-works.php">How It Works</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'how-it-works.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/how-it-works">How It Works</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/contact.php">Contact</a>
+                        <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'contact.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/contact">Contact</a>
                     </li>
                 </ul>
                 <ul class="navbar-nav align-items-center">
@@ -127,7 +127,7 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                                     </li>
                                 </div>
                                 <li><hr class="dropdown-divider m-0"></li>
-                                <li><a class="dropdown-item text-center py-3 fw-semibold text-primary" href="<?php echo SITE_URL; ?>/notifications.php">View All Notifications</a></li>
+                                <li><a class="dropdown-item text-center py-3 fw-semibold text-primary" href="<?php echo SITE_URL; ?>/notifications">View All Notifications</a></li>
                             </ul>
                         </li>
 
@@ -165,7 +165,7 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                                     <?php endif; ?>
                                     <?php if (getSetting('show_vote_counts', '1') !== '1'): ?>
                                     <li>
-                                        <a class="dropdown-item py-2 px-3" href="<?php echo SITE_URL; ?>/nominee-results.php">
+                                        <a class="dropdown-item py-2 px-3" href="<?php echo SITE_URL; ?>/nominee-results">
                                             <i class="bi bi-person-badge me-2"></i> Live Results Portal
                                         </a>
                                     </li>
@@ -174,7 +174,7 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                                     <li><hr class="dropdown-divider mx-3"></li>
                                     
                                     <li>
-                                        <a class="dropdown-item py-2 px-3 text-danger" href="<?php echo SITE_URL; ?>/logout.php">
+                                        <a class="dropdown-item py-2 px-3 text-danger" href="<?php echo SITE_URL; ?>/logout">
                                             <i class="bi bi-box-arrow-right me-2"></i> Logout
                                         </a>
                                     </li>
@@ -183,10 +183,10 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="<?php echo SITE_URL; ?>/login.php">Login</a>
+                            <a class="nav-link" href="<?php echo SITE_URL; ?>/login">Login</a>
                         </li>
                         <li class="nav-item ms-2">
-                            <a class="btn btn-primary" href="<?php echo SITE_URL; ?>/register.php">Get Started</a>
+                            <a class="btn btn-primary" href="<?php echo SITE_URL; ?>/register">Get Started</a>
                         </li>
                     <?php endif; ?>
                 </ul>

@@ -5,18 +5,20 @@
  * Configuration for Nalo Solutions USSD and SMS services
  */
 
-// Nalo SMS Credentials (User to provide these)
-define('NALO_SMS_KEY', 'ChKWJbL_FcwPWjTcNSkmtMw0kxxadrwEMoRC-tqSCAk6LYWLoy48QpopmAkfN75E'); // Your Nalo SMS API Key
-define('NALO_SMS_SENDER_ID', 'VOTEHUBGH'); // Your Nalo SMS Sender ID
+require_once __DIR__ . '/env.php';
+
+// Nalo SMS credentials (from .env)
+define('NALO_SMS_KEY', env('NALO_SMS_KEY', ''));
+define('NALO_SMS_SENDER_ID', env('NALO_SMS_SENDER_ID', 'VOTEHUBGH'));
 define('NALO_SMS_URL', 'https://sms.nalosolutions.com/smsbackend/Resl_Nalo/send-message/');
 
 // USSD Settings
-define('NALO_USER_ID', 'eben1234'); // Your Nalo USSD User ID
+define('NALO_USER_ID', env('NALO_USER_ID', ''));
 
-// Nalo Pay Credentials (User to provide these)
-define('NALO_PAY_MERCHANT_ID', 'JK8vqbaoPDPSk4Hyvvr98v'); // Your Nalo Pay Merchant ID
-define('NALO_PAY_SECRET_KEY', '056ee3dd3ae37df2d605aa29cc63ab17f09cd4ab622f2d148fe2cbde5ad219f3'); // Your Nalo Pay Secret Key
-define('NALO_PAY_BASIC_AUTH', 'Basic 425847225fcba7c09580106a49a2df41dadd69852c219a926e323eb46da72958c6f3921282327856a63914d28eee924768f62f896b19e28e5bdbc1cb4f9bc9e3'); // Your Nalo Pay Basic Auth Token (Base64)
+// Nalo Pay credentials (from .env)
+define('NALO_PAY_MERCHANT_ID', env('NALO_PAY_MERCHANT_ID', ''));
+define('NALO_PAY_SECRET_KEY', env('NALO_PAY_SECRET_KEY', ''));
+define('NALO_PAY_BASIC_AUTH', env('NALO_PAY_BASIC_AUTH', ''));
 define('NALO_PAY_BASE_URL', 'https://api.nalopay.com');
 define('NALO_PAY_TOKEN_URL', NALO_PAY_BASE_URL . '/clientapi/generate-payment-token/');
 define('NALO_PAY_COLLECTION_URL', NALO_PAY_BASE_URL . '/clientapi/collection/');

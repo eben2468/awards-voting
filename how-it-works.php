@@ -126,7 +126,7 @@ include 'includes/header.php';
                     <h5 class="mb-3"><i class="bi bi-lightning-charge me-2"></i>Quick Vote Demo</h5>
                     <p class="text-gray-300 mb-4">Enter a nominee's shortcode below to see how quick voting works:</p>
                     
-                    <form action="vote.php" method="GET" class="shortcode-search d-flex align-items-center gap-2 mb-3">
+                    <form action="vote" method="GET" class="shortcode-search d-flex align-items-center gap-2 mb-3">
                         <label class="text-white mb-0 flex-shrink-0 d-none d-sm-block">Shortcode:</label>
                         <input type="text" name="shortcode" placeholder="e.g., NOM001" class="form-control border-0 bg-white">
                         <button type="submit" class="btn btn-primary rounded-pill px-4 flex-shrink-0">Vote Now</button>

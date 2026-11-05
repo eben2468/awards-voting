@@ -25,18 +25,18 @@
                     <h5>Quick Links</h5>
                     <ul>
                         <li><a href="<?php echo SITE_URL; ?>">Home</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/events.php">Events</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/results.php">Results</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/how-it-works.php">How It Works</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/events">Events</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/results">Results</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/how-it-works">How It Works</a></li>
                     </ul>
                 </div>
                 <div class="col-6 col-lg-2">
                     <h5>Support</h5>
                     <ul>
-                        <li><a href="<?php echo SITE_URL; ?>/faq.php">FAQ</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/contact.php">Contact Us</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/privacy.php">Privacy Policy</a></li>
-                        <li><a href="<?php echo SITE_URL; ?>/terms.php">Terms of Service</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/faq">FAQ</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/contact">Contact Us</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/privacy">Privacy Policy</a></li>
+                        <li><a href="<?php echo SITE_URL; ?>/terms">Terms of Service</a></li>
                     </ul>
                 </div>
                 <div class="col-lg-4">

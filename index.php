@@ -108,7 +108,7 @@ include 'includes/header.php';
                 
                 <!-- Shortcode Search -->
                 <div class="hero-search-box">
-                    <form action="vote.php" method="GET" class="hero-search-form">
+                    <form action="vote" method="GET" class="hero-search-form">
                         <div class="search-input-wrap">
                             <i class="bi bi-search"></i>
                             <input type="text" name="shortcode" placeholder="Enter shortcode to vote...">

@@ -4,11 +4,13 @@
  * Awards Voting System
  */
 
-define('DB_HOST', 'localhost');
-define('DB_NAME', 'awards_voting');
-define('DB_USER', 'root');
-define('DB_PASS', '');
-define('DB_CHARSET', 'utf8mb4');
+require_once __DIR__ . '/env.php';
+
+define('DB_HOST', env('DB_HOST', 'localhost'));
+define('DB_NAME', env('DB_NAME', 'awards_voting'));
+define('DB_USER', env('DB_USER', 'root'));
+define('DB_PASS', env('DB_PASS', ''));
+define('DB_CHARSET', env('DB_CHARSET', 'utf8mb4'));
 
 // PDO Connection
 function getDBConnection() {

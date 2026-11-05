@@ -1,0 +1,23 @@
+# Secrets - never commit these
+.env
+.env.*
+!.env.example
+
+# Deployment bundles and backups (these contain copies of config files)
+*.zip
+update_package/
+update_temp/
+*.bak
+
+# Local test and debug scripts
+scratch/
+test-sms.php
+test-nalo-live.php
+debug-pending-sms.php
+
+# Logs and tooling
+*.log
+.qoder/
+.claude/
+.vscode/
+.idea/

@@ -88,7 +88,7 @@ include 'includes/header.php';
                                     </div>
                                 <?php endif; ?>
 
-                                <form method="POST" action="nominee-results.php">
+                                <form method="POST" action="nominee-results">
                                     <div class="mb-4">
                                         <label class="form-label fw-semibold">Category Access Code</label>
                                         <div class="input-group input-group-lg">
