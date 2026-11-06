@@ -277,10 +277,10 @@ include 'includes/header.php';
                                                     <span class="shortcode badge bg-primary bg-opacity-10 text-primary mb-3"><?php echo $nominee['shortcode']; ?></span>
                                                     
                                                     <?php if ($nominee['description']): ?>
-                                                        <p class="text-muted small mb-3"><?php echo strlen($nominee['description']) > 60 ? substr(htmlspecialchars($nominee['description']), 0, 60) . '...' : htmlspecialchars($nominee['description']); ?></p>
+                                                        <p class="nominee-desc text-muted small mb-3" title="<?php echo htmlspecialchars($nominee['description']); ?>"><?php echo htmlspecialchars($nominee['description']); ?></p>
                                                     <?php endif; ?>
                                                     
-                                                    <div class="vote-progress mb-3">
+                                                    <div class="vote-progress mb-3 <?php echo $show_vote_counts ? '' : 'is-quiet'; ?>">
                                                         <div class="d-flex justify-content-between small text-muted mb-1">
                                                             <?php if ($show_vote_counts): ?>
                                                                 <span><?php echo number_format($nominee['vote_count']); ?> votes</span>
