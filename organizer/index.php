@@ -94,7 +94,7 @@ $topNominees = $topNomineesStmt->fetchAll();
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">Organizer Dashboard</h2>
-                    <p class="text-muted mb-0">Welcome back, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</p>
+                    <p class="text-muted mb-0">Welcome back, <?php echo e($_SESSION['user_name']); ?>!</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="events/add.php" class="btn btn-primary">
@@ -199,7 +199,7 @@ $topNominees = $topNomineesStmt->fetchAll();
                                         <?php foreach ($recentEvents as $event): ?>
                                             <tr>
                                                 <td>
-                                                    <strong><?php echo htmlspecialchars($event['title']); ?></strong>
+                                                    <strong><?php echo e($event['title']); ?></strong>
                                                 </td>
                                                 <td>
                                                     <span class="badge bg-<?php echo match($event['status']) {
@@ -269,8 +269,8 @@ $topNominees = $topNomineesStmt->fetchAll();
                                         <li class="list-group-item">
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-grow-1">
-                                                    <h6 class="mb-0 small"><?php echo htmlspecialchars($nominee['name']); ?></h6>
-                                                    <small class="text-muted"><?php echo htmlspecialchars($nominee['event_title']); ?></small>
+                                                    <h6 class="mb-0 small"><?php echo e($nominee['name']); ?></h6>
+                                                    <small class="text-muted"><?php echo e($nominee['event_title']); ?></small>
                                                 </div>
                                                 <div class="text-end">
                                                     <span class="badge bg-primary rounded-pill"><?php echo number_format($nominee['vote_count']); ?></span>

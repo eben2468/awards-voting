@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         "profile.php"
                     );
 
-                    setFlash('success', 'Password for ' . htmlspecialchars($user['fullname']) . ' has been reset successfully.');
+                    setFlash('success', 'Password for ' . e($user['fullname']) . ' has been reset successfully.');
                     redirect('admin/users/');
                 } else {
                     $errors[] = 'Failed to update password. Please try again.';
@@ -135,11 +135,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="card-body p-4">
                             <div class="text-center mb-4">
                                 <div class="avatar-wrapper mb-3">
-                                    <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']); ?>" 
+                                    <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($user['fullname'])); ?>" 
                                          class="rounded-circle" style="width: 80px; height: 80px; object-fit: cover;">
                                 </div>
-                                <h5 class="mb-1"><?php echo htmlspecialchars($user['fullname']); ?></h5>
-                                <p class="text-muted small"><?php echo htmlspecialchars($user['email']); ?></p>
+                                <h5 class="mb-1"><?php echo e($user['fullname']); ?></h5>
+                                <p class="text-muted small"><?php echo e($user['email']); ?></p>
                                 <span class="badge bg-<?php echo $user['role'] === 'admin' ? 'danger' : ($user['role'] === 'organizer' ? 'primary' : 'secondary'); ?>">
                                     <?php echo ucfirst($user['role']); ?>
                                 </span>

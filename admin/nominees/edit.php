@@ -150,14 +150,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <option value="">Select Category</option>
                                         <?php foreach ($categories as $cat): ?>
                                             <option value="<?php echo $cat['id']; ?>" <?php echo $nominee['category_id'] == $cat['id'] ? 'selected' : ''; ?>>
-                                                <?php echo htmlspecialchars($cat['name'] . ' - ' . $cat['event_title']); ?>
+                                                <?php echo e($cat['name'] . ' - ' . $cat['event_title']); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Nominee Name *</label>
-                                    <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($nominee['name']); ?>" required>
+                                    <input type="text" name="name" class="form-control" value="<?php echo e($nominee['name']); ?>" required>
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Shortcode *</label>
@@ -165,7 +165,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Description</label>
-                                    <textarea name="description" class="form-control" rows="3"><?php echo htmlspecialchars($nominee['description']); ?></textarea>
+                                    <textarea name="description" class="form-control" rows="3"><?php echo e($nominee['description']); ?></textarea>
                                 </div>
                             </div>
                             <div class="col-md-4">

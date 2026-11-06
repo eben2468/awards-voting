@@ -63,23 +63,23 @@ if (!defined('IMAGE_CROPPER_LOADED')) {
 
         $hasExisting = !empty($existing);
         ?>
-        <div class="crop-field" data-crop-field="<?php echo htmlspecialchars($id); ?>">
-            <label class="form-label" for="<?php echo htmlspecialchars($id); ?>_file">
-                <?php echo htmlspecialchars($label); ?>
+        <div class="crop-field" data-crop-field="<?php echo e($id); ?>">
+            <label class="form-label" for="<?php echo e($id); ?>_file">
+                <?php echo e($label); ?>
                 <?php if ($required): ?><span class="text-danger">*</span><?php endif; ?>
             </label>
 
             <div class="crop-field-body">
                 <!-- Preview -->
-                <div class="crop-preview crop-preview-<?php echo htmlspecialchars($shape); ?>"
-                     id="<?php echo htmlspecialchars($id); ?>_previewWrap">
-                    <img id="<?php echo htmlspecialchars($id); ?>_preview"
+                <div class="crop-preview crop-preview-<?php echo e($shape); ?>"
+                     id="<?php echo e($id); ?>_previewWrap">
+                    <img id="<?php echo e($id); ?>_preview"
                          class="crop-preview-img<?php echo $hasExisting ? '' : ' d-none'; ?>"
-                         src="<?php echo $hasExisting ? htmlspecialchars($existing) : ''; ?>"
-                         data-original-src="<?php echo $hasExisting ? htmlspecialchars($existing) : ''; ?>"
+                         src="<?php echo $hasExisting ? e($existing) : ''; ?>"
+                         data-original-src="<?php echo $hasExisting ? e($existing) : ''; ?>"
                          alt="">
                     <div class="crop-preview-empty<?php echo $hasExisting ? ' d-none' : ''; ?>"
-                         id="<?php echo htmlspecialchars($id); ?>_empty">
+                         id="<?php echo e($id); ?>_empty">
                         <i class="bi bi-person-bounding-box"></i>
                         <span>No photo</span>
                     </div>
@@ -88,46 +88,46 @@ if (!defined('IMAGE_CROPPER_LOADED')) {
                 <!-- Controls -->
                 <div class="crop-field-controls">
                     <input type="file"
-                           id="<?php echo htmlspecialchars($id); ?>_file"
-                           name="<?php echo htmlspecialchars($name); ?>"
+                           id="<?php echo e($id); ?>_file"
+                           name="<?php echo e($name); ?>"
                            class="crop-file-input"
                            accept="image/jpeg,image/png,image/webp,image/gif">
 
                     <!-- Where the cropped result is stored -->
                     <input type="hidden"
-                           id="<?php echo htmlspecialchars($id); ?>_cropped"
-                           name="<?php echo htmlspecialchars($name); ?>_cropped"
+                           id="<?php echo e($id); ?>_cropped"
+                           name="<?php echo e($name); ?>_cropped"
                            value="">
 
                     <div class="d-flex flex-wrap gap-2">
                         <button type="button" class="btn btn-primary btn-sm crop-choose-btn"
-                                data-target="<?php echo htmlspecialchars($id); ?>">
+                                data-target="<?php echo e($id); ?>">
                             <i class="bi bi-upload me-1"></i>Choose Photo
                         </button>
 
                         <button type="button"
                                 class="btn btn-outline-secondary btn-sm crop-recrop-btn<?php echo $hasExisting ? '' : ' d-none'; ?>"
-                                id="<?php echo htmlspecialchars($id); ?>_recrop"
-                                data-target="<?php echo htmlspecialchars($id); ?>">
+                                id="<?php echo e($id); ?>_recrop"
+                                data-target="<?php echo e($id); ?>">
                             <i class="bi bi-crop me-1"></i>Re-crop
                         </button>
 
                         <button type="button"
                                 class="btn btn-outline-danger btn-sm crop-clear-btn d-none"
-                                id="<?php echo htmlspecialchars($id); ?>_clear"
-                                data-target="<?php echo htmlspecialchars($id); ?>"
+                                id="<?php echo e($id); ?>_clear"
+                                data-target="<?php echo e($id); ?>"
                                 title="Discard the photo you just cropped">
                             <i class="bi bi-arrow-counterclockwise me-1"></i>Discard
                         </button>
                     </div>
 
-                    <div class="form-text mt-2"><?php echo htmlspecialchars($help); ?></div>
+                    <div class="form-text mt-2"><?php echo e($help); ?></div>
                     <div class="crop-status small text-success mt-1 d-none"
-                         id="<?php echo htmlspecialchars($id); ?>_status">
+                         id="<?php echo e($id); ?>_status">
                         <i class="bi bi-check-circle-fill me-1"></i>Photo cropped and ready to save.
                     </div>
                     <div class="crop-error small text-danger mt-1 d-none"
-                         id="<?php echo htmlspecialchars($id); ?>_error"></div>
+                         id="<?php echo e($id); ?>_error"></div>
                 </div>
             </div>
         </div>

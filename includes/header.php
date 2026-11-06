@@ -16,22 +16,22 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="<?php echo $page_description ?? 'VoteHubGH - Your trusted online awards voting platform. Vote for your favorite nominees in various award categories.'; ?>">
+    <meta name="description" content="<?php echo e($page_description ?? 'VoteHubGH - Your trusted online awards voting platform. Vote for your favorite nominees in various award categories.'); ?>">
     <meta name="keywords" content="voting, awards, online voting, elections, nominees, Ghana awards">
     <meta name="author" content="VoteHubGH">
     
     <!-- Open Graph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="<?php echo SITE_URL; ?>">
-    <meta property="og:title" content="<?php echo $page_title ?? 'VoteHubGH - Online Awards Voting Platform'; ?>">
-    <meta property="og:description" content="<?php echo $page_description ?? 'Your trusted online awards voting platform.'; ?>">
+    <meta property="og:title" content="<?php echo e($page_title ?? 'VoteHubGH - Online Awards Voting Platform'); ?>">
+    <meta property="og:description" content="<?php echo e($page_description ?? 'Your trusted online awards voting platform.'); ?>">
     <meta property="og:image" content="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
     
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="<?php echo SITE_URL; ?>">
-    <meta property="twitter:title" content="<?php echo $page_title ?? 'VoteHubGH - Online Awards Voting Platform'; ?>">
-    <meta property="twitter:description" content="<?php echo $page_description ?? 'Your trusted online awards voting platform.'; ?>">
+    <meta property="twitter:title" content="<?php echo e($page_title ?? 'VoteHubGH - Online Awards Voting Platform'); ?>">
+    <meta property="twitter:description" content="<?php echo e($page_description ?? 'Your trusted online awards voting platform.'); ?>">
     <meta property="twitter:image" content="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
 
     <!-- Schema.org for Google -->
@@ -44,7 +44,7 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
     }
     </script>
     
-    <title><?php echo isset($page_title) ? $page_title . ' - ' . SITE_NAME : SITE_NAME . ' - Online Awards Voting Platform'; ?></title>
+    <title><?php echo e(isset($page_title) ? $page_title . ' - ' . SITE_NAME : SITE_NAME . ' - Online Awards Voting Platform'); ?></title>
     
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
@@ -138,15 +138,15 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
                                 <div class="user-avatar-sm">
                                     <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['user_name'] ?? 'User'); ?>&background=0F2C7A&color=fff" alt="Avatar" class="rounded-circle" style="width: 32px; height: 32px;">
                                 </div>
-                                <span class="d-none d-sm-inline"><?php echo htmlspecialchars($_SESSION['user_name'] ?? 'My Account'); ?></span>
+                                <span class="d-none d-sm-inline"><?php echo e($_SESSION['user_name'] ?? 'My Account'); ?></span>
                             </a>
                             <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu border-0 shadow-lg p-0" aria-labelledby="userDropdown">
                                 <div class="user-dropdown-header p-3 mb-2" style="background: var(--gradient-primary); border-radius: 0.5rem 0.5rem 0 0;">
                                     <div class="d-flex align-items-center gap-3">
                                         <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($_SESSION['user_name'] ?? 'User'); ?>&background=fff&color=6366f1" alt="Avatar" class="rounded-circle border border-2 border-white-50" style="width: 40px; height: 40px;">
                                         <div class="overflow-hidden">
-                                            <h6 class="user-name mb-0 text-white text-truncate" style="font-weight: 600;"><?php echo htmlspecialchars($_SESSION['user_name']); ?></h6>
-                                            <small class="user-email text-white-50 text-truncate d-block"><?php echo htmlspecialchars($_SESSION['user_email'] ?? ''); ?></small>
+                                            <h6 class="user-name mb-0 text-white text-truncate" style="font-weight: 600;"><?php echo e($_SESSION['user_name']); ?></h6>
+                                            <small class="user-email text-white-50 text-truncate d-block"><?php echo e($_SESSION['user_email'] ?? ''); ?></small>
                                         </div>
                                     </div>
                                 </div>

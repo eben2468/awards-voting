@@ -75,7 +75,7 @@ include 'includes/header.php';
                         <ol class="breadcrumb mb-4">
                             <li class="breadcrumb-item"><a href="<?php echo SITE_URL; ?>" class="text-white-50">Home</a></li>
                             <li class="breadcrumb-item"><a href="events.php" class="text-white-50">Events</a></li>
-                            <li class="breadcrumb-item active text-white" aria-current="page"><?php echo htmlspecialchars($event['title']); ?></li>
+                            <li class="breadcrumb-item active text-white" aria-current="page"><?php echo e($event['title']); ?></li>
                         </ol>
                     </nav>
                     
@@ -100,7 +100,7 @@ include 'includes/header.php';
                         <?php endif; ?>
                     </div>
                     
-                    <h1 class="text-white display-3 fw-bold mb-2"><?php echo htmlspecialchars($event['title']); ?></h1>
+                    <h1 class="text-white display-3 fw-bold mb-2"><?php echo e($event['title']); ?></h1>
                     <div class="d-flex align-items-center gap-2 mb-4">
                         <span class="badge bg-primary px-3 py-2 rounded-pill fs-6">
                             <i class="bi bi-phone me-1"></i> Dial *920*137# to Vote
@@ -111,7 +111,7 @@ include 'includes/header.php';
                             </a>
                         <?php endif; ?>
                     </div>
-                    <p class="text-white-75 lead mb-5 fs-4"><?php echo htmlspecialchars($event['description'], ENT_QUOTES, 'UTF-8', false); ?></p>
+                    <p class="text-white-75 lead mb-5 fs-4"><?php echo e($event['description']); ?></p>
                     
                     <div class="d-flex flex-wrap gap-5 text-white fs-5">
                         <div class="d-flex align-items-center">
@@ -210,7 +210,7 @@ include 'includes/header.php';
                                         <i class="bi bi-trophy fs-4"></i>
                                     </div>
                                     <div class="flex-grow-1">
-                                        <h5 class="fw-bold mb-1"><?php echo htmlspecialchars($category['name']); ?></h5>
+                                        <h5 class="fw-bold mb-1"><?php echo e($category['name']); ?></h5>
                                         <div class="d-flex gap-3 small text-muted">
                                             <span><i class="bi bi-people me-1"></i><?php echo $category['nominee_count']; ?> Nominees</span>
                                             <?php if ($show_vote_counts): ?>
@@ -232,7 +232,7 @@ include 'includes/header.php';
                              data-bs-parent="#eventCategories">
                             <div class="accordion-body bg-light p-4">
                                 <?php if ($category['description']): ?>
-                                    <p class="text-muted mb-4"><?php echo htmlspecialchars($category['description']); ?></p>
+                                    <p class="text-muted mb-4"><?php echo e($category['description']); ?></p>
                                 <?php endif; ?>
 
                                 <?php
@@ -265,19 +265,19 @@ include 'includes/header.php';
                                                 
                                                 <div class="nominee-photo-wrapper text-center pt-4">
                                                     <div class="position-relative d-inline-block">
-                                                        <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=150'; ?>" 
-                                                             alt="<?php echo htmlspecialchars($nominee['name']); ?>"
+                                                        <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])) . '&background=0F2C7A&color=fff&size=150'; ?>" 
+                                                             alt="<?php echo e($nominee['name']); ?>"
                                                              class="nominee-photo rounded-circle shadow-sm"
                                                              style="object-fit: cover;">
                                                     </div>
                                                 </div>
                                                 
                                                 <div class="card-body text-center">
-                                                    <h6 class="fw-bold mb-1"><?php echo htmlspecialchars($nominee['name']); ?></h6>
+                                                    <h6 class="fw-bold mb-1"><?php echo e($nominee['name']); ?></h6>
                                                     <span class="shortcode badge bg-primary bg-opacity-10 text-primary mb-3"><?php echo $nominee['shortcode']; ?></span>
                                                     
                                                     <?php if ($nominee['description']): ?>
-                                                        <p class="nominee-desc text-muted small mb-3" title="<?php echo htmlspecialchars($nominee['description']); ?>"><?php echo htmlspecialchars($nominee['description']); ?></p>
+                                                        <p class="nominee-desc text-muted small mb-3" title="<?php echo e($nominee['description']); ?>"><?php echo e($nominee['description']); ?></p>
                                                     <?php endif; ?>
                                                     
                                                     <div class="vote-progress mb-3 <?php echo $show_vote_counts ? '' : 'is-quiet'; ?>">
@@ -301,12 +301,12 @@ include 'includes/header.php';
                                                             <input type="hidden" name="category_id" value="<?php echo $category['id']; ?>">
                                                             <input type="hidden" name="event_id" value="<?php echo $event['id']; ?>">
                                                             <input type="hidden" name="vote_price" value="<?php echo $event['vote_price']; ?>">
-                                                            <input type="hidden" name="nominee_name" value="<?php echo htmlspecialchars($nominee['name']); ?>">
+                                                            <input type="hidden" name="nominee_name" value="<?php echo e($nominee['name']); ?>">
                                                             
                                                             <?php if ($event['voting_type'] === 'paid'): ?>
                                                                 <button type="button" class="btn btn-outline-primary btn-sm w-100 rounded-pill btn-buy-votes" 
                                                                         data-nominee-id="<?php echo $nominee['id']; ?>"
-                                                                        data-nominee-name="<?php echo htmlspecialchars($nominee['name']); ?>"
+                                                                        data-nominee-name="<?php echo e($nominee['name']); ?>"
                                                                         data-price="<?php echo $event['vote_price']; ?>">
                                                                     <i class="bi bi-credit-card me-1"></i> Vote (GHS <?php echo number_format($event['vote_price'], 2); ?>)
                                                                 </button>

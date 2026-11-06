@@ -111,7 +111,7 @@ $votes = $stmt->fetchAll();
                                 <option value="">All My Events</option>
                                 <?php foreach ($events as $event): ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $eventId == $event['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($event['title']); ?>
+                                        <?php echo e($event['title']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -150,18 +150,18 @@ $votes = $stmt->fetchAll();
                                             <td>#<?php echo $vote['id']; ?></td>
                                             <td>
                                                 <?php if ($vote['user_name']): ?>
-                                                    <strong><?php echo htmlspecialchars($vote['user_name']); ?></strong>
+                                                    <strong><?php echo e($vote['user_name']); ?></strong>
                                                     <br><small class="text-muted"><?php echo $vote['user_email']; ?></small>
                                                 <?php else: ?>
                                                     <span class="text-muted">Guest User</span>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <?php echo htmlspecialchars($vote['nominee_name']); ?>
+                                                <?php echo e($vote['nominee_name']); ?>
                                                 <br><code class="small"><?php echo $vote['shortcode']; ?></code>
                                             </td>
-                                            <td><?php echo htmlspecialchars($vote['category_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($vote['event_title']); ?></td>
+                                            <td><?php echo e($vote['category_name']); ?></td>
+                                            <td><?php echo e($vote['event_title']); ?></td>
                                             <td><span class="badge bg-info"><?php echo number_format($vote['vote_count']); ?></span></td>
                                             <td><small class="text-muted"><?php echo $vote['ip_address']; ?></small></td>
                                             <td>

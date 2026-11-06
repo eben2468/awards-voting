@@ -138,7 +138,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             redirect($destination);
                         }
 
-                        $errors[] = 'We could not send your verification code. ' . htmlspecialchars($result['error']);
+                        $errors[] = 'We could not send your verification code. ' . e($result['error']);
                     }
                 }
             } catch (PDOException $e) {
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
 
                 <?php $flash = getFlash(); if ($flash): ?>
-                    <div class="alert alert-<?php echo htmlspecialchars($flash['type']); ?>">
+                    <div class="alert alert-<?php echo e($flash['type']); ?>">
                         <?php echo $flash['message']; ?>
                     </div>
                 <?php endif; ?>
@@ -218,7 +218,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="auth-field">
                         <label for="email" class="visually-hidden">Email address</label>
                         <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
-                               value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
+                               value="<?php echo isset($_POST['email']) ? e($_POST['email']) : ''; ?>" required>
                     </div>
 
                     <div class="auth-field auth-password">

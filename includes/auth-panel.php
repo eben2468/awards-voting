@@ -9,5 +9,5 @@
         <h2><?php echo $authHeadline; ?></h2>
         <p><?php echo $authIntro; ?></p>
     </div>
-    <img src="<?php echo htmlspecialchars($authImage); ?>" alt="" class="auth-panel-image">
+    <img src="<?php echo e($authImage); ?>" alt="" class="auth-panel-image">
 </aside>

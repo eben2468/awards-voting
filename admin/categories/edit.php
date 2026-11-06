@@ -120,18 +120,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="">Select Event</option>
                                     <?php foreach ($events as $event): ?>
                                         <option value="<?php echo $event['id']; ?>" <?php echo $category['event_id'] == $event['id'] ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($event['title']); ?>
+                                            <?php echo e($event['title']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Category Name *</label>
-                                <input type="text" name="name" class="form-control" value="<?php echo htmlspecialchars($category['name']); ?>" required>
+                                <input type="text" name="name" class="form-control" value="<?php echo e($category['name']); ?>" required>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Description</label>
-                                <textarea name="description" class="form-control" rows="3"><?php echo htmlspecialchars($category['description']); ?></textarea>
+                                <textarea name="description" class="form-control" rows="3"><?php echo e($category['description']); ?></textarea>
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Display Order</label>
@@ -148,7 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">Access Code * <small class="text-muted">(Shared code for nominees in this category)</small></label>
                                 <div class="input-group">
                                     <input type="text" name="access_code" id="access_code" class="form-control" maxlength="20" required 
-                                           value="<?php echo htmlspecialchars($category['access_code']); ?>">
+                                           value="<?php echo e($category['access_code']); ?>">
                                     <button class="btn btn-outline-secondary" type="button" onclick="generateCode()">
                                         <i class="bi bi-arrow-clockwise"></i>
                                     </button>

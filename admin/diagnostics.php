@@ -148,8 +148,8 @@ addCheck($checks, 'Settings', 'Write a setting and read it back',
     ($writeOk && $readBack === $probeValue) ? 'ok' : 'fail',
     ($writeOk && $readBack === $probeValue)
         ? 'Settings save correctly on this server.'
-        : 'Write failed. Wrote "' . htmlspecialchars($probeValue) . '", read back "' . htmlspecialchars((string) $readBack) . '". '
-            . 'Database reply: ' . htmlspecialchars(lastSettingError() ?: 'none'),
+        : 'Write failed. Wrote "' . e($probeValue) . '", read back "' . e((string) $readBack) . '". '
+            . 'Database reply: ' . e(lastSettingError() ?: 'none'),
     ($writeOk && $readBack === $probeValue) ? ''
         : 'The database user may lack UPDATE/INSERT rights on the settings table.');
 
@@ -247,10 +247,10 @@ if ($cfg['host'] !== '') {
         $greeting = trim((string) @fgets($sock, 512));
         @fclose($sock);
         addCheck($checks, 'Email', 'Connect to ' . $target, 'ok',
-            'Connected in ' . $ms . 'ms. Server said: ' . htmlspecialchars(substr($greeting, 0, 90)));
+            'Connected in ' . $ms . 'ms. Server said: ' . e(substr($greeting, 0, 90)));
     } else {
         addCheck($checks, 'Email', 'Connect to ' . $target, 'fail',
-            'Failed after ' . $ms . 'ms (' . $errno . ': ' . htmlspecialchars($errstr) . ')',
+            'Failed after ' . $ms . 'ms (' . $errno . ': ' . e($errstr) . ')',
             'Your host is probably blocking outgoing SMTP. Try port 465 with SSL encryption instead of 587/STARTTLS, '
             . 'or ask your host to open outbound SMTP.');
     }
@@ -419,14 +419,14 @@ foreach ($checks as $c) {
             <?php foreach ($groups as $groupName => $groupChecks): ?>
                 <div class="card border-0 shadow-sm mb-4">
                     <div class="card-header bg-white py-3">
-                        <h5 class="mb-0"><?php echo htmlspecialchars($groupName); ?></h5>
+                        <h5 class="mb-0"><?php echo e($groupName); ?></h5>
                     </div>
                     <div class="list-group list-group-flush">
                         <?php foreach ($groupChecks as $c): ?>
                             <div class="list-group-item diag-row <?php echo $c['state']; ?>">
                                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
                                     <div class="flex-grow-1" style="min-width:240px;">
-                                        <div class="fw-semibold"><?php echo htmlspecialchars($c['label']); ?></div>
+                                        <div class="fw-semibold"><?php echo e($c['label']); ?></div>
                                         <div class="small text-muted"><?php echo $c['detail']; ?></div>
                                         <?php if ($c['fix']): ?>
                                             <div class="diag-fix mt-2 p-2 bg-light rounded border">
@@ -461,9 +461,9 @@ foreach ($checks as $c) {
                         <tbody>
                         <?php foreach ($storedMail as $k => $v): ?>
                             <tr>
-                                <td><code><?php echo htmlspecialchars($k); ?></code></td>
+                                <td><code><?php echo e($k); ?></code></td>
                                 <td class="<?php echo ($v === '(empty)' || $v === '(row missing)') ? 'text-danger' : ''; ?>">
-                                    <?php echo htmlspecialchars($v); ?>
+                                    <?php echo e($v); ?>
                                 </td>
                             </tr>
                         <?php endforeach; ?>

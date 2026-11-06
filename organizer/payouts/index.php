@@ -280,9 +280,9 @@ $availableBalance = $totalRevenues - $totalProcessedWithdrawn;
                                         <div class="list-group-item p-3">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h6 class="mb-1"><?php echo htmlspecialchars($m['method_name']); ?></h6>
-                                                    <p class="small text-muted mb-1"><?php echo htmlspecialchars($m['account_name']); ?></p>
-                                                    <code class="small"><?php echo htmlspecialchars($m['account_number']); ?></code>
+                                                    <h6 class="mb-1"><?php echo e($m['method_name']); ?></h6>
+                                                    <p class="small text-muted mb-1"><?php echo e($m['account_name']); ?></p>
+                                                    <code class="small"><?php echo e($m['account_number']); ?></code>
                                                 </div>
                                                 <span class="badge bg-<?php echo $m['method_type'] === 'bank' ? 'info' : 'warning'; ?> text-dark">
                                                     <?php echo strtoupper($m['method_type']); ?>
@@ -323,7 +323,7 @@ $availableBalance = $totalRevenues - $totalProcessedWithdrawn;
                                         <?php foreach ($history as $h): ?>
                                             <tr>
                                                 <td><?php echo date('M d, Y', strtotime($h['requested_at'])); ?></td>
-                                                <td><?php echo htmlspecialchars($h['event_title']); ?></td>
+                                                <td><?php echo e($h['event_title']); ?></td>
                                                 <td><strong>GHS <?php echo number_format($h['amount'], 2); ?></strong></td>
                                                 <td><span class="text-uppercase small"><?php echo $h['payment_method']; ?></span></td>
                                                 <td>
@@ -433,7 +433,7 @@ $availableBalance = $totalRevenues - $totalProcessedWithdrawn;
                                         if ($avail > 0):
                                     ?>
                                         <option value="<?php echo $e['id']; ?>" data-available="<?php echo $avail; ?>">
-                                            <?php echo htmlspecialchars($e['title']); ?> (Votes: GHS <?php echo number_format($votingEarned, 2); ?>, Tickets: GHS <?php echo number_format($ticketingEarned, 2); ?>, Bal: GHS <?php echo number_format($avail, 2); ?>)
+                                            <?php echo e($e['title']); ?> (Votes: GHS <?php echo number_format($votingEarned, 2); ?>, Tickets: GHS <?php echo number_format($ticketingEarned, 2); ?>, Bal: GHS <?php echo number_format($avail, 2); ?>)
                                         </option>
                                     <?php endif; endforeach; ?>
                                 </select>
@@ -443,7 +443,7 @@ $availableBalance = $totalRevenues - $totalProcessedWithdrawn;
                                 <select name="method_id" class="form-select" required>
                                     <?php foreach ($methods as $m): ?>
                                         <option value="<?php echo $m['id']; ?>">
-                                            <?php echo htmlspecialchars($m['method_name'] . ' - ' . $m['account_number']); ?>
+                                            <?php echo e($m['method_name'] . ' - ' . $m['account_number']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>

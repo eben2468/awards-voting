@@ -159,14 +159,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <p class="auth-note">
                         <i class="bi bi-shield-lock"></i> When you log in we'll email a 6-digit code to
-                        <strong><?php echo htmlspecialchars(maskEmail($email)); ?></strong> to confirm it's you.
+                        <strong><?php echo e(maskEmail($email)); ?></strong> to confirm it's you.
                     </p>
 
                 <?php else: ?>
                     <h1><?php echo $verified ? 'Choose a new password' : 'Reset your password'; ?></h1>
                     <p class="auth-sub">
                         <?php if ($verified): ?>
-                            Pick a strong password for <strong><?php echo htmlspecialchars($email); ?></strong>.
+                            Pick a strong password for <strong><?php echo e($email); ?></strong>.
                         <?php else: ?>
                             Enter the 6-digit code we emailed you, or click the reset link in that email.
                         <?php endif; ?>
@@ -176,7 +176,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="alert alert-danger">
                             <ul class="mb-0">
                                 <?php foreach ($errors as $error): ?>
-                                    <li><?php echo htmlspecialchars($error); ?></li>
+                                    <li><?php echo e($error); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -187,9 +187,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <form method="POST" action="" id="passwordForm">
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="action" value="set_password">
-                            <input type="hidden" name="email" value="<?php echo htmlspecialchars($email); ?>">
-                            <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
-                            <input type="hidden" name="code" value="<?php echo htmlspecialchars($code); ?>">
+                            <input type="hidden" name="email" value="<?php echo e($email); ?>">
+                            <input type="hidden" name="token" value="<?php echo e($token); ?>">
+                            <input type="hidden" name="code" value="<?php echo e($code); ?>">
 
                             <div class="auth-field auth-password">
                                 <label for="password" class="visually-hidden">New password</label>
@@ -219,7 +219,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="auth-field">
                                 <label for="email" class="visually-hidden">Email address</label>
                                 <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
-                                       value="<?php echo htmlspecialchars($email); ?>" required>
+                                       value="<?php echo e($email); ?>" required>
                             </div>
 
                             <div class="auth-field">

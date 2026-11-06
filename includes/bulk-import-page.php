@@ -111,7 +111,7 @@ $shownErrors = array_slice($errors, 0, BULK_MAX_REPORTED_ERRORS);
                     <strong>Nothing was added.</strong> Fix these and upload the file again:
                     <ul class="mb-0 mt-2">
                         <?php foreach ($shownErrors as $error): ?>
-                            <li><?php echo htmlspecialchars($error); ?></li>
+                            <li><?php echo e($error); ?></li>
                         <?php endforeach; ?>
                         <?php if ($hiddenErrors): ?>
                             <li>And <?php echo $hiddenErrors; ?> more.</li>
@@ -140,7 +140,7 @@ $shownErrors = array_slice($errors, 0, BULK_MAX_REPORTED_ERRORS);
                                             <option value="">Select Event</option>
                                             <?php foreach ($events as $id => $title): ?>
                                                 <option value="<?php echo (int) $id; ?>" <?php echo (int) $id === $selectedEvent ? 'selected' : ''; ?>>
-                                                    <?php echo htmlspecialchars($title); ?>
+                                                    <?php echo e($title); ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
@@ -178,7 +178,7 @@ $shownErrors = array_slice($errors, 0, BULK_MAX_REPORTED_ERRORS);
                                         <?php foreach ($columns as $name => $column): ?>
                                             <tr>
                                                 <td><code><?php echo $name; ?></code><?php echo $column['required'] ? ' *' : ''; ?></td>
-                                                <td><?php echo htmlspecialchars($column['help']); ?></td>
+                                                <td><?php echo e($column['help']); ?></td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>

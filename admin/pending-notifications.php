@@ -115,7 +115,7 @@ $messageConfig = [
                                     <select class="form-select" id="eventFilter">
                                         <option value="0">All events</option>
                                         <?php foreach ($events as $event): ?>
-                                            <option value="<?php echo (int) $event['id']; ?>"><?php echo htmlspecialchars($event['title']); ?></option>
+                                            <option value="<?php echo (int) $event['id']; ?>"><?php echo e($event['title']); ?></option>
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
@@ -214,7 +214,7 @@ $messageConfig = [
                         <summary>Do not contact list (<span id="blockedCount"><?php echo count($blockedNumbers); ?></span>)</summary>
                         <p class="text-muted mt-2 mb-2">Numbers here never receive messages sent from this page. Add anyone who asks to stop hearing from you.</p>
                         <label class="form-label" for="blockedNumbers">Phone numbers</label>
-                        <textarea class="form-control" id="blockedNumbers" rows="3"><?php echo htmlspecialchars(implode("\n", $blockedNumbers)); ?></textarea>
+                        <textarea class="form-control" id="blockedNumbers" rows="3"><?php echo e(implode("\n", $blockedNumbers)); ?></textarea>
                         <div class="msg-inline mt-2">
                             <span class="form-text flex-grow-1 mt-0" id="blockedInfo"></span>
                             <button type="button" class="btn btn-outline-primary" id="saveBlocked">Save list</button>

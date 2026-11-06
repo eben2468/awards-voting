@@ -176,7 +176,7 @@ $users = $stmt->fetchAll();
                     <form method="GET" class="row g-3">
                         <div class="col-md-4">
                             <label class="form-label">Search</label>
-                            <input type="text" name="search" class="form-control" placeholder="Name, email or phone..." value="<?php echo htmlspecialchars($search); ?>">
+                            <input type="text" name="search" class="form-control" placeholder="Name, email or phone..." value="<?php echo e($search); ?>">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">Role</label>
@@ -235,23 +235,23 @@ $users = $stmt->fetchAll();
                                     <tr>
                                         <td>
                                             <div class="d-flex align-items-center">
-                                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']); ?>" 
+                                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($user['fullname'])); ?>" 
                                                      class="rounded-circle me-3" style="width: 40px; height: 40px; object-fit: cover;">
                                                 <div>
-                                                    <div class="fw-bold"><?php echo htmlspecialchars($user['fullname']); ?></div>
-                                                    <div class="small text-muted"><?php echo htmlspecialchars($user['email']); ?></div>
+                                                    <div class="fw-bold"><?php echo e($user['fullname']); ?></div>
+                                                    <div class="small text-muted"><?php echo e($user['email']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <?php if (!empty($user['phone'])): ?>
                                                 <?php $digits = preg_replace('/\D/', '', $user['phone']); ?>
-                                                <a href="tel:<?php echo htmlspecialchars($user['phone']); ?>"
+                                                <a href="tel:<?php echo e($user['phone']); ?>"
                                                    class="text-decoration-none d-inline-block">
-                                                    <?php echo htmlspecialchars($user['phone']); ?>
+                                                    <?php echo e($user['phone']); ?>
                                                 </a>
                                                 <?php if (strlen($digits) >= 9): ?>
-                                                    <a href="https://wa.me/<?php echo htmlspecialchars($digits); ?>"
+                                                    <a href="https://wa.me/<?php echo e($digits); ?>"
                                                        target="_blank" rel="noopener"
                                                        class="text-success ms-2 text-decoration-none"
                                                        title="Message on WhatsApp">
@@ -291,7 +291,7 @@ $users = $stmt->fetchAll();
                                         <td>
                                             <div class="btn-group btn-group-sm">
                                                 <?php if ($user['role'] === 'organizer' && ($user['approval_status'] ?? 'approved') !== 'approved'): ?>
-                                                    <a href="<?php echo SITE_URL; ?>/admin/organizer-approvals.php?filter=<?php echo htmlspecialchars($user['approval_status']); ?>"
+                                                    <a href="<?php echo SITE_URL; ?>/admin/organizer-approvals.php?filter=<?php echo e($user['approval_status']); ?>"
                                                        class="btn btn-outline-success" title="Review approval">
                                                         <i class="bi bi-person-check"></i>
                                                     </a>

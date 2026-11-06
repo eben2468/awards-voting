@@ -121,15 +121,15 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         $when = date('F j, Y \a\t g:i A');
         $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>Use the verification code below to finish signing in to your ' . htmlspecialchars(SITE_NAME) . ' account.</p>'
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>Use the verification code below to finish signing in to your ' . e(SITE_NAME) . ' account.</p>'
             . buildCodeBlock($code) .
             '<p style="text-align:center; color:#777; font-size:13px;">This code expires in '
             . LOGIN_CODE_TTL_MINUTES . ' minutes and can only be used once.</p>
             <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
             <p style="font-size:13px; color:#777; margin:0;"><strong>Sign-in attempt details</strong><br>
-            Time: ' . htmlspecialchars($when) . '<br>
-            IP address: ' . htmlspecialchars($ip) . '</p>
+            Time: ' . e($when) . '<br>
+            IP address: ' . e($ip) . '</p>
             <p style="font-size:13px; color:#c0392b; margin-top:16px;">
             If you did not try to sign in, do not share this code with anyone and change your password immediately.</p>';
 
@@ -374,27 +374,27 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
                    style="border-collapse:collapse; margin:20px 0; font-size:14px;">
                 <tr>
                     <td style="padding:10px 8px; color:#777; width:130px; border-bottom:1px solid #eee;"><strong>Name</strong></td>
-                    <td style="padding:10px 8px; color:#333; border-bottom:1px solid #eee;">' . htmlspecialchars($user['fullname']) . '</td>
+                    <td style="padding:10px 8px; color:#333; border-bottom:1px solid #eee;">' . e($user['fullname']) . '</td>
                 </tr>
                 <tr>
                     <td style="padding:10px 8px; color:#777; border-bottom:1px solid #eee;"><strong>Email</strong></td>
                     <td style="padding:10px 8px; color:#333; border-bottom:1px solid #eee;">
-                        <a href="mailto:' . htmlspecialchars($user['email']) . '" style="color:#2a5298; text-decoration:none;">'
-                        . htmlspecialchars($user['email']) . '</a></td>
+                        <a href="mailto:' . e($user['email']) . '" style="color:#2a5298; text-decoration:none;">'
+                        . e($user['email']) . '</a></td>
                 </tr>
                 <tr>
                     <td style="padding:10px 8px; color:#777; border-bottom:1px solid #eee;"><strong>Phone</strong></td>
                     <td style="padding:10px 8px; color:#333; border-bottom:1px solid #eee;">'
-                        . htmlspecialchars($user['phone'] ?: 'Not provided') . '</td>
+                        . e($user['phone'] ?: 'Not provided') . '</td>
                 </tr>
                 <tr>
                     <td style="padding:10px 8px; color:#777;"><strong>Registered</strong></td>
-                    <td style="padding:10px 8px; color:#333;">' . htmlspecialchars($registered) . '</td>
+                    <td style="padding:10px 8px; color:#333;">' . e($registered) . '</td>
                 </tr>
             </table>'
             . buildEmailButton($approvalUrl, 'Review & Approve') .
-            '<p style="font-size:13px; color:#777;">Or open: <a href="' . htmlspecialchars($approvalUrl)
-            . '" style="color:#2a5298;">' . htmlspecialchars($approvalUrl) . '</a></p>';
+            '<p style="font-size:13px; color:#777;">Or open: <a href="' . e($approvalUrl)
+            . '" style="color:#2a5298;">' . e($approvalUrl) . '</a></p>';
 
         $html = buildEmailTemplate(
             'Organizer Approval Needed',
@@ -423,14 +423,14 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         $firstName = explode(' ', trim($user['fullname']))[0];
         $loginUrl = SITE_URL . '/login.php';
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>Good news - your organizer account on ' . htmlspecialchars(SITE_NAME)
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>Good news - your organizer account on ' . e(SITE_NAME)
             . ' has been <strong style="color:#198754;">approved</strong>. You can now sign in and start
             creating events, categories and nominees.</p>
             <p>For your security, each time you sign in we will email you a 6-digit verification code.</p>'
             . buildEmailButton($loginUrl, 'Sign In Now') .
             '<p style="font-size:13px; color:#777;">Need a hand getting started? Reply to this email or reach us on WhatsApp at '
-            . htmlspecialchars(WHATSAPP_NUMBER) . '.</p>';
+            . e(WHATSAPP_NUMBER) . '.</p>';
 
         return sendMailMessage(
             $user['email'],
@@ -447,20 +447,20 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
 
         $reasonBlock = trim($reason) !== ''
             ? '<div style="background-color:#fff4f4; border-left:4px solid #dc3545; padding:14px 18px; margin:18px 0; color:#444;">'
-                . nl2br(htmlspecialchars($reason)) . '</div>'
+                . nl2br(e($reason)) . '</div>'
             : '';
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>Thank you for your interest in organising events on ' . htmlspecialchars(SITE_NAME)
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>Thank you for your interest in organising events on ' . e(SITE_NAME)
             . '. After review, we are unable to approve your organizer account at this time.</p>'
             . $reasonBlock .
             '<p>If you believe this was a mistake, or you would like to provide more information,
             please get in touch with our team:</p>
             <p style="font-size:14px;">
-                WhatsApp / Call: <strong>' . htmlspecialchars(WHATSAPP_NUMBER) . '</strong><br>
-                Alternate line: <strong>' . htmlspecialchars(SUPPORT_PHONE_ALT) . '</strong><br>
-                Email: <a href="mailto:' . htmlspecialchars(ADMIN_EMAIL) . '" style="color:#2a5298;">'
-                . htmlspecialchars(ADMIN_EMAIL) . '</a>
+                WhatsApp / Call: <strong>' . e(WHATSAPP_NUMBER) . '</strong><br>
+                Alternate line: <strong>' . e(SUPPORT_PHONE_ALT) . '</strong><br>
+                Email: <a href="mailto:' . e(ADMIN_EMAIL) . '" style="color:#2a5298;">'
+                . e(ADMIN_EMAIL) . '</a>
             </p>';
 
         return sendMailMessage(
@@ -476,8 +476,8 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
     function sendOrganizerPendingEmail(array $user) {
         $firstName = explode(' ', trim($user['fullname']))[0];
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>Thanks for registering as an organizer on ' . htmlspecialchars(SITE_NAME) . '.</p>
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>Thanks for registering as an organizer on ' . e(SITE_NAME) . '.</p>
             <p>Your account is now <strong style="color:#fd7e14;">awaiting administrator approval</strong>.
             We review new organizer accounts manually to keep the platform safe for voters.
             You will receive another email as soon as your account is approved - this is usually
@@ -485,13 +485,13 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
             <div style="background-color:#f1f5ff; border-radius:8px; padding:18px; margin:20px 0;">
                 <p style="margin:0 0 10px; font-weight:bold; color:#1e3c72;">Need it approved faster?</p>
                 <p style="margin:0; font-size:14px;">
-                    WhatsApp or call <strong>' . htmlspecialchars(WHATSAPP_NUMBER) . '</strong><br>
-                    Alternate line: <strong>' . htmlspecialchars(SUPPORT_PHONE_ALT) . '</strong><br>
-                    Email: <a href="mailto:' . htmlspecialchars(ADMIN_EMAIL) . '" style="color:#2a5298;">'
-                    . htmlspecialchars(ADMIN_EMAIL) . '</a>
+                    WhatsApp or call <strong>' . e(WHATSAPP_NUMBER) . '</strong><br>
+                    Alternate line: <strong>' . e(SUPPORT_PHONE_ALT) . '</strong><br>
+                    Email: <a href="mailto:' . e(ADMIN_EMAIL) . '" style="color:#2a5298;">'
+                    . e(ADMIN_EMAIL) . '</a>
                 </p>
             </div>
-            <p style="font-size:13px; color:#777;">Registered email: ' . htmlspecialchars($user['email']) . '</p>';
+            <p style="font-size:13px; color:#777;">Registered email: ' . e($user['email']) . '</p>';
 
         return sendMailMessage(
             $user['email'],
@@ -537,15 +537,15 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
 
         $firstName = explode(' ', trim($user['fullname']))[0];
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>You asked to change the email address on your ' . htmlspecialchars(SITE_NAME)
-            . ' account to <strong>' . htmlspecialchars($newEmail) . '</strong>.</p>
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>You asked to change the email address on your ' . e(SITE_NAME)
+            . ' account to <strong>' . e($newEmail) . '</strong>.</p>
             <p>Enter this confirmation code on your profile page to complete the change:</p>'
             . buildCodeBlock($code) .
             '<p style="text-align:center; color:#777; font-size:13px;">This code expires in '
             . EMAIL_CHANGE_TTL_MINUTES . ' minutes.</p>
             <p style="font-size:13px; color:#c0392b;">If you did not request this change, you can ignore this
-            email - your address will stay as ' . htmlspecialchars($user['email']) . '.</p>';
+            email - your address will stay as ' . e($user['email']) . '.</p>';
 
         $sent = sendMailMessage(
             $newEmail,
@@ -558,13 +558,13 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         }
 
         // Courtesy heads-up to the old address
-        $alertBody = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>A request was made to change the email address on your ' . htmlspecialchars(SITE_NAME)
-            . ' account from <strong>' . htmlspecialchars($user['email']) . '</strong> to <strong>'
-            . htmlspecialchars(maskEmail($newEmail)) . '</strong>.</p>
+        $alertBody = '<p>Hi ' . e($firstName) . ',</p>
+            <p>A request was made to change the email address on your ' . e(SITE_NAME)
+            . ' account from <strong>' . e($user['email']) . '</strong> to <strong>'
+            . e(maskEmail($newEmail)) . '</strong>.</p>
             <p>If this was you, no action is needed - just confirm the code we sent to the new address.</p>
             <p style="color:#c0392b;"><strong>If this was not you</strong>, change your password immediately
-            and contact us on ' . htmlspecialchars(WHATSAPP_NUMBER) . '.</p>';
+            and contact us on ' . e(WHATSAPP_NUMBER) . '.</p>';
 
         sendMailMessage(
             $user['email'],
@@ -684,13 +684,13 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         $firstName = explode(' ', trim($user['fullname']))[0];
         $resetUrl = SITE_URL . '/reset-password.php?token=' . $token . '&email=' . rawurlencode($user['email']);
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>We received a request to reset the password for your ' . htmlspecialchars(SITE_NAME)
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>We received a request to reset the password for your ' . e(SITE_NAME)
             . ' account. Click the button below to choose a new password.</p>'
             . buildEmailButton($resetUrl, 'Reset My Password') .
             '<p style="font-size:13px; color:#777;">Button not working? Copy and paste this link into your browser:<br>
-            <a href="' . htmlspecialchars($resetUrl) . '" style="color:#2a5298; word-break:break-all;">'
-            . htmlspecialchars($resetUrl) . '</a></p>
+            <a href="' . e($resetUrl) . '" style="color:#2a5298; word-break:break-all;">'
+            . e($resetUrl) . '</a></p>
             <hr style="border:none; border-top:1px solid #eee; margin:24px 0;">
             <p style="margin:0 0 6px;">Prefer a code? Enter this on the reset page:</p>'
             . buildCodeBlock($code) .
@@ -756,12 +756,12 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
     function sendPasswordChangedEmail(array $user) {
         $firstName = explode(' ', trim($user['fullname']))[0];
 
-        $body = '<p>Hi ' . htmlspecialchars($firstName) . ',</p>
-            <p>Your ' . htmlspecialchars(SITE_NAME) . ' password was changed on <strong>'
+        $body = '<p>Hi ' . e($firstName) . ',</p>
+            <p>Your ' . e(SITE_NAME) . ' password was changed on <strong>'
             . date('F j, Y \a\t g:i A') . '</strong>.</p>
             <p>If this was you, no further action is needed.</p>
             <p style="color:#c0392b;"><strong>If this was not you</strong>, contact us immediately on '
-            . htmlspecialchars(WHATSAPP_NUMBER) . ' or ' . htmlspecialchars(ADMIN_EMAIL) . '.</p>';
+            . e(WHATSAPP_NUMBER) . ' or ' . e(ADMIN_EMAIL) . '.</p>';
 
         return sendMailMessage(
             $user['email'],
@@ -785,14 +785,14 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         ?>
         <div class="auth-contacts">
             <strong>Need it approved faster?</strong>
-            <a href="<?php echo htmlspecialchars($waLink); ?>" target="_blank" rel="noopener" class="auth-contact-whatsapp">
+            <a href="<?php echo e($waLink); ?>" target="_blank" rel="noopener" class="auth-contact-whatsapp">
                 <i class="bi bi-whatsapp"></i> Chat on WhatsApp
             </a>
             <div class="auth-contact-row">
-                <a href="tel:<?php echo htmlspecialchars($tel); ?>"><i class="bi bi-telephone"></i> <?php echo htmlspecialchars(SUPPORT_PHONE); ?></a>
-                <a href="tel:<?php echo htmlspecialchars($telAlt); ?>"><i class="bi bi-telephone"></i> <?php echo htmlspecialchars(SUPPORT_PHONE_ALT); ?></a>
+                <a href="tel:<?php echo e($tel); ?>"><i class="bi bi-telephone"></i> <?php echo e(SUPPORT_PHONE); ?></a>
+                <a href="tel:<?php echo e($telAlt); ?>"><i class="bi bi-telephone"></i> <?php echo e(SUPPORT_PHONE_ALT); ?></a>
             </div>
-            <a href="mailto:<?php echo htmlspecialchars(ADMIN_EMAIL); ?>"><i class="bi bi-envelope"></i> <?php echo htmlspecialchars(ADMIN_EMAIL); ?></a>
+            <a href="mailto:<?php echo e(ADMIN_EMAIL); ?>"><i class="bi bi-envelope"></i> <?php echo e(ADMIN_EMAIL); ?></a>
             <p>Support hours: Monday to Saturday, 8:00 AM to 8:00 PM (GMT)</p>
         </div>
         <?php

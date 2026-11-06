@@ -378,6 +378,7 @@ if (!defined('MAILER_LOADED')) {
     {
         $config = getMailConfig(!empty($options['freshConfig']));
         $GLOBALS['__last_mail_error'] = '';
+        $subject = plainText($subject);
 
         if (!filter_var($to, FILTER_VALIDATE_EMAIL)) {
             $GLOBALS['__last_mail_error'] = 'Invalid recipient address: ' . $to;
@@ -462,17 +463,17 @@ if (!defined('MAILER_LOADED')) {
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>' . htmlspecialchars($heading) . '</title>
+<title>' . e($heading) . '</title>
 </head>
 <body style="margin:0; padding:0; background-color:#f4f7f6; font-family:Arial, Helvetica, sans-serif; color:#333333;">
-<div style="display:none; max-height:0; overflow:hidden; opacity:0;">' . htmlspecialchars($preheader) . '</div>
+<div style="display:none; max-height:0; overflow:hidden; opacity:0;">' . e($preheader) . '</div>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f7f6; padding:24px 12px;">
 <tr><td align="center">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background-color:#ffffff; border-radius:10px; overflow:hidden; box-shadow:0 4px 14px rgba(0,0,0,0.08);">
     <tr>
         <td style="background:linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); background-color:#1e3c72; padding:28px 24px; text-align:center;">
-            <h1 style="color:#ffffff; margin:0; font-size:22px; font-weight:bold;">' . htmlspecialchars($heading) . '</h1>
-            <p style="color:rgba(255,255,255,0.85); margin:8px 0 0; font-size:13px;">' . htmlspecialchars($siteName) . '</p>
+            <h1 style="color:#ffffff; margin:0; font-size:22px; font-weight:bold;">' . e($heading) . '</h1>
+            <p style="color:rgba(255,255,255,0.85); margin:8px 0 0; font-size:13px;">' . e($siteName) . '</p>
         </td>
     </tr>
     <tr>
@@ -482,8 +483,8 @@ if (!defined('MAILER_LOADED')) {
     </tr>
     <tr>
         <td style="background-color:#f4f7f6; padding:18px 24px; text-align:center; color:#888888; font-size:12px;">
-            <p style="margin:0;">This is an automated message from <a href="' . htmlspecialchars($siteUrl) . '" style="color:#2a5298; text-decoration:none;">' . htmlspecialchars($siteName) . '</a>.</p>
-            <p style="margin:6px 0 0;">&copy; ' . $year . ' ' . htmlspecialchars($siteName) . '. All rights reserved.</p>
+            <p style="margin:0;">This is an automated message from <a href="' . e($siteUrl) . '" style="color:#2a5298; text-decoration:none;">' . e($siteName) . '</a>.</p>
+            <p style="margin:6px 0 0;">&copy; ' . $year . ' ' . e($siteName) . '. All rights reserved.</p>
         </td>
     </tr>
 </table>
@@ -500,7 +501,7 @@ if (!defined('MAILER_LOADED')) {
     {
         return '<div style="margin:24px 0; text-align:center;">
             <div style="display:inline-block; background-color:#f1f5ff; border:2px dashed #2a5298; border-radius:10px; padding:18px 34px;">
-                <span style="font-size:34px; letter-spacing:10px; font-weight:bold; color:#1e3c72; font-family:Courier New, monospace;">' . htmlspecialchars($code) . '</span>
+                <span style="font-size:34px; letter-spacing:10px; font-weight:bold; color:#1e3c72; font-family:Courier New, monospace;">' . e($code) . '</span>
             </div>
         </div>';
     }
@@ -511,7 +512,7 @@ if (!defined('MAILER_LOADED')) {
     function buildEmailButton($url, $label)
     {
         return '<div style="text-align:center; margin:26px 0;">
-            <a href="' . htmlspecialchars($url) . '" style="background-color:#2a5298; color:#ffffff; padding:14px 32px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block; font-size:15px;">' . htmlspecialchars($label) . '</a>
+            <a href="' . e($url) . '" style="background-color:#2a5298; color:#ffffff; padding:14px 32px; text-decoration:none; border-radius:6px; font-weight:bold; display:inline-block; font-size:15px;">' . e($label) . '</a>
         </div>';
     }
 }

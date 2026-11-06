@@ -297,7 +297,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                         <?php foreach ($steps as $i => $step): ?>
                             <tr>
                                 <td><?php echo $i + 1; ?></td>
-                                <td><code><?php echo htmlspecialchars($step['label']); ?></code></td>
+                                <td><code><?php echo e($step['label']); ?></code></td>
                                 <td>
                                     <?php if ($step['state'] === 'ok'): ?>
                                         <span class="badge bg-success">Applied</span>
@@ -307,7 +307,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'
                                         <span class="badge bg-danger">Failed</span>
                                     <?php endif; ?>
                                 </td>
-                                <td class="small text-muted"><?php echo htmlspecialchars($step['detail']); ?></td>
+                                <td class="small text-muted"><?php echo e($step['detail']); ?></td>
                             </tr>
                         <?php endforeach; ?>
                         </tbody>

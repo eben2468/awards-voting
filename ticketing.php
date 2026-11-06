@@ -73,7 +73,7 @@ include 'includes/header.php';
                                    name="search" 
                                    class="form-control" 
                                    placeholder="Search events or enter event code..." 
-                                   value="<?php echo htmlspecialchars($search); ?>"
+                                   value="<?php echo e($search); ?>"
                                    id="ticketingSearchInput">
                             <button class="btn btn-primary" type="submit">
                                 <i class="bi bi-search"></i>
@@ -93,7 +93,7 @@ include 'includes/header.php';
         <p class="text-muted mb-4">
             Showing <strong><?php echo count($events); ?></strong> ticketed event<?php echo count($events) !== 1 ? 's' : ''; ?>
             <?php if (!empty($search)): ?>
-                for "<strong><?php echo htmlspecialchars($search); ?></strong>"
+                for "<strong><?php echo e($search); ?></strong>"
             <?php endif; ?>
         </p>
 
@@ -133,25 +133,25 @@ include 'includes/header.php';
                     <div class="rv" style="--d:<?php echo ($ticketIndex++ % 4) * 70; ?>ms">
                         <article class="ev">
                             <span class="ev-img">
-                                <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" alt="<?php echo htmlspecialchars($event['title']); ?>" loading="lazy">
+                                <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" alt="<?php echo e($event['title']); ?>" loading="lazy">
                                 <?php if ($event['is_featured']): ?>
                                     <span class="ev-star" title="Featured"><i class="bi bi-star-fill" aria-hidden="true"></i><span class="visually-hidden">Featured</span></span>
                                 <?php endif; ?>
                             </span>
                             <span class="ev-body">
                                 <span class="ev-state is-open"><?php echo $daysLeft < 1 ? 'Last day' : number_format($daysLeft) . ($daysLeft == 1 ? ' day left' : ' days left'); ?></span>
-                                <span class="ev-title"><?php echo htmlspecialchars($event['title']); ?></span>
+                                <span class="ev-title"><?php echo e($event['title']); ?></span>
                                 <span class="ev-meta">
                                     <span><?php echo $event['category_count']; ?> tier<?php echo $event['category_count'] == 1 ? '' : 's'; ?></span>
                                     <span><?php echo number_format($event['tickets_sold']); ?> sold</span>
                                     <?php if ($event['event_code']): ?>
-                                        <span>Code <?php echo htmlspecialchars($event['event_code']); ?></span>
+                                        <span>Code <?php echo e($event['event_code']); ?></span>
                                     <?php endif; ?>
                                 </span>
                                 <span class="ev-price"><?php echo $priceRange; ?></span>
                                 <button type="button" class="btn btn-ticket-buy ev-buy"
                                         data-event-id="<?php echo $event['id']; ?>"
-                                        data-event-title="<?php echo htmlspecialchars($event['title']); ?>"
+                                        data-event-title="<?php echo e($event['title']); ?>"
                                         data-event-banner="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>"
                                         data-categories='<?php echo json_encode($categories); ?>'>
                                     Buy ticket

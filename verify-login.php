@@ -146,17 +146,17 @@ $maskedEmail = maskEmail($pending['email']);
                     <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
                 </a>
                 <h1>Enter your code</h1>
-                <p class="auth-sub">We emailed a 6-digit code to <strong><?php echo htmlspecialchars($maskedEmail); ?></strong></p>
+                <p class="auth-sub">We emailed a 6-digit code to <strong><?php echo e($maskedEmail); ?></strong></p>
 
                 <?php if ($notice): ?>
-                    <div class="alert alert-success"><?php echo htmlspecialchars($notice); ?></div>
+                    <div class="alert alert-success"><?php echo e($notice); ?></div>
                 <?php endif; ?>
 
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-danger">
                         <ul class="mb-0">
                             <?php foreach ($errors as $error): ?>
-                                <li><?php echo htmlspecialchars($error); ?></li>
+                                <li><?php echo e($error); ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>

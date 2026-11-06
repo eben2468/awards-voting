@@ -110,7 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <option value="">Select Event</option>
                                     <?php foreach ($events as $event): ?>
                                         <option value="<?php echo $event['id']; ?>" <?php echo $selectedEvent == $event['id'] ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($event['title']); ?>
+                                            <?php echo e($event['title']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 </select>

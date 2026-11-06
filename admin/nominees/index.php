@@ -125,7 +125,7 @@ $nominees = $pdo->query($sql)->fetchAll();
                                 <option value="">All Events</option>
                                 <?php foreach ($events as $event): ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $eventId == $event['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($event['title']); ?>
+                                        <?php echo e($event['title']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -141,7 +141,7 @@ $nominees = $pdo->query($sql)->fetchAll();
                                     <option value="">All Categories</option>
                                     <?php foreach ($categories as $cat): ?>
                                         <option value="<?php echo $cat['id']; ?>" <?php echo $categoryId == $cat['id'] ? 'selected' : ''; ?>>
-                                            <?php echo htmlspecialchars($cat['name']); ?>
+                                            <?php echo e($cat['name']); ?>
                                         </option>
                                     <?php endforeach; ?>
                                 <?php endif; ?>
@@ -179,16 +179,16 @@ $nominees = $pdo->query($sql)->fetchAll();
                                         <tr>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="<?php echo $nominee['photo'] ? '../../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']); ?>" 
+                                                    <img src="<?php echo $nominee['photo'] ? '../../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])); ?>" 
                                                          class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
                                                     <div>
-                                                        <strong><?php echo htmlspecialchars($nominee['name']); ?></strong>
+                                                        <strong><?php echo e($nominee['name']); ?></strong>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td><code><?php echo $nominee['shortcode']; ?></code></td>
-                                            <td><?php echo htmlspecialchars($nominee['category_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($nominee['event_title']); ?></td>
+                                            <td><?php echo e($nominee['category_name']); ?></td>
+                                            <td><?php echo e($nominee['event_title']); ?></td>
                                             <td><strong class="text-primary"><?php echo number_format($nominee['vote_count']); ?></strong></td>
                                             <td>
                                                 <span class="badge bg-<?php echo $nominee['status'] === 'active' ? 'success' : ($nominee['status'] === 'disqualified' ? 'danger' : 'secondary'); ?>">

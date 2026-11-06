@@ -29,14 +29,14 @@ $cardVotes = (int) $event['total_votes'];
 <div class="rv" style="--d:<?php echo ($index % 4) * 70; ?>ms">
     <a class="ev" href="event-details?slug=<?php echo urlencode($event['slug']); ?>">
         <span class="ev-img">
-            <img src="<?php echo $cardImage; ?>" alt="<?php echo htmlspecialchars($event['title']); ?>" loading="lazy">
+            <img src="<?php echo $cardImage; ?>" alt="<?php echo e($event['title']); ?>" loading="lazy">
             <?php if (!empty($event['is_featured'])): ?>
                 <span class="ev-star" title="Featured"><i class="bi bi-star-fill" aria-hidden="true"></i><span class="visually-hidden">Featured</span></span>
             <?php endif; ?>
         </span>
         <span class="ev-body">
             <span class="ev-state <?php echo $cardStateClass; ?>"><?php echo $cardState; ?></span>
-            <span class="ev-title"><?php echo htmlspecialchars($event['title']); ?></span>
+            <span class="ev-title"><?php echo e($event['title']); ?></span>
             <span class="ev-meta">
                 <span><?php echo number_format($cardCategories) . ($cardCategories == 1 ? ' category' : ' categories'); ?></span>
                 <span><?php echo number_format($cardNominees) . ($cardNominees == 1 ? ' nominee' : ' nominees'); ?></span>

@@ -129,7 +129,7 @@ $eventImage = function ($event) {
 $nomineeImage = function ($nominee) {
     return $nominee['photo']
         ? 'uploads/nominees/' . $nominee['photo']
-        : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=160';
+        : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])) . '&background=0F2C7A&color=fff&size=160';
 };
 $plural = function ($count, $one, $many) {
     return number_format($count) . ' ' . ($count == 1 ? $one : $many);
@@ -200,8 +200,8 @@ include 'includes/header.php';
                 <div class="mq-screen">
                     <?php foreach ($posters as $i => $poster): ?>
                         <a class="mq-slide<?php echo $i === 0 ? ' is-on' : ''; ?>" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>"<?php echo $i === 0 ? '' : ' tabindex="-1"'; ?>>
-                            <img class="mq-backdrop" src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="">
-                            <img class="mq-poster" src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="<?php echo htmlspecialchars($poster['title']); ?>"<?php echo $i === 0 ? ' fetchpriority="high"' : ''; ?>>
+                            <img class="mq-backdrop" src="uploads/events/<?php echo e($poster['banner']); ?>" alt="">
+                            <img class="mq-poster" src="uploads/events/<?php echo e($poster['banner']); ?>" alt="<?php echo e($poster['title']); ?>"<?php echo $i === 0 ? ' fetchpriority="high"' : ''; ?>>
                         </a>
                     <?php endforeach; ?>
                 </div>
@@ -212,7 +212,7 @@ include 'includes/header.php';
                     <div class="mq-details">
                         <?php foreach ($posters as $i => $poster): $state = $eventState($poster); ?>
                             <div class="mq-info<?php echo $i === 0 ? ' is-on' : ''; ?>">
-                                <h2 class="mq-title"><?php echo htmlspecialchars($poster['title']); ?></h2>
+                                <h2 class="mq-title"><?php echo e($poster['title']); ?></h2>
                                 <p class="mq-state"><?php echo $state['label']; ?></p>
                                 <a class="mq-action" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>"<?php echo $i === 0 ? '' : ' tabindex="-1"'; ?>><?php echo $state['action']; ?> <i class="bi bi-arrow-right"></i></a>
                             </div>
@@ -222,8 +222,8 @@ include 'includes/header.php';
                     <?php if (count($posters) > 1): ?>
                         <div class="mq-rail">
                             <?php foreach ($posters as $i => $poster): ?>
-                                <a class="mq-thumb<?php echo $i === 0 ? ' is-on' : ''; ?>" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>" data-slide="<?php echo $i; ?>" aria-label="Show <?php echo htmlspecialchars($poster['title']); ?>">
-                                    <img src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="">
+                                <a class="mq-thumb<?php echo $i === 0 ? ' is-on' : ''; ?>" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>" data-slide="<?php echo $i; ?>" aria-label="Show <?php echo e($poster['title']); ?>">
+                                    <img src="uploads/events/<?php echo e($poster['banner']); ?>" alt="">
                                 </a>
                             <?php endforeach; ?>
                         </div>
@@ -236,7 +236,7 @@ include 'includes/header.php';
                     <img src="<?php echo $nomineeImage($leader); ?>" alt="">
                     <div>
                         <span class="lead-card-label">Leading now</span>
-                        <strong><?php echo htmlspecialchars($leader['name']); ?></strong>
+                        <strong><?php echo e($leader['name']); ?></strong>
                         <span class="lead-card-votes"><span class="counter" data-target="<?php echo (int) $leader['vote_count']; ?>"><?php echo number_format($leader['vote_count']); ?></span> <?php echo (int) $leader['vote_count'] === 1 ? 'vote' : 'votes'; ?></span>
                     </div>
                 </div>
@@ -274,7 +274,7 @@ include 'includes/header.php';
                         $state = $plural($daysLeft, 'day', 'days') . ' left';
                     }
                 ?>
-                    <span class="ticker-item"><?php echo htmlspecialchars($event['title']); ?> <small><?php echo $state; ?></small></span>
+                    <span class="ticker-item"><?php echo e($event['title']); ?> <small><?php echo $state; ?></small></span>
                 <?php endforeach; ?>
             </div>
         <?php endfor; ?>
@@ -351,13 +351,13 @@ include 'includes/header.php';
                     $categories = $catStmt->fetchAll();
                 ?>
                     <article class="stub rv" style="--d:<?php echo $i * 80; ?>ms">
-                        <img class="stub-img" src="<?php echo $eventImage($event); ?>" alt="<?php echo htmlspecialchars($event['title']); ?>" loading="lazy">
+                        <img class="stub-img" src="<?php echo $eventImage($event); ?>" alt="<?php echo e($event['title']); ?>" loading="lazy">
                         <div class="stub-main">
                             <p class="stub-date">On sale until <?php echo date('j M Y', strtotime($event['end_date'])); ?></p>
-                            <h3><?php echo htmlspecialchars($event['title']); ?></h3>
+                            <h3><?php echo e($event['title']); ?></h3>
                             <p class="stub-meta">
                                 <?php echo $plural($event['category_count'], 'ticket type', 'ticket types'); ?>
-                                <?php if ($event['event_code']): ?>&middot; Code <?php echo htmlspecialchars($event['event_code']); ?><?php endif; ?>
+                                <?php if ($event['event_code']): ?>&middot; Code <?php echo e($event['event_code']); ?><?php endif; ?>
                             </p>
                         </div>
                         <div class="stub-side">
@@ -367,9 +367,9 @@ include 'includes/header.php';
                             <?php endif; ?>
                             <button type="button" class="btn-ticket-buy"
                                     data-event-id="<?php echo $event['id']; ?>"
-                                    data-event-title="<?php echo htmlspecialchars($event['title']); ?>"
+                                    data-event-title="<?php echo e($event['title']); ?>"
                                     data-event-banner="<?php echo $eventImage($event); ?>"
-                                    data-categories='<?php echo htmlspecialchars(json_encode($categories), ENT_QUOTES); ?>'>
+                                    data-categories='<?php echo htmlspecialchars(json_encode($categories), ENT_QUOTES, 'UTF-8', false); ?>'>
                                 Buy ticket
                             </button>
                         </div>
@@ -389,7 +389,7 @@ include 'includes/header.php';
             <h2><?php echo $clockIsOpen ? 'The clock<br>is running.' : 'The countdown<br>is on.'; ?></h2>
             <p class="clock-for">
                 <?php echo $clockIsOpen ? 'Until voting closes on' : 'Until voting opens on'; ?>
-                <a href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>"><?php echo htmlspecialchars($clockEvent['title']); ?></a>
+                <a href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>"><?php echo e($clockEvent['title']); ?></a>
             </p>
 
             <div class="flip" role="timer" data-deadline="<?php echo $clockTarget; ?>">
@@ -412,8 +412,8 @@ include 'includes/header.php';
                         <li class="rv" style="--d:<?php echo $i * 70; ?>ms">
                             <a class="nom" href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>">
                                 <img src="<?php echo $nomineeImage($nominee); ?>" alt="" loading="lazy">
-                                <strong><?php echo htmlspecialchars($nominee['name']); ?></strong>
-                                <span><?php echo htmlspecialchars($nominee['category_name']); ?></span>
+                                <strong><?php echo e($nominee['name']); ?></strong>
+                                <span><?php echo e($nominee['category_name']); ?></span>
                             </a>
                         </li>
                     <?php endforeach; ?>

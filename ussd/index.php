@@ -44,6 +44,7 @@ require_once __DIR__ . '/../config/nalo.php';
  * Send USSD Response and Exit
  */
 function sendNaloResponse($ussd_id, $msisdn, $user_data, $msg, $continue = true) {
+    $msg = plainText($msg);
     header('Content-type: application/json');
     $resp = [
         "USERID" => $ussd_id,

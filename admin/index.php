@@ -98,7 +98,7 @@ $recentActivity = $recentActivityStmt->fetchAll();
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">Dashboard Overview</h2>
-                    <p class="text-muted mb-0">Welcome back, <?php echo htmlspecialchars($_SESSION['user_name']); ?>!</p>
+                    <p class="text-muted mb-0">Welcome back, <?php echo e($_SESSION['user_name']); ?>!</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="events/add.php" class="btn btn-primary">
@@ -228,7 +228,7 @@ $recentActivity = $recentActivityStmt->fetchAll();
                                     <?php foreach ($recentEvents as $event): ?>
                                         <tr>
                                             <td>
-                                                <strong><?php echo htmlspecialchars($event['title']); ?></strong>
+                                                <strong><?php echo e($event['title']); ?></strong>
                                             </td>
                                             <td>
                                                 <span class="badge bg-<?php echo match($event['status']) {
@@ -284,13 +284,13 @@ $recentActivity = $recentActivityStmt->fetchAll();
                                             </td>
                                             <td>
                                                 <div class="d-flex align-items-center">
-                                                    <img src="<?php echo $nominee['photo'] ? '../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']); ?>" 
+                                                    <img src="<?php echo $nominee['photo'] ? '../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])); ?>" 
                                                          class="rounded-circle me-2" style="width: 40px; height: 40px; object-fit: cover;">
-                                                    <?php echo htmlspecialchars($nominee['name']); ?>
+                                                    <?php echo e($nominee['name']); ?>
                                                 </div>
                                             </td>
-                                            <td><?php echo htmlspecialchars($nominee['category_name']); ?></td>
-                                            <td><?php echo htmlspecialchars($nominee['event_title']); ?></td>
+                                            <td><?php echo e($nominee['category_name']); ?></td>
+                                            <td><?php echo e($nominee['event_title']); ?></td>
                                             <td><strong class="text-primary"><?php echo number_format($nominee['vote_count']); ?></strong></td>
                                         </tr>
                                     <?php endforeach; ?>

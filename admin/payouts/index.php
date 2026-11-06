@@ -153,11 +153,11 @@ $payouts = $stmt->fetchAll();
                                     <tr>
                                         <td>
                                             <div class="d-flex flex-column">
-                                                <span class="fw-bold"><?php echo htmlspecialchars($p['organizer_name']); ?></span>
-                                                <small class="text-muted"><?php echo htmlspecialchars($p['organizer_email']); ?></small>
+                                                <span class="fw-bold"><?php echo e($p['organizer_name']); ?></span>
+                                                <small class="text-muted"><?php echo e($p['organizer_email']); ?></small>
                                             </div>
                                         </td>
-                                        <td><?php echo htmlspecialchars($p['event_title']); ?></td>
+                                        <td><?php echo e($p['event_title']); ?></td>
                                         <td><span class="fw-bold text-primary">GHS <?php echo number_format($p['amount'], 2); ?></span></td>
                                         <td>
                                             <span class="badge bg-light text-dark border">

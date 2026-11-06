@@ -151,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <option value="">Select Category</option>
                                         <?php foreach ($categories as $cat): ?>
                                             <option value="<?php echo $cat['id']; ?>">
-                                                <?php echo htmlspecialchars($cat['name'] . ' - ' . $cat['event_title']); ?>
+                                                <?php echo e($cat['name'] . ' - ' . $cat['event_title']); ?>
                                             </option>
                                         <?php endforeach; ?>
                                     </select>

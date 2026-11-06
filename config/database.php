@@ -149,6 +149,24 @@ function sanitize($data) {
     return htmlspecialchars(strip_tags(trim($data)), ENT_QUOTES, 'UTF-8');
 }
 
+/**
+ * Stored text was already made HTML-safe by sanitize(), and an older edit form could
+ * do that twice. This gets back what was typed, for SMS, USSD, CSV and subject lines.
+ */
+function plainText($value) {
+    $text = (string) $value;
+    do {
+        $before = $text;
+        $text = htmlspecialchars_decode($text, ENT_QUOTES);
+    } while ($text !== $before);
+    return $text;
+}
+
+// Safe for HTML whether or not the value has already been through sanitize()
+function e($value) {
+    return htmlspecialchars(plainText($value), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+}
+
 // Redirect Function
 function redirect($url) {
     header("Location: " . SITE_URL . "/" . $url);
@@ -531,15 +549,15 @@ function sendContactMessage($name, $email, $subject, $message) {
                     <table style='width: 100%; border-collapse: collapse;'>
                         <tr>
                             <td style='padding: 8px 0; color: #777; width: 100px;'><strong>Name:</strong></td>
-                            <td style='padding: 8px 0; color: #333;'>" . htmlspecialchars($name) . "</td>
+                            <td style='padding: 8px 0; color: #333;'>" . e($name) . "</td>
                         </tr>
                         <tr>
                             <td style='padding: 8px 0; color: #777;'><strong>Email:</strong></td>
-                            <td style='padding: 8px 0; color: #333;'><a href='mailto:" . htmlspecialchars($email) . "' style='color: #2a5298; text-decoration: none;'>" . htmlspecialchars($email) . "</a></td>
+                            <td style='padding: 8px 0; color: #333;'><a href='mailto:" . e($email) . "' style='color: #2a5298; text-decoration: none;'>" . e($email) . "</a></td>
                         </tr>
                         <tr>
                             <td style='padding: 8px 0; color: #777;'><strong>Subject:</strong></td>
-                            <td style='padding: 8px 0; color: #333;'>" . htmlspecialchars($subject) . "</td>
+                            <td style='padding: 8px 0; color: #333;'>" . e($subject) . "</td>
                         </tr>
                         <tr>
                             <td style='padding: 8px 0; color: #777;'><strong>Date:</strong></td>
@@ -550,11 +568,11 @@ function sendContactMessage($name, $email, $subject, $message) {
                 
                 <div style='margin-bottom: 25px;'>
                     <h3 style='color: #1e3c72; border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 0;'>Message Content</h3>
-                    <div style='background-color: #f9f9f9; border-left: 4px solid #2a5298; padding: 20px; color: #444; white-space: pre-wrap; font-style: italic;'>" . nl2br(htmlspecialchars($message)) . "</div>
+                    <div style='background-color: #f9f9f9; border-left: 4px solid #2a5298; padding: 20px; color: #444; white-space: pre-wrap; font-style: italic;'>" . nl2br(e($message)) . "</div>
                 </div>
                 
                 <div style='text-align: center; margin-top: 30px;'>
-                    <a href='mailto:" . htmlspecialchars($email) . "' style='background-color: #2a5298; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;'>Reply to " . htmlspecialchars($name) . "</a>
+                    <a href='mailto:" . e($email) . "' style='background-color: #2a5298; color: #ffffff; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;'>Reply to " . e($name) . "</a>
                 </div>
             </div>
             

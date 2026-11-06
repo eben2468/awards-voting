@@ -289,7 +289,7 @@ if (!defined('IMAGE_UPLOAD_LOADED')) {
 
         $allowed = explode(',', IMAGE_ALLOWED_MIMES);
         if (!in_array(strtolower($info['mime']), $allowed, true)) {
-            $error = 'Unsupported image type (' . htmlspecialchars($info['mime']) . '). Use JPG, PNG, WEBP or GIF.';
+            $error = 'Unsupported image type (' . e($info['mime']) . '). Use JPG, PNG, WEBP or GIF.';
             return null;
         }
 

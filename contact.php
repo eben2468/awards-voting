@@ -135,12 +135,12 @@ include 'includes/header.php';
                             <div class="col-md-6">
                                 <label class="form-label">Your Name <span class="text-danger">*</span></label>
                                 <input type="text" name="name" class="form-control" placeholder="Ebenezer Owusu" required
-                                       value="<?php echo isset($_POST['name']) ? htmlspecialchars($_POST['name']) : ''; ?>">
+                                       value="<?php echo isset($_POST['name']) ? e($_POST['name']) : ''; ?>">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Email Address <span class="text-danger">*</span></label>
                                 <input type="email" name="email" class="form-control" placeholder="ebenezer@example.com" required
-                                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>">
+                                       value="<?php echo isset($_POST['email']) ? e($_POST['email']) : ''; ?>">
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Subject <span class="text-danger">*</span></label>
@@ -157,7 +157,7 @@ include 'includes/header.php';
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Your Message <span class="text-danger">*</span></label>
-                                <textarea name="message" class="form-control" rows="6" placeholder="Tell us how we can help..." required><?php echo isset($_POST['message']) ? htmlspecialchars($_POST['message']) : ''; ?></textarea>
+                                <textarea name="message" class="form-control" rows="6" placeholder="Tell us how we can help..." required><?php echo isset($_POST['message']) ? e($_POST['message']) : ''; ?></textarea>
                             </div>
                             <div class="col-12">
                                 <button type="submit" class="btn btn-primary btn-lg">

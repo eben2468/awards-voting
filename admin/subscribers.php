@@ -184,7 +184,7 @@ $stats = [
                         <div class="col-md-5">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by email..." value="<?php echo htmlspecialchars($search); ?>">
+                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by email..." value="<?php echo e($search); ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -227,7 +227,7 @@ $stats = [
                                     <tr>
                                         <td>#<?php echo $sub['id']; ?></td>
                                         <td>
-                                            <div class="fw-bold"><?php echo htmlspecialchars($sub['email']); ?></div>
+                                            <div class="fw-bold"><?php echo e($sub['email']); ?></div>
                                         </td>
                                         <td>
                                             <span class="badge bg-<?php echo $sub['status'] == 'active' ? 'success' : 'danger'; ?> bg-opacity-10 text-<?php echo $sub['status'] == 'active' ? 'success' : 'danger'; ?>">

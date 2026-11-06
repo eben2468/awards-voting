@@ -39,7 +39,7 @@ if (isset($_GET['export'])) {
             $sql .= " ORDER BY v.created_at DESC";
             $votes = $pdo->query($sql)->fetchAll();
             foreach ($votes as $v) {
-                fputcsv($output, [$v['id'], $v['fullname'], $v['email'], $v['nominee'], $v['category'], $v['event'], $v['created_at']]);
+                fputcsv($output, array_map('plainText', [$v['id'], $v['fullname'], $v['email'], $v['nominee'], $v['category'], $v['event'], $v['created_at']]));
             }
             break;
             
@@ -60,7 +60,7 @@ if (isset($_GET['export'])) {
             foreach ($nominees as $n) {
                 if ($lastCategory !== $n['category']) { $rank = 1; $lastCategory = $n['category']; } else { $rank++; }
                 $pct = $n['total_category_votes'] > 0 ? round(($n['vote_count'] / $n['total_category_votes']) * 100, 2) : 0;
-                fputcsv($output, [$rank, $n['name'], $n['shortcode'], $n['category'], $n['event'], $n['vote_count'], $pct . '%']);
+                fputcsv($output, array_map('plainText', [$rank, $n['name'], $n['shortcode'], $n['category'], $n['event'], $n['vote_count'], $pct . '%']));
             }
             break;
             
@@ -71,7 +71,7 @@ if (isset($_GET['export'])) {
                 FROM users u ORDER BY u.created_at DESC
             ")->fetchAll();
             foreach ($users as $u) {
-                fputcsv($output, [$u['id'], $u['fullname'], $u['email'], $u['phone'], $u['role'], $u['status'], $u['vote_count'], $u['created_at']]);
+                fputcsv($output, array_map('plainText', [$u['id'], $u['fullname'], $u['email'], $u['phone'], $u['role'], $u['status'], $u['vote_count'], $u['created_at']]));
             }
             break;
             
@@ -88,7 +88,7 @@ if (isset($_GET['export'])) {
             $sql .= " ORDER BY t.created_at DESC";
             $tickets = $pdo->query($sql)->fetchAll();
             foreach ($tickets as $t) {
-                fputcsv($output, [$t['id'], $t['ticket_code'], $t['event'], $t['category'], $t['quantity'], $t['phone'], $t['amount'], $t['created_at']]);
+                fputcsv($output, array_map('plainText', [$t['id'], $t['ticket_code'], $t['event'], $t['category'], $t['quantity'], $t['phone'], $t['amount'], $t['created_at']]));
             }
             break;
     }
@@ -143,7 +143,7 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                                 <select name="event" class="form-select form-select-sm">
                                     <option value="">All Events</option>
                                     <?php foreach ($events as $e): ?>
-                                        <option value="<?php echo $e['id']; ?>"><?php echo htmlspecialchars($e['title']); ?></option>
+                                        <option value="<?php echo $e['id']; ?>"><?php echo e($e['title']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="submit" name="export" value="votes" class="btn btn-primary">
@@ -167,7 +167,7 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                                 <select name="event" class="form-select form-select-sm">
                                     <option value="">All Events</option>
                                     <?php foreach ($events as $e): ?>
-                                        <option value="<?php echo $e['id']; ?>"><?php echo htmlspecialchars($e['title']); ?></option>
+                                        <option value="<?php echo $e['id']; ?>"><?php echo e($e['title']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="submit" name="export" value="results" class="btn btn-success">
@@ -191,7 +191,7 @@ $events = $pdo->query("SELECT id, title FROM events ORDER BY title")->fetchAll()
                                 <select name="event" class="form-select form-select-sm">
                                     <option value="">All Events</option>
                                     <?php foreach ($events as $e): ?>
-                                        <option value="<?php echo $e['id']; ?>"><?php echo htmlspecialchars($e['title']); ?></option>
+                                        <option value="<?php echo $e['id']; ?>"><?php echo e($e['title']); ?></option>
                                     <?php endforeach; ?>
                                 </select>
                                 <button type="submit" name="export" value="tickets" class="btn btn-warning text-white">

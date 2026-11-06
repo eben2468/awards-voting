@@ -111,7 +111,7 @@ if ($selectedEvent) {
                             <select name="event" class="form-select" onchange="this.form.submit()">
                                 <?php foreach ($events as $event): ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $eventId == $event['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($event['title']); ?>
+                                        <?php echo e($event['title']); ?>
                                         (<?php echo ucfirst($event['status']); ?>)
                                     </option>
                                 <?php endforeach; ?>
@@ -122,7 +122,7 @@ if ($selectedEvent) {
                             <select name="category" class="form-select" onchange="this.form.submit()">
                                 <?php foreach ($categories as $cat): ?>
                                     <option value="<?php echo $cat['id']; ?>" <?php echo $categoryId == $cat['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($cat['name']); ?>
+                                        <?php echo e($cat['name']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -156,12 +156,12 @@ if ($selectedEvent) {
                                         <span class="badge bg-secondary fs-6">#<?php echo $index + 1; ?></span>
                                     <?php endif; ?>
                                 </div>
-                                <img src="<?php echo $nominee['photo'] ? '../../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']); ?>" 
+                                <img src="<?php echo $nominee['photo'] ? '../../uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])); ?>" 
                                      class="rounded-circle me-3" style="width: 60px; height: 60px; object-fit: cover;">
                                 <div class="flex-grow-1">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <div>
-                                            <h5 class="mb-0"><?php echo htmlspecialchars($nominee['name']); ?></h5>
+                                            <h5 class="mb-0"><?php echo e($nominee['name']); ?></h5>
                                             <code class="small"><?php echo $nominee['shortcode']; ?></code>
                                         </div>
                                         <div class="text-end">

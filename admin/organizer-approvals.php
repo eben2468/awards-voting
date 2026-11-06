@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $migrationReady) {
 
             $emailed = sendOrganizerApprovedEmail($target);
 
-            setFlash('success', htmlspecialchars($target['fullname']) . ' has been approved.'
+            setFlash('success', e($target['fullname']) . ' has been approved.'
                 . ($emailed ? ' They have been notified by email.'
                             : ' <strong>Note:</strong> the notification email could not be sent &mdash; check your SMTP settings.'));
         } catch (PDOException $e) {
@@ -90,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $migrationReady) {
 
             sendOrganizerRejectedEmail($target, $note);
 
-            setFlash('warning', htmlspecialchars($target['fullname']) . ' has been rejected and notified by email.');
+            setFlash('warning', e($target['fullname']) . ' has been rejected and notified by email.');
         } catch (PDOException $e) {
             error_log('Reject organizer error: ' . $e->getMessage());
             setFlash('danger', 'Failed to reject the account.');
@@ -108,7 +108,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $migrationReady) {
             logAudit(getCurrentUserId(), 'organizer_access_revoked', 'users', $userId,
                 ['approval_status' => $target['approval_status']], ['approval_status' => 'pending']);
 
-            setFlash('warning', htmlspecialchars($target['fullname']) . ' has been moved back to pending and can no longer log in.');
+            setFlash('warning', e($target['fullname']) . ' has been moved back to pending and can no longer log in.');
         } catch (PDOException $e) {
             error_log('Revoke organizer error: ' . $e->getMessage());
             setFlash('danger', 'Failed to update the account.');
@@ -184,7 +184,7 @@ if ($migrationReady) {
             </div>
 
             <?php $flash = getFlash(); if ($flash): ?>
-                <div class="alert alert-<?php echo htmlspecialchars($flash['type']); ?> alert-dismissible fade show">
+                <div class="alert alert-<?php echo e($flash['type']); ?> alert-dismissible fade show">
                     <?php echo $flash['message']; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
@@ -297,25 +297,25 @@ if ($migrationReady) {
                                             <div class="d-flex align-items-center">
                                                 <img src="<?php echo $account['avatar']
                                                         ? SITE_URL . '/uploads/avatars/' . $account['avatar']
-                                                        : 'https://ui-avatars.com/api/?name=' . urlencode($account['fullname']); ?>"
+                                                        : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($account['fullname'])); ?>"
                                                      class="rounded-circle me-3" style="width:42px;height:42px;object-fit:cover;" alt="">
                                                 <div>
-                                                    <div class="fw-bold"><?php echo htmlspecialchars($account['fullname']); ?></div>
+                                                    <div class="fw-bold"><?php echo e($account['fullname']); ?></div>
                                                     <div class="small text-muted">ID #<?php echo (int) $account['id']; ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
                                             <div class="small">
-                                                <a href="mailto:<?php echo htmlspecialchars($account['email']); ?>" class="text-decoration-none">
-                                                    <i class="bi bi-envelope me-1"></i><?php echo htmlspecialchars($account['email']); ?>
+                                                <a href="mailto:<?php echo e($account['email']); ?>" class="text-decoration-none">
+                                                    <i class="bi bi-envelope me-1"></i><?php echo e($account['email']); ?>
                                                 </a>
                                             </div>
                                             <?php if (!empty($account['phone'])): ?>
                                                 <div class="small text-muted">
                                                     <a href="https://wa.me/<?php echo preg_replace('/\D/', '', $account['phone']); ?>"
                                                        target="_blank" rel="noopener" class="text-success text-decoration-none">
-                                                        <i class="bi bi-whatsapp me-1"></i><?php echo htmlspecialchars($account['phone']); ?>
+                                                        <i class="bi bi-whatsapp me-1"></i><?php echo e($account['phone']); ?>
                                                     </a>
                                                 </div>
                                             <?php else: ?>
@@ -337,13 +337,13 @@ if ($migrationReady) {
                                                     : '<span class="text-muted">&mdash;</span>'; ?><br>
                                                 <span class="text-muted">
                                                     <?php echo $account['approver_name']
-                                                        ? 'by ' . htmlspecialchars($account['approver_name'])
+                                                        ? 'by ' . e($account['approver_name'])
                                                         : ''; ?>
                                                 </span>
                                                 <?php if ($filter === 'rejected' && !empty($account['approval_note'])): ?>
-                                                    <div class="text-danger small mt-1" title="<?php echo htmlspecialchars($account['approval_note']); ?>">
+                                                    <div class="text-danger small mt-1" title="<?php echo e($account['approval_note']); ?>">
                                                         <i class="bi bi-chat-left-text me-1"></i>
-                                                        <?php echo htmlspecialchars(mb_strimwidth($account['approval_note'], 0, 42, '...')); ?>
+                                                        <?php echo e(mb_strimwidth($account['approval_note'], 0, 42, '...')); ?>
                                                     </div>
                                                 <?php endif; ?>
                                             <?php endif; ?>
@@ -363,7 +363,7 @@ if ($migrationReady) {
                                             <?php if ($account['approval_status'] === 'pending'): ?>
                                                 <button type="button" class="btn btn-outline-danger btn-sm btn-reject"
                                                         data-user-id="<?php echo (int) $account['id']; ?>"
-                                                        data-user-name="<?php echo htmlspecialchars($account['fullname']); ?>">
+                                                        data-user-name="<?php echo e($account['fullname']); ?>">
                                                     <i class="bi bi-x-lg me-1"></i>Reject
                                                 </button>
                                             <?php elseif ($account['approval_status'] === 'approved'): ?>

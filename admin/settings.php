@@ -149,8 +149,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!empty($writeFailures)) {
                 $message = 'These settings could not be saved: <strong>'
-                    . htmlspecialchars(implode(', ', $writeFailures)) . '</strong>.'
-                    . '<br>Database reply: ' . htmlspecialchars(lastSettingError() ?: 'none')
+                    . e(implode(', ', $writeFailures)) . '</strong>.'
+                    . '<br>Database reply: ' . e(lastSettingError() ?: 'none')
                     . '<br>Please try again in a minute. If it keeps happening, open '
                     . '<a href="' . SITE_URL . '/admin/diagnostics.php" class="alert-link">Diagnostics</a> '
                     . 'to check the connection limit.';
@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $testResult = ['ok' => false, 'text' => 'Please enter a valid email address to test with.'];
                 } else {
                     $body = '<p>Hello,</p>
-                        <p>If you are reading this, your ' . htmlspecialchars(SITE_NAME) . ' mail settings are
+                        <p>If you are reading this, your ' . e(SITE_NAME) . ' mail settings are
                         working correctly. Login verification codes, password resets and organizer approval
                         notices will be delivered from this address.</p>
                         <p style="font-size:13px; color:#777;">Sent ' . date('F j, Y \a\t g:i A') . '</p>';
@@ -177,8 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
                     $testResult = $sent
-                        ? ['ok' => true, 'text' => 'Test email sent to ' . htmlspecialchars($testTo) . '. Check the inbox (and spam folder).']
-                        : ['ok' => false, 'text' => 'Could not send: ' . htmlspecialchars(getLastMailError() ?: 'unknown error')];
+                        ? ['ok' => true, 'text' => 'Test email sent to ' . e($testTo) . '. Check the inbox (and spam folder).']
+                        : ['ok' => false, 'text' => 'Could not send: ' . e(getLastMailError() ?: 'unknown error')];
                 }
             }
 
@@ -242,15 +242,15 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
 
                                 <div class="mb-3">
                                     <label class="form-label">Site Name</label>
-                                    <input type="text" class="form-control" name="site_name" value="<?php echo htmlspecialchars($settings['site_name']); ?>">
+                                    <input type="text" class="form-control" name="site_name" value="<?php echo e($settings['site_name']); ?>">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Site URL</label>
-                                    <input type="url" class="form-control" name="site_url" value="<?php echo htmlspecialchars($settings['site_url']); ?>">
+                                    <input type="url" class="form-control" name="site_url" value="<?php echo e($settings['site_url']); ?>">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Admin Email</label>
-                                    <input type="email" class="form-control" name="admin_email" value="<?php echo htmlspecialchars($settings['admin_email']); ?>">
+                                    <input type="email" class="form-control" name="admin_email" value="<?php echo e($settings['admin_email']); ?>">
                                 </div>
                                 
                                 <button type="submit" class="btn btn-primary">
@@ -323,13 +323,13 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     <div class="col-md-8">
                                         <label class="form-label">SMTP Host</label>
                                         <input type="text" class="form-control" name="smtp_host"
-                                               value="<?php echo htmlspecialchars($settings['smtp_host']); ?>"
+                                               value="<?php echo e($settings['smtp_host']); ?>"
                                                placeholder="smtp.gmail.com">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Port</label>
                                         <input type="number" class="form-control" name="smtp_port"
-                                               value="<?php echo htmlspecialchars($settings['smtp_port']); ?>" placeholder="587">
+                                               value="<?php echo e($settings['smtp_port']); ?>" placeholder="587">
                                     </div>
                                     <div class="col-md-4">
                                         <label class="form-label">Encryption</label>
@@ -342,7 +342,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     <div class="col-md-8">
                                         <label class="form-label">Gmail Address (SMTP username)</label>
                                         <input type="email" class="form-control" name="smtp_username"
-                                               value="<?php echo htmlspecialchars($settings['smtp_username']); ?>"
+                                               value="<?php echo e($settings['smtp_username']); ?>"
                                                placeholder="yourname@gmail.com">
                                     </div>
                                     <div class="col-md-12">
@@ -362,15 +362,15 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     <div class="col-md-6">
                                         <label class="form-label">From Address</label>
                                         <input type="email" class="form-control" name="smtp_from_email"
-                                               value="<?php echo htmlspecialchars($settings['smtp_from_email']); ?>"
+                                               value="<?php echo e($settings['smtp_from_email']); ?>"
                                                placeholder="Defaults to the Gmail address above">
                                         <div class="form-text">Gmail rewrites this to your account address unless it is a verified alias.</div>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">From Name</label>
                                         <input type="text" class="form-control" name="smtp_from_name"
-                                               value="<?php echo htmlspecialchars($settings['smtp_from_name']); ?>"
-                                               placeholder="<?php echo htmlspecialchars(SITE_NAME); ?>">
+                                               value="<?php echo e($settings['smtp_from_name']); ?>"
+                                               placeholder="<?php echo e(SITE_NAME); ?>">
                                     </div>
                                 </div>
 
@@ -387,7 +387,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                 <div class="col-md-7">
                                     <label class="form-label fw-semibold">Send a test email</label>
                                     <input type="email" class="form-control" name="test_email"
-                                           value="<?php echo htmlspecialchars($settings['admin_email']); ?>"
+                                           value="<?php echo e($settings['admin_email']); ?>"
                                            placeholder="where should we send it?">
                                 </div>
                                 <div class="col-md-5">
@@ -457,7 +457,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                 <div class="mb-3">
                                     <label class="form-label">Extra approval notification email</label>
                                     <input type="email" class="form-control" name="approval_notify_email"
-                                           value="<?php echo htmlspecialchars($settings['approval_notify_email']); ?>"
+                                           value="<?php echo e($settings['approval_notify_email']); ?>"
                                            placeholder="optional - e.g. your personal Gmail">
                                     <div class="form-text">
                                         Every active admin is emailed when an organizer registers. Add one more address here if you like.
@@ -508,13 +508,13 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     <?php $authPictures = authImagePages(); ?>
                                     <?php foreach ($authPictures as $page => $picture): $field = 'auth_image_' . $page; ?>
                                         <div class="col-md-6">
-                                            <label class="form-label" for="<?php echo $field; ?>"><?php echo htmlspecialchars($picture['label']); ?></label>
+                                            <label class="form-label" for="<?php echo $field; ?>"><?php echo e($picture['label']); ?></label>
                                             <div class="auth-image-preview">
-                                                <img src="<?php echo htmlspecialchars(authPanelImage($page)); ?>" alt="">
+                                                <img src="<?php echo e(authPanelImage($page)); ?>" alt="">
                                             </div>
                                             <input type="file" class="form-control" id="<?php echo $field; ?>" name="<?php echo $field; ?>" accept="image/*" data-compress-max="5242880">
                                             <?php if ($picture['hint'] !== ''): ?>
-                                                <div class="form-text"><?php echo htmlspecialchars($picture['hint']); ?></div>
+                                                <div class="form-text"><?php echo e($picture['hint']); ?></div>
                                             <?php endif; ?>
                                             <?php if ($settings[$field] !== ''): ?>
                                                 <div class="form-check mt-2">
@@ -522,7 +522,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                                     <label class="form-check-label" for="<?php echo $field; ?>_remove">Remove this picture</label>
                                                 </div>
                                             <?php elseif ($picture['fallback'] !== null): ?>
-                                                <div class="form-text">No picture yet, so this page borrows the <?php echo htmlspecialchars($authPictures[$picture['fallback']]['label']); ?> picture.</div>
+                                                <div class="form-text">No picture yet, so this page borrows the <?php echo e($authPictures[$picture['fallback']]['label']); ?> picture.</div>
                                             <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>

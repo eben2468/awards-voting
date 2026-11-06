@@ -269,7 +269,7 @@ $stats = $stats_stmt->fetch();
                         <div class="col-md-5">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, email, subject, or message..." value="<?php echo htmlspecialchars($search); ?>">
+                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search by name, email, subject, or message..." value="<?php echo e($search); ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -325,18 +325,18 @@ $stats = $stats_stmt->fetch();
                                                     <?php echo strtoupper(substr($msg['name'] ?? 'U', 0, 1)); ?>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-bold"><?php echo htmlspecialchars($msg['name']); ?></div>
+                                                    <div class="fw-bold"><?php echo e($msg['name']); ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td>
-                                            <a href="mailto:<?php echo htmlspecialchars($msg['email']); ?>" class="text-decoration-none">
-                                                <?php echo htmlspecialchars($msg['email']); ?>
+                                            <a href="mailto:<?php echo e($msg['email']); ?>" class="text-decoration-none">
+                                                <?php echo e($msg['email']); ?>
                                             </a>
                                         </td>
                                         <td>
-                                            <div class="text-truncate" style="max-width: 250px;" title="<?php echo htmlspecialchars($msg['subject']); ?>">
-                                                <?php echo htmlspecialchars($msg['subject']); ?>
+                                            <div class="text-truncate" style="max-width: 250px;" title="<?php echo e($msg['subject']); ?>">
+                                                <?php echo e($msg['subject']); ?>
                                             </div>
                                         </td>
                                         <td>
@@ -372,14 +372,14 @@ $stats = $stats_stmt->fetch();
                                             <div class="d-inline-flex gap-1">
                                                 <button class="btn btn-sm btn-outline-primary view-msg-btn" type="button"
                                                         data-id="<?php echo $msg['id']; ?>"
-                                                        data-name="<?php echo htmlspecialchars($msg['name']); ?>"
-                                                        data-email="<?php echo htmlspecialchars($msg['email']); ?>"
-                                                        data-subject="<?php echo htmlspecialchars($msg['subject']); ?>"
-                                                        data-message="<?php echo htmlspecialchars($msg['message']); ?>"
+                                                        data-name="<?php echo e($msg['name']); ?>"
+                                                        data-email="<?php echo e($msg['email']); ?>"
+                                                        data-subject="<?php echo e($msg['subject']); ?>"
+                                                        data-message="<?php echo e($msg['message']); ?>"
                                                         data-status="<?php echo $msg['status']; ?>"
                                                         data-date="<?php echo date('M j, Y h:i A', strtotime($msg['created_at'])); ?>"
-                                                        data-ip="<?php echo htmlspecialchars($msg['ip_address'] ?? 'N/A'); ?>"
-                                                        data-ua="<?php echo htmlspecialchars($msg['user_agent'] ?? 'N/A'); ?>"
+                                                        data-ip="<?php echo e($msg['ip_address'] ?? 'N/A'); ?>"
+                                                        data-ua="<?php echo e($msg['user_agent'] ?? 'N/A'); ?>"
                                                         data-bs-toggle="modal" data-bs-target="#viewMessageModal">
                                                     <i class="bi bi-eye"></i> View
                                                 </button>

@@ -80,7 +80,7 @@ if (!defined('PROFILE_EMAIL_LOADED')) {
 
                 if ($result['sent']) {
                     setFlash('info', 'We sent a 6-digit confirmation code to <strong>'
-                        . htmlspecialchars($newEmail) . '</strong>. Enter it below to finish the change.');
+                        . e($newEmail) . '</strong>. Enter it below to finish the change.');
                     redirect($redirectPath);
                 }
 
@@ -95,7 +95,7 @@ if (!defined('PROFILE_EMAIL_LOADED')) {
 
             if ($result['ok']) {
                 setFlash('success', 'Your email address has been updated to <strong>'
-                    . htmlspecialchars($result['email']) . '</strong>. Use it the next time you log in.');
+                    . e($result['email']) . '</strong>. Use it the next time you log in.');
                 redirect($redirectPath);
             }
 
@@ -107,7 +107,7 @@ if (!defined('PROFILE_EMAIL_LOADED')) {
             try {
                 $pdo->prepare("UPDATE email_change_requests SET used_at = NOW()
                     WHERE user_id = ? AND used_at IS NULL")->execute([$user['id']]);
-                setFlash('info', 'Email change cancelled. Your address stays as ' . htmlspecialchars($user['email']) . '.');
+                setFlash('info', 'Email change cancelled. Your address stays as ' . e($user['email']) . '.');
             } catch (PDOException $e) {
                 error_log('Cancel email change error: ' . $e->getMessage());
             }
@@ -140,7 +140,7 @@ if (!defined('PROFILE_EMAIL_LOADED')) {
                 <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 p-3 bg-light rounded-3 mb-4">
                     <div>
                         <div class="text-muted small">Current email address</div>
-                        <div class="fw-bold"><?php echo htmlspecialchars($user['email']); ?></div>
+                        <div class="fw-bold"><?php echo e($user['email']); ?></div>
                     </div>
                     <div class="text-muted small">
                         <i class="bi bi-shield-lock me-1"></i>Used for login codes &amp; password resets
@@ -154,9 +154,9 @@ if (!defined('PROFILE_EMAIL_LOADED')) {
                         <div>
                             <strong>Confirmation pending</strong><br>
                             <span class="small">
-                                We emailed a 6-digit code to <strong><?php echo htmlspecialchars($pending['new_email']); ?></strong>.
+                                We emailed a 6-digit code to <strong><?php echo e($pending['new_email']); ?></strong>.
                                 Enter it below to complete the change. The code expires at
-                                <?php echo htmlspecialchars($pending['expires_label']); ?>.
+                                <?php echo e($pending['expires_label']); ?>.
                             </span>
                         </div>
                     </div>

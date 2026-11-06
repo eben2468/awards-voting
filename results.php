@@ -149,7 +149,7 @@ include 'includes/header.php';
                                     <a href="?event=<?php echo $event['slug']; ?>" 
                                        class="list-group-item list-group-item-action d-flex justify-content-between align-items-center <?php echo ($selectedEvent && $selectedEvent['slug'] === $event['slug']) ? 'active' : ''; ?>">
                                         <div class="text-truncate me-2">
-                                            <?php echo htmlspecialchars($event['title']); ?>
+                                            <?php echo e($event['title']); ?>
                                         </div>
                                         <?php if ($show_vote_counts): ?>
                                         <span class="badge bg-<?php echo ($selectedEvent && $selectedEvent['slug'] === $event['slug']) ? 'light text-primary' : 'primary'; ?> rounded-pill">
@@ -171,8 +171,8 @@ include 'includes/header.php';
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
-                                        <h3 class="mb-1"><?php echo htmlspecialchars($selectedEvent['title']); ?></h3>
-                                        <p class="text-muted mb-0"><?php echo htmlspecialchars($selectedEvent['description'], ENT_QUOTES, 'UTF-8', false); ?></p>
+                                        <h3 class="mb-1"><?php echo e($selectedEvent['title']); ?></h3>
+                                        <p class="text-muted mb-0"><?php echo e($selectedEvent['description']); ?></p>
                                     </div>
                                     <span class="badge bg-<?php echo $selectedEvent['status'] === 'active' ? 'success' : 'secondary'; ?> fs-6">
                                         <?php echo ucfirst($selectedEvent['status']); ?>
@@ -194,7 +194,7 @@ include 'includes/header.php';
                                     <?php foreach ($categories as $cat): ?>
                                         <a href="?event=<?php echo $selectedEvent['slug']; ?>&category=<?php echo $cat['id']; ?>" 
                                            class="btn <?php echo $cat['id'] == $categoryId ? 'btn-primary' : 'btn-outline-primary'; ?> rounded-pill flex-shrink-0">
-                                            <?php echo htmlspecialchars($cat['name']); ?>
+                                            <?php echo e($cat['name']); ?>
                                             <?php if ($show_vote_counts): ?>
                                             <span class="badge bg-<?php echo $cat['id'] == $categoryId ? 'white text-primary' : 'primary'; ?> ms-1">
                                                 <?php echo number_format($cat['total_votes']); ?>
@@ -232,8 +232,8 @@ include 'includes/header.php';
                                                     </div>
                                                     
                                                     <!-- Photo -->
-                                                    <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=60'; ?>" 
-                                                         alt="<?php echo htmlspecialchars($nominee['name']); ?>"
+                                                    <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])) . '&background=0F2C7A&color=fff&size=60'; ?>" 
+                                                         alt="<?php echo e($nominee['name']); ?>"
                                                          class="rounded-circle flex-shrink-0 me-3"
                                                          style="width: 60px; height: 60px; object-fit: cover;">
                                                     
@@ -241,7 +241,7 @@ include 'includes/header.php';
                                                     <div class="flex-grow-1 min-width-0">
                                                         <div class="d-flex justify-content-between align-items-start mb-2">
                                                             <div>
-                                                                <h5 class="mb-0 text-truncate"><?php echo htmlspecialchars($nominee['name']); ?></h5>
+                                                                <h5 class="mb-0 text-truncate"><?php echo e($nominee['name']); ?></h5>
                                                                 <small class="text-muted"><?php echo $nominee['shortcode']; ?></small>
                                                             </div>
                                                             <div class="text-end">

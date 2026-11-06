@@ -93,7 +93,7 @@ include 'includes/header.php';
                                    name="search" 
                                    class="form-control" 
                                    placeholder="Search events..." 
-                                   value="<?php echo htmlspecialchars($search); ?>">
+                                   value="<?php echo e($search); ?>">
                             <button class="btn btn-primary" type="submit">
                                 <i class="bi bi-search"></i>
                             </button>
@@ -145,7 +145,7 @@ include 'includes/header.php';
         <p class="text-muted mb-4">
             Showing <strong><?php echo count($events); ?></strong> events
             <?php if (!empty($search)): ?>
-                for "<strong><?php echo htmlspecialchars($search); ?></strong>"
+                for "<strong><?php echo e($search); ?></strong>"
             <?php endif; ?>
         </p>
 

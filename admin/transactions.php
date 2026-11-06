@@ -243,7 +243,7 @@ $stats = [
                         <div class="col-md-4">
                             <div class="input-group">
                                 <span class="input-group-text bg-white border-end-0"><i class="bi bi-search"></i></span>
-                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search reference, name, email or phone..." value="<?php echo htmlspecialchars($search); ?>">
+                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search reference, name, email or phone..." value="<?php echo e($search); ?>">
                             </div>
                         </div>
                         <div class="col-md-3">
@@ -302,24 +302,24 @@ $stats = [
                                         </td>
                                         <td>
                                             <?php if ($tx['user_name']): ?>
-                                                <div class="fw-bold"><?php echo htmlspecialchars($tx['user_name']); ?></div>
-                                                <small class="text-muted"><?php echo htmlspecialchars($tx['user_email']); ?></small>
+                                                <div class="fw-bold"><?php echo e($tx['user_name']); ?></div>
+                                                <small class="text-muted"><?php echo e($tx['user_email']); ?></small>
                                             <?php else: ?>
                                                 <span class="text-muted">Guest User</span>
                                             <?php endif; ?>
                                             
                                             <?php if (!empty($tx['phone'])): ?>
                                                 <div class="small text-primary mt-1">
-                                                    <i class="bi bi-phone me-1"></i><?php echo htmlspecialchars($tx['phone']); ?>
+                                                    <i class="bi bi-phone me-1"></i><?php echo e($tx['phone']); ?>
                                                 </div>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <div class="small fw-bold"><?php echo htmlspecialchars($tx['event_title']); ?></div>
+                                            <div class="small fw-bold"><?php echo e($tx['event_title']); ?></div>
                                             <?php if (!empty($tx['ticket_category_id'])): ?>
-                                                <div class="small text-muted"><i class="bi bi-ticket-perforated me-1"></i>Ticket: <?php echo htmlspecialchars($tx['ticket_category_name'] ?? 'N/A'); ?></div>
+                                                <div class="small text-muted"><i class="bi bi-ticket-perforated me-1"></i>Ticket: <?php echo e($tx['ticket_category_name'] ?? 'N/A'); ?></div>
                                             <?php else: ?>
-                                                <div class="small text-muted">Nominee: <?php echo htmlspecialchars($tx['nominee_name']); ?></div>
+                                                <div class="small text-muted">Nominee: <?php echo e($tx['nominee_name']); ?></div>
                                             <?php endif; ?>
                                         </td>
                                         <td>

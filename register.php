@@ -210,19 +210,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="auth-field">
                         <label for="fullname" class="visually-hidden">Full name</label>
                         <input type="text" class="auth-input" id="fullname" name="fullname" placeholder="Full name" autocomplete="name"
-                               value="<?php echo isset($_POST['fullname']) ? htmlspecialchars($_POST['fullname']) : ''; ?>" required>
+                               value="<?php echo isset($_POST['fullname']) ? e($_POST['fullname']) : ''; ?>" required>
                     </div>
 
                     <div class="auth-field">
                         <label for="email" class="visually-hidden">Email address</label>
                         <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
-                               value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
+                               value="<?php echo isset($_POST['email']) ? e($_POST['email']) : ''; ?>" required>
                     </div>
 
                     <div class="auth-field">
                         <label for="phone" class="visually-hidden">Phone number</label>
                         <input type="tel" class="auth-input" id="phone" name="phone" placeholder="Phone number, e.g. 0244000000" inputmode="tel" autocomplete="tel"
-                               value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>" required>
+                               value="<?php echo isset($_POST['phone']) ? e($_POST['phone']) : ''; ?>" required>
                     </div>
 
                     <div class="auth-pair">

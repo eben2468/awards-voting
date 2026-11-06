@@ -124,7 +124,7 @@ $events = $stmt->fetchAll();
                                                     <img src="<?php echo $event['banner'] ? '../../uploads/events/' . $event['banner'] : 'https://picsum.photos/60/40?random=' . $event['id']; ?>" 
                                                          class="rounded me-3" style="width: 60px; height: 40px; object-fit: cover;">
                                                     <div>
-                                                        <strong><?php echo htmlspecialchars($event['title']); ?></strong>
+                                                        <strong><?php echo e($event['title']); ?></strong>
                                                         <?php if ($event['is_featured']): ?>
                                                             <span class="badge bg-warning text-dark ms-2">Featured</span>
                                                         <?php endif; ?>

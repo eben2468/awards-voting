@@ -115,20 +115,20 @@ $contactContext = $isRejected
                 <?php else: ?>
                     <h1>Awaiting approval</h1>
                     <p class="auth-sub">
-                        Thanks for registering, <strong><?php echo htmlspecialchars(explode(' ', trim($account['fullname']))[0]); ?></strong>.
+                        Thanks for registering, <strong><?php echo e(explode(' ', trim($account['fullname']))[0]); ?></strong>.
                         An administrator needs to approve your organizer account before you can sign in.
                     </p>
                 <?php endif; ?>
 
                 <?php if ($notice): ?>
-                    <div class="alert alert-success"><?php echo htmlspecialchars($notice); ?></div>
+                    <div class="alert alert-success"><?php echo e($notice); ?></div>
                 <?php endif; ?>
 
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-warning">
                         <ul class="mb-0">
                             <?php foreach ($errors as $error): ?>
-                                <li><?php echo htmlspecialchars($error); ?></li>
+                                <li><?php echo e($error); ?></li>
                             <?php endforeach; ?>
                         </ul>
                     </div>
@@ -137,12 +137,12 @@ $contactContext = $isRejected
                 <?php if ($isRejected && !empty($account['note'])): ?>
                     <div class="alert alert-danger">
                         <strong>Note from the admin team</strong><br>
-                        <?php echo nl2br(htmlspecialchars($account['note'])); ?>
+                        <?php echo nl2br(e($account['note'])); ?>
                     </div>
                 <?php endif; ?>
 
                 <div class="auth-details">
-                    <div><span>Registered email</span><strong><?php echo htmlspecialchars($account['email']); ?></strong></div>
+                    <div><span>Registered email</span><strong><?php echo e($account['email']); ?></strong></div>
                     <div><span>Account type</span><strong>Event organizer</strong></div>
                 </div>
 

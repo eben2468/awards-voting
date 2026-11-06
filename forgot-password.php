@@ -107,12 +107,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php if ($sent): ?>
                     <h1>Check your email</h1>
                     <p class="auth-sub">
-                        If an account exists for <strong><?php echo htmlspecialchars($sentTo); ?></strong>,
+                        If an account exists for <strong><?php echo e($sentTo); ?></strong>,
                         we've sent a password reset link to that inbox.
                     </p>
 
                     <ol class="auth-steps">
-                        <li>Open the email from <?php echo htmlspecialchars(SITE_NAME); ?> and click <em>Reset My Password</em>.</li>
+                        <li>Open the email from <?php echo e(SITE_NAME); ?> and click <em>Reset My Password</em>.</li>
                         <li>Prefer a code? The email also has a 6-digit code you can enter instead.</li>
                         <li>The link and code expire in <?php echo RESET_TOKEN_TTL_MINUTES; ?> minutes.</li>
                     </ol>
@@ -133,7 +133,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="alert alert-danger">
                             <ul class="mb-0">
                                 <?php foreach ($errors as $error): ?>
-                                    <li><?php echo htmlspecialchars($error); ?></li>
+                                    <li><?php echo e($error); ?></li>
                                 <?php endforeach; ?>
                             </ul>
                         </div>
@@ -145,7 +145,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="auth-field">
                             <label for="email" class="visually-hidden">Email address</label>
                             <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
-                                   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" autofocus required>
+                                   value="<?php echo isset($_POST['email']) ? e($_POST['email']) : ''; ?>" autofocus required>
                         </div>
 
                         <button type="submit" class="auth-submit">Send reset link</button>

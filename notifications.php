@@ -233,15 +233,15 @@ include 'includes/header.php';
                         </div>
                         <div class="notification-body">
                             <div class="notification-header">
-                                <h5 class="notification-title"><?php echo htmlspecialchars($notification['title']); ?></h5>
+                                <h5 class="notification-title"><?php echo e($notification['title']); ?></h5>
                                 <span class="notification-time">
                                     <i class="bi bi-clock me-1"></i><?php echo $timeAgo; ?>
                                 </span>
                             </div>
-                            <p class="notification-message"><?php echo htmlspecialchars($notification['message']); ?></p>
+                            <p class="notification-message"><?php echo e($notification['message']); ?></p>
                             <div class="notification-actions">
                                 <?php if ($notification['link']): ?>
-                                <a href="<?php echo htmlspecialchars(notificationUrl($notification['link'])); ?>" class="btn btn-sm btn-outline-primary">
+                                <a href="<?php echo e(notificationUrl($notification['link'])); ?>" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-arrow-right me-1"></i> View Details
                                 </a>
                                 <?php endif; ?>

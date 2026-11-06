@@ -119,8 +119,8 @@ include 'includes/header.php';
                                                 <i class="bi bi-collection fs-1 text-primary"></i>
                                             </div>
                                         </div>
-                                        <h3 class="fw-bold mb-1"><?php echo htmlspecialchars($category['name']); ?></h3>
-                                        <p class="text-white-50 mb-0"><?php echo htmlspecialchars($category['event_title']); ?></p>
+                                        <h3 class="fw-bold mb-1"><?php echo e($category['name']); ?></h3>
+                                        <p class="text-white-50 mb-0"><?php echo e($category['event_title']); ?></p>
                                         <div class="mt-3">
                                             <span class="badge bg-white bg-opacity-20 rounded-pill px-3">
                                                 <i class="bi bi-calendar3 me-2"></i>Live Tracking
@@ -147,10 +147,10 @@ include 'includes/header.php';
                                         <div class="mt-4 pt-3 border-top">
                                             <h6 class="fw-bold mb-3">Current Leader</h6>
                                             <div class="d-flex align-items-center p-3 rounded-4 bg-primary bg-opacity-10 border border-primary border-opacity-10">
-                                                <img src="<?php echo $standings[0]['photo'] ? 'uploads/nominees/' . $standings[0]['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($standings[0]['name']) . '&size=45&background=0F2C7A&color=fff'; ?>" 
+                                                <img src="<?php echo $standings[0]['photo'] ? 'uploads/nominees/' . $standings[0]['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($standings[0]['name'])) . '&size=45&background=0F2C7A&color=fff'; ?>" 
                                                      class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
                                                 <div>
-                                                    <h6 class="mb-0 fw-bold"><?php echo htmlspecialchars($standings[0]['name']); ?></h6>
+                                                    <h6 class="mb-0 fw-bold"><?php echo e($standings[0]['name']); ?></h6>
                                                     <small class="text-primary fw-bold"><?php echo number_format($standings[0]['vote_count']); ?> Votes</small>
                                                 </div>
                                             </div>
@@ -205,11 +205,11 @@ include 'includes/header.php';
                                                     <td class="border-0">
                                                         <div class="d-flex align-items-center">
                                                             <div class="nominee-avatar me-3">
-                                                                <img src="<?php echo $s['photo'] ? 'uploads/nominees/' . $s['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($s['name']) . '&size=45&background=f1f1f1&color=333'; ?>" 
+                                                                <img src="<?php echo $s['photo'] ? 'uploads/nominees/' . $s['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($s['name'])) . '&size=45&background=f1f1f1&color=333'; ?>" 
                                                                      class="rounded-circle" style="width: 45px; height: 45px; object-fit: cover;">
                                                             </div>
                                                             <div>
-                                                                <h6 class="mb-0 fw-bold"><?php echo htmlspecialchars($s['name']); ?></h6>
+                                                                <h6 class="mb-0 fw-bold"><?php echo e($s['name']); ?></h6>
                                                             </div>
                                                         </div>
                                                     </td>

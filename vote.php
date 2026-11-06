@@ -36,7 +36,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['shortcode'])) {
                     'nominee' => [
                         'id' => $nominee['id'],
                         'name' => $nominee['name'],
-                        'photo' => $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=150',
+                        'photo' => $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($nominee['name'])) . '&background=0F2C7A&color=fff&size=150',
                         'category_id' => $nominee['category_id'],
                         'event_id' => $nominee['event_id'],
                         'voting_type' => $nominee['voting_type'],

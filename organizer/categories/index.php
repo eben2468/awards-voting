@@ -122,7 +122,7 @@ $categories = $stmt->fetchAll();
                                 <option value="">All My Events</option>
                                 <?php foreach ($events as $event): ?>
                                     <option value="<?php echo $event['id']; ?>" <?php echo $eventId == $event['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($event['title']); ?>
+                                        <?php echo e($event['title']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -159,12 +159,12 @@ $categories = $stmt->fetchAll();
                                     <?php foreach ($categories as $cat): ?>
                                         <tr>
                                             <td>
-                                                <strong><?php echo htmlspecialchars($cat['name']); ?></strong>
+                                                <strong><?php echo e($cat['name']); ?></strong>
                                                 <?php if ($cat['description']): ?>
                                                     <br><small class="text-muted"><?php echo substr($cat['description'], 0, 50); ?>...</small>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><?php echo htmlspecialchars($cat['event_title']); ?></td>
+                                            <td><?php echo e($cat['event_title']); ?></td>
                                             <td><span class="badge bg-light text-dark border"><?php echo $cat['access_code']; ?></span></td>
                                             <td><?php echo $cat['nominee_count']; ?></td>
                                             <td><strong class="text-primary"><?php echo number_format($cat['total_votes']); ?></strong></td>

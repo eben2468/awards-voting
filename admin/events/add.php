@@ -171,12 +171,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="mb-3">
                                     <label for="title" class="form-label">Event Title *</label>
                                     <input type="text" class="form-control" id="title" name="title" 
-                                           value="<?php echo htmlspecialchars($_POST['title'] ?? ''); ?>" required>
+                                           value="<?php echo e($_POST['title'] ?? ''); ?>" required>
                                 </div>
                                 
                                 <div class="mb-3">
                                     <label for="description" class="form-label">Description</label>
-                                    <textarea class="form-control" id="description" name="description" rows="4"><?php echo htmlspecialchars($_POST['description'] ?? ''); ?></textarea>
+                                    <textarea class="form-control" id="description" name="description" rows="4"><?php echo e($_POST['description'] ?? ''); ?></textarea>
                                 </div>
                                 
                                 <div class="row">
@@ -262,7 +262,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div id="votingFields">
                                     <div class="mb-3" id="priceField">
                                         <label for="vote_price" class="form-label">Vote Price (GHS) *</label>
-                                        <input type="number" class="form-control" id="vote_price" name="vote_price" step="0.01" min="0.01" placeholder="e.g. 1.00" value="<?php echo htmlspecialchars($_POST['vote_price'] ?? ''); ?>">
+                                        <input type="number" class="form-control" id="vote_price" name="vote_price" step="0.01" min="0.01" placeholder="e.g. 1.00" value="<?php echo e($_POST['vote_price'] ?? ''); ?>">
                                         <div class="invalid-feedback">Enter a vote price above GHS 0.00.</div>
                                     </div>
                                 </div>
@@ -270,7 +270,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div id="ticketingFields" class="d-none">
                                     <div class="mb-3">
                                         <label for="event_code" class="form-label">Ticket Purchase Event Code *</label>
-                                        <input type="text" class="form-control" id="event_code" name="event_code" placeholder="e.g. CONCERT26" value="<?php echo htmlspecialchars($_POST['event_code'] ?? ''); ?>">
+                                        <input type="text" class="form-control" id="event_code" name="event_code" placeholder="e.g. CONCERT26" value="<?php echo e($_POST['event_code'] ?? ''); ?>">
                                         <div class="form-text small text-muted">A unique code used to buy tickets. E.g. "CONCERT26"</div>
                                     </div>
                                     

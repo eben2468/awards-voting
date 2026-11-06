@@ -58,15 +58,15 @@
             <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none" type="button" data-bs-toggle="dropdown">
                 <?php 
                 $avatar = $_SESSION['user_avatar'] ?? null;
-                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['user_name']) . '&background=0F2C7A&color=fff';
+                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($_SESSION['user_name'])) . '&background=0F2C7A&color=fff';
                 ?>
                 <img src="<?php echo $avatarUrl; ?>" 
                      class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover;">
-                <span class="d-none d-md-inline text-dark"><?php echo htmlspecialchars($_SESSION['user_name']); ?></span>
+                <span class="d-none d-md-inline text-dark"><?php echo e($_SESSION['user_name']); ?></span>
                 <i class="bi bi-chevron-down small"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end">
-                <li><h6 class="dropdown-header"><?php echo htmlspecialchars($_SESSION['user_email']); ?></h6></li>
+                <li><h6 class="dropdown-header"><?php echo e($_SESSION['user_email']); ?></h6></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/admin/profile.php"><i class="bi bi-person me-2"></i>Profile</a></li>
                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/admin/settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>

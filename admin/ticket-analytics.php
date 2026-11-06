@@ -297,12 +297,12 @@ $recentTickets = $recentTicketsStmt->fetchAll();
                                         <?php foreach ($revenueByEvent as $evt): ?>
                                             <tr>
                                                 <td>
-                                                    <div class="fw-bold"><?php echo htmlspecialchars($evt['title']); ?></div>
+                                                    <div class="fw-bold"><?php echo e($evt['title']); ?></div>
                                                     <small class="text-muted"><?php echo date('M d', strtotime($evt['start_date'])); ?> - <?php echo date('M d, Y', strtotime($evt['end_date'])); ?></small>
                                                 </td>
                                                 <td>
                                                     <?php if ($evt['event_code']): ?>
-                                                        <code class="text-primary"><?php echo htmlspecialchars($evt['event_code']); ?></code>
+                                                        <code class="text-primary"><?php echo e($evt['event_code']); ?></code>
                                                     <?php else: ?>
                                                         <span class="text-muted">—</span>
                                                     <?php endif; ?>
@@ -347,8 +347,8 @@ $recentTickets = $recentTicketsStmt->fetchAll();
                                         <?php foreach ($revenueByCategory as $cat): ?>
                                             <tr>
                                                 <td>
-                                                    <div class="fw-bold"><?php echo htmlspecialchars($cat['category_name']); ?></div>
-                                                    <small class="text-muted"><?php echo htmlspecialchars($cat['event_title']); ?> · GHS <?php echo number_format($cat['unit_price'], 2); ?>/ea</small>
+                                                    <div class="fw-bold"><?php echo e($cat['category_name']); ?></div>
+                                                    <small class="text-muted"><?php echo e($cat['event_title']); ?> · GHS <?php echo number_format($cat['unit_price'], 2); ?>/ea</small>
                                                 </td>
                                                 <td class="text-center">
                                                     <span class="badge bg-info bg-opacity-10 text-info"><?php echo number_format($cat['qty_sold']); ?></span>
@@ -392,25 +392,25 @@ $recentTickets = $recentTicketsStmt->fetchAll();
                                     <tr>
                                         <td>
                                             <span class="ticket-code-badge badge bg-dark bg-opacity-10 text-dark px-2 py-1">
-                                                <i class="bi bi-qr-code me-1"></i><?php echo htmlspecialchars($tk['ticket_code']); ?>
+                                                <i class="bi bi-qr-code me-1"></i><?php echo e($tk['ticket_code']); ?>
                                             </span>
                                         </td>
                                         <td>
                                             <?php if ($tk['buyer_name']): ?>
-                                                <div class="fw-bold small"><?php echo htmlspecialchars($tk['buyer_name']); ?></div>
-                                                <small class="text-muted"><?php echo htmlspecialchars($tk['buyer_email']); ?></small>
+                                                <div class="fw-bold small"><?php echo e($tk['buyer_name']); ?></div>
+                                                <small class="text-muted"><?php echo e($tk['buyer_email']); ?></small>
                                             <?php else: ?>
                                                 <span class="text-muted small">Guest</span>
                                             <?php endif; ?>
                                             <?php if ($tk['phone']): ?>
-                                                <div class="small text-primary"><i class="bi bi-phone me-1"></i><?php echo htmlspecialchars($tk['phone']); ?></div>
+                                                <div class="small text-primary"><i class="bi bi-phone me-1"></i><?php echo e($tk['phone']); ?></div>
                                             <?php endif; ?>
                                         </td>
                                         <td>
-                                            <div class="small fw-bold"><?php echo htmlspecialchars($tk['event_title']); ?></div>
+                                            <div class="small fw-bold"><?php echo e($tk['event_title']); ?></div>
                                             <small class="text-muted"><?php echo date('M d, Y', strtotime($tk['event_date'])); ?></small>
                                         </td>
-                                        <td><span class="badge bg-primary bg-opacity-10 text-primary"><?php echo htmlspecialchars($tk['category_name']); ?></span></td>
+                                        <td><span class="badge bg-primary bg-opacity-10 text-primary"><?php echo e($tk['category_name']); ?></span></td>
                                         <td class="text-center"><?php echo $tk['quantity']; ?></td>
                                         <td class="text-end fw-bold">GHS <?php echo number_format($tk['amount'] ?? 0, 2); ?></td>
                                         <td>

@@ -562,6 +562,8 @@ function processSuccessfulPayment($pdo, $transaction, $naloData) {
  * Reference: https://documenter.getpostman.com/view/7705958/Uyr7Hydn
  */
 function sendNaloSMS($to, $message) {
+    $message = plainText($message);
+
     if (empty(NALO_SMS_KEY)) {
         error_log("Nalo SMS Error: API Key not set.");
         return ['status' => 'error', 'message' => 'API Key not set'];

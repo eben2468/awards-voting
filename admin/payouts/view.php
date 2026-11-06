@@ -150,12 +150,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <div class="row g-3">
                                 <div class="col-md-6">
                                     <label class="text-muted small text-uppercase">Organizer</label>
-                                    <p class="fw-bold mb-0"><?php echo htmlspecialchars($payout['organizer_name']); ?></p>
-                                    <small class="text-muted"><?php echo htmlspecialchars($payout['organizer_email']); ?></small>
+                                    <p class="fw-bold mb-0"><?php echo e($payout['organizer_name']); ?></p>
+                                    <small class="text-muted"><?php echo e($payout['organizer_email']); ?></small>
                                 </div>
                                 <div class="col-md-6">
                                     <label class="text-muted small text-uppercase">Event</label>
-                                    <p class="fw-bold mb-0"><?php echo htmlspecialchars($payout['event_title']); ?></p>
+                                    <p class="fw-bold mb-0"><?php echo e($payout['event_title']); ?></p>
                                     <a href="<?php echo SITE_URL; ?>/event-details.php?slug=<?php echo $payout['event_slug']; ?>" target="_blank" class="small text-decoration-none">View Event Page <i class="bi bi-box-arrow-up-right"></i></a>
                                 </div>
                                 <div class="col-md-6">
@@ -269,7 +269,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                     <i class="bi bi-<?php echo $payout['payment_method'] === 'bank' ? 'bank' : 'phone'; ?> fs-4"></i>
                                 </div>
                                 <div>
-                                    <h6 class="mb-0 text-uppercase"><?php echo htmlspecialchars($payout['payment_method']); ?></h6>
+                                    <h6 class="mb-0 text-uppercase"><?php echo e($payout['payment_method']); ?></h6>
                                     <small class="text-muted">Settlement Account</small>
                                 </div>
                             </div>
@@ -277,20 +277,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                             <table class="table table-sm table-borderless mb-0">
                                 <tr>
                                     <td class="text-muted">Provider:</td>
-                                    <td class="text-end fw-bold"><?php echo htmlspecialchars($details['name']); ?></td>
+                                    <td class="text-end fw-bold"><?php echo e($details['name']); ?></td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Account Name:</td>
-                                    <td class="text-end fw-bold"><?php echo htmlspecialchars($details['account_name']); ?></td>
+                                    <td class="text-end fw-bold"><?php echo e($details['account_name']); ?></td>
                                 </tr>
                                 <tr>
                                     <td class="text-muted">Account Number:</td>
-                                    <td class="text-end fw-bold"><code><?php echo htmlspecialchars($details['account_number']); ?></code></td>
+                                    <td class="text-end fw-bold"><code><?php echo e($details['account_number']); ?></code></td>
                                 </tr>
                                 <?php if (isset($details['branch']) && $details['branch']): ?>
                                 <tr>
                                     <td class="text-muted">Branch:</td>
-                                    <td class="text-end fw-bold"><?php echo htmlspecialchars($details['branch']); ?></td>
+                                    <td class="text-end fw-bold"><?php echo e($details['branch']); ?></td>
                                 </tr>
                                 <?php endif; ?>
                             </table>
@@ -306,7 +306,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                                 <div class="mb-4">
                                     <label class="text-muted small text-uppercase mb-2">Previous Notes</label>
                                     <div class="p-3 bg-light rounded border-start border-4 border-info">
-                                        <?php echo nl2br(htmlspecialchars($payout['admin_notes'])); ?>
+                                        <?php echo nl2br(e($payout['admin_notes'])); ?>
                                     </div>
                                 </div>
                             <?php endif; ?>

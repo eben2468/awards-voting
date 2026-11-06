@@ -119,7 +119,7 @@ $ipLocations = cachedIpLocations();
                                 <option value="">All Users</option>
                                 <?php foreach ($users as $u): ?>
                                     <option value="<?php echo $u['id']; ?>" <?php echo $userId == $u['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($u['fullname']); ?>
+                                        <?php echo e($u['fullname']); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
@@ -163,7 +163,7 @@ $ipLocations = cachedIpLocations();
                                             <td>#<?php echo $log['id']; ?></td>
                                             <td>
                                                 <?php if ($log['user_name']): ?>
-                                                    <strong><?php echo htmlspecialchars($log['user_name']); ?></strong>
+                                                    <strong><?php echo e($log['user_name']); ?></strong>
                                                     <br><small class="text-muted"><?php echo $log['user_email']; ?></small>
                                                 <?php else: ?>
                                                     <span class="text-muted">System</span>
@@ -184,12 +184,12 @@ $ipLocations = cachedIpLocations();
                                             </td>
                                             <td>
                                                 <?php $device = describeDevice($log['user_agent'] ?? ''); ?>
-                                                <span class="log-device" title="<?php echo htmlspecialchars((string) ($log['user_agent'] ?? '')); ?>">
+                                                <span class="log-device" title="<?php echo e((string) ($log['user_agent'] ?? '')); ?>">
                                                     <i class="bi <?php echo $device['icon']; ?>" aria-hidden="true"></i>
                                                     <span>
-                                                        <strong><?php echo htmlspecialchars($device['name']); ?></strong>
+                                                        <strong><?php echo e($device['name']); ?></strong>
                                                         <?php if ($device['browser'] !== ''): ?>
-                                                            <small class="text-muted"><?php echo htmlspecialchars($device['browser']); ?></small>
+                                                            <small class="text-muted"><?php echo e($device['browser']); ?></small>
                                                         <?php endif; ?>
                                                     </span>
                                                 </span>
@@ -198,9 +198,9 @@ $ipLocations = cachedIpLocations();
                                                 <?php $ip = (string) ($log['ip_address'] ?? ''); ?>
                                                 <?php if (isPublicIp($ip)): ?>
                                                     <?php if (isset($ipLocations[$ip])): ?>
-                                                        <span>Near <?php echo htmlspecialchars($ipLocations[$ip]); ?></span>
+                                                        <span>Near <?php echo e($ipLocations[$ip]); ?></span>
                                                     <?php else: ?>
-                                                        <span data-ip-location="<?php echo htmlspecialchars($ip); ?>">Looking up...</span>
+                                                        <span data-ip-location="<?php echo e($ip); ?>">Looking up...</span>
                                                     <?php endif; ?>
                                                 <?php elseif ($ip === 'SYSTEM' || $ip === ''): ?>
                                                     <span class="text-muted">Not applicable</span>
@@ -208,11 +208,11 @@ $ipLocations = cachedIpLocations();
                                                     <span class="text-muted">This computer</span>
                                                 <?php endif; ?>
                                                 <?php if ($ip !== '' && $ip !== 'SYSTEM'): ?>
-                                                    <code class="small d-block"><?php echo htmlspecialchars($ip); ?></code>
+                                                    <code class="small d-block"><?php echo e($ip); ?></code>
                                                 <?php endif; ?>
                                             </td>
                                             <td>
-                                                <?php echo htmlspecialchars((string) ($log['table_name'] ?: '-')); ?>
+                                                <?php echo e((string) ($log['table_name'] ?: '-')); ?>
                                                 <?php if ($log['record_id']): ?>
                                                     <small class="text-muted">#<?php echo (int) $log['record_id']; ?></small>
                                                 <?php endif; ?>

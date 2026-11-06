@@ -179,13 +179,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card border-0 shadow-sm">
                         <div class="card-body text-center py-5">
                             <div class="avatar-wrapper mb-3">
-                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=150&background=0F2C7A&color=fff'; ?>" 
+                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($user['fullname'])) . '&size=150&background=0F2C7A&color=fff'; ?>" 
                                      alt="Profile" 
                                      class="rounded-circle mb-3 shadow-sm"
                                      style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #f8f9fa;">
                             </div>
-                            <h4 class="mb-1"><?php echo htmlspecialchars($user['fullname']); ?></h4>
-                            <p class="text-muted mb-3"><?php echo htmlspecialchars($user['email']); ?></p>
+                            <h4 class="mb-1"><?php echo e($user['fullname']); ?></h4>
+                            <p class="text-muted mb-3"><?php echo e($user['email']); ?></p>
                             <span class="badge bg-danger px-3 py-2 mb-3">
                                 <i class="bi bi-shield-lock me-1"></i>Administrator
                             </span>
@@ -224,7 +224,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-12 mb-3">
                                         <label for="avatar" class="form-label fw-bold">Profile Picture</label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=100&background=0F2C7A&color=fff'; ?>" 
+                                            <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode(plainText($user['fullname'])) . '&size=100&background=0F2C7A&color=fff'; ?>" 
                                                  alt="Current Avatar" 
                                                  id="avatarPreview"
                                                  class="rounded-circle shadow-sm"
@@ -238,12 +238,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-6">
                                         <label for="fullname" class="form-label fw-bold">Full Name</label>
                                         <input type="text" class="form-control" id="fullname" name="fullname" 
-                                               value="<?php echo htmlspecialchars($user['fullname']); ?>" required>
+                                               value="<?php echo e($user['fullname']); ?>" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="email" class="form-label fw-bold">Email Address</label>
                                         <input type="email" class="form-control bg-light" id="email"
-                                               value="<?php echo htmlspecialchars($user['email']); ?>" readonly>
+                                               value="<?php echo e($user['email']); ?>" readonly>
                                         <div class="form-text">
                                             <a href="#emailCard" class="text-primary text-decoration-none fw-semibold">
                                                 <i class="bi bi-pencil-square me-1"></i>Change your email address
@@ -253,7 +253,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-6">
                                         <label for="phone" class="form-label fw-bold">Phone Number</label>
                                         <input type="tel" class="form-control" id="phone" name="phone" 
-                                               value="<?php echo htmlspecialchars($user['phone'] ?? ''); ?>" 
+                                               value="<?php echo e($user['phone'] ?? ''); ?>" 
                                                placeholder="e.g. +233 24 000 0000">
                                     </div>
                                     <div class="col-12 mt-4">
