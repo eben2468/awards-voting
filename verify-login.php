@@ -130,51 +130,31 @@ $maskedEmail = maskEmail($pending['email']);
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
-
-    <style>
-        .otp-input {
-            font-size: 2rem;
-            letter-spacing: 1rem;
-            text-align: center;
-            font-weight: 700;
-            padding: .75rem 1rem;
-            text-indent: 1rem;
-        }
-        .otp-input::placeholder { letter-spacing: .75rem; font-weight: 400; opacity: .35; }
-        .verify-icon {
-            width: 74px; height: 74px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            background: rgba(42, 82, 152, .1);
-            color: #2a5298;
-            font-size: 2rem;
-            margin: 0 auto 1rem;
-        }
-    </style>
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card">
-                <div class="text-center mb-4">
-                    <div class="verify-icon"><i class="bi bi-shield-lock-fill"></i></div>
-                    <h3 class="fw-bold mb-2">Two-Step Verification</h3>
-                    <p class="text-muted mb-0">
-                        We emailed a 6-digit code to<br>
-                        <strong class="text-dark"><?php echo htmlspecialchars($maskedEmail); ?></strong>
-                    </p>
-                </div>
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = 'One more step to sign in.';
+            $authIntro = 'This code keeps your account safe, even if someone else has your password.';
+            $authImage = authPanelImage('login');
+            include 'includes/auth-panel.php';
+            ?>
+
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
+                <h1>Enter your code</h1>
+                <p class="auth-sub">We emailed a 6-digit code to <strong><?php echo htmlspecialchars($maskedEmail); ?></strong></p>
 
                 <?php if ($notice): ?>
-                    <div class="alert alert-success d-flex align-items-center gap-2">
-                        <i class="bi bi-check-circle-fill"></i>
-                        <div><?php echo htmlspecialchars($notice); ?></div>
-                    </div>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($notice); ?></div>
                 <?php endif; ?>
 
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-danger">
-                        <ul class="mb-0 ps-3">
+                        <ul class="mb-0">
                             <?php foreach ($errors as $error): ?>
                                 <li><?php echo htmlspecialchars($error); ?></li>
                             <?php endforeach; ?>
@@ -186,59 +166,33 @@ $maskedEmail = maskEmail($pending['email']);
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <input type="hidden" name="action" value="verify">
 
-                    <div class="mb-3">
-                        <label for="code" class="form-label">Verification Code</label>
-                        <input type="text"
-                               class="form-control otp-input"
-                               id="code"
-                               name="code"
-                               inputmode="numeric"
-                               pattern="[0-9]{6}"
-                               maxlength="6"
-                               autocomplete="one-time-code"
-                               placeholder="000000"
-                               autofocus
-                               required>
-                        <div class="form-text text-center mt-2">
-                            The code expires in <?php echo LOGIN_CODE_TTL_MINUTES; ?> minutes.
-                        </div>
+                    <div class="auth-field">
+                        <label for="code" class="visually-hidden">Verification code</label>
+                        <input type="text" class="auth-input auth-code" id="code" name="code"
+                               inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
+                               autocomplete="one-time-code" placeholder="000000" autofocus required>
                     </div>
+                    <p class="auth-hint">The code expires in <?php echo LOGIN_CODE_TTL_MINUTES; ?> minutes.</p>
 
-                    <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                        <i class="bi bi-check2-circle me-2"></i>Verify &amp; Continue
-                    </button>
+                    <button type="submit" class="auth-submit">Verify and continue</button>
                 </form>
 
-                <div class="text-center mb-3">
-                    <form method="POST" action="" class="d-inline">
-                        <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                        <input type="hidden" name="action" value="resend">
-                        <span class="text-muted small">Didn't get the email?</span>
-                        <button type="submit" class="btn btn-link p-0 align-baseline fw-semibold" id="resendBtn">
-                            Resend code
-                        </button>
-                    </form>
-                </div>
+                <form method="POST" action="" class="auth-switch">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                    <input type="hidden" name="action" value="resend">
+                    Didn't get the email? <button type="submit" class="auth-link" id="resendBtn">Resend code</button>
+                </form>
 
-                <div class="alert alert-light border small text-muted">
-                    <i class="bi bi-info-circle me-1 text-primary"></i>
-                    Check your <strong>Spam</strong> or <strong>Promotions</strong> folder if the email has not
-                    arrived after a minute. Still stuck? Call or WhatsApp
-                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener" class="fw-semibold"><?php echo WHATSAPP_NUMBER; ?></a>.
-                </div>
+                <p class="auth-note">
+                    Check your Spam or Promotions folder if nothing arrives after a minute. Still stuck? Call or WhatsApp
+                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener"><?php echo WHATSAPP_NUMBER; ?></a>.
+                </p>
 
-                <hr class="my-4">
-
-                <div class="text-center">
-                    <a href="<?php echo SITE_URL; ?>/logout.php?cancel=1" class="text-muted">
-                        <i class="bi bi-arrow-left me-1"></i>Cancel and use a different account
-                    </a>
-                </div>
-            </div>
-        </div>
+                <a href="<?php echo SITE_URL; ?>/logout.php?cancel=1" class="auth-home"><i class="bi bi-arrow-left"></i> Use a different account</a>
+            </section>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         // Keep the code field numeric and auto-submit once six digits are entered
         const codeInput = document.getElementById('code');

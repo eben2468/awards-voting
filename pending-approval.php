@@ -91,66 +91,42 @@ $contactContext = $isRejected
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
-
-    <style>
-        .status-icon {
-            width: 86px; height: 86px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            font-size: 2.4rem;
-            margin: 0 auto 1.25rem;
-        }
-        .status-icon.pending { background: rgba(253, 126, 20, .12); color: #fd7e14; }
-        .status-icon.rejected { background: rgba(220, 53, 69, .12); color: #dc3545; }
-        .timeline-step { display: flex; gap: .9rem; padding: .55rem 0; }
-        .timeline-step .dot {
-            flex: 0 0 26px; height: 26px; border-radius: 50%;
-            display: flex; align-items: center; justify-content: center;
-            font-size: .8rem;
-        }
-        .timeline-step .dot.done { background: #d1e7dd; color: #0f5132; }
-        .timeline-step .dot.current { background: #fff3cd; color: #664d03; }
-        .timeline-step .dot.todo { background: #e9ecef; color: #adb5bd; }
-        .auth-card-wide { max-width: 620px; margin: 0 auto; }
-    </style>
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card auth-card-wide">
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = $isRejected ? 'We\'re here to help.' : 'You\'re almost ready to start.';
+            $authIntro = $isRejected
+                ? 'Talk to our team and we\'ll take another look at your account.'
+                : 'Once you\'re approved, you can create your first event.';
+            $authImage = authPanelImage('register');
+            include 'includes/auth-panel.php';
+            ?>
 
-                <div class="text-center mb-4">
-                    <a href="<?php echo SITE_URL; ?>" class="text-decoration-none">
-                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-sm">
-                    </a>
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
 
-                    <?php if ($isRejected): ?>
-                        <div class="status-icon rejected"><i class="bi bi-x-circle-fill"></i></div>
-                        <h3 class="fw-bold mb-2">Account Not Approved</h3>
-                        <p class="text-muted mb-0">
-                            Unfortunately your organizer account was not approved. Talk to an administrator below
-                            and we will be happy to take another look.
-                        </p>
-                    <?php else: ?>
-                        <div class="status-icon pending"><i class="bi bi-hourglass-split"></i></div>
-                        <h3 class="fw-bold mb-2">Your Account Is Awaiting Approval</h3>
-                        <p class="text-muted mb-0">
-                            Thanks for registering, <strong><?php echo htmlspecialchars(explode(' ', trim($account['fullname']))[0]); ?></strong>!
-                            An administrator needs to approve your organizer account before you can sign in.
-                        </p>
-                    <?php endif; ?>
-                </div>
+                <?php if ($isRejected): ?>
+                    <h1>Account not approved</h1>
+                    <p class="auth-sub">Your organizer account was not approved. Talk to an administrator and we'll be happy to take another look.</p>
+                <?php else: ?>
+                    <h1>Awaiting approval</h1>
+                    <p class="auth-sub">
+                        Thanks for registering, <strong><?php echo htmlspecialchars(explode(' ', trim($account['fullname']))[0]); ?></strong>.
+                        An administrator needs to approve your organizer account before you can sign in.
+                    </p>
+                <?php endif; ?>
 
                 <?php if ($notice): ?>
-                    <div class="alert alert-success d-flex align-items-start gap-2">
-                        <i class="bi bi-check-circle-fill mt-1"></i>
-                        <div><?php echo htmlspecialchars($notice); ?></div>
-                    </div>
+                    <div class="alert alert-success"><?php echo htmlspecialchars($notice); ?></div>
                 <?php endif; ?>
 
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-warning">
-                        <ul class="mb-0 ps-3">
+                        <ul class="mb-0">
                             <?php foreach ($errors as $error): ?>
                                 <li><?php echo htmlspecialchars($error); ?></li>
                             <?php endforeach; ?>
@@ -160,86 +136,51 @@ $contactContext = $isRejected
 
                 <?php if ($isRejected && !empty($account['note'])): ?>
                     <div class="alert alert-danger">
-                        <h6 class="fw-bold mb-1"><i class="bi bi-chat-left-text me-1"></i>Note from the admin team</h6>
-                        <p class="mb-0 small"><?php echo nl2br(htmlspecialchars($account['note'])); ?></p>
+                        <strong>Note from the admin team</strong><br>
+                        <?php echo nl2br(htmlspecialchars($account['note'])); ?>
                     </div>
                 <?php endif; ?>
 
-                <div class="card border-0 bg-light rounded-4 mb-4">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="text-muted small">Registered email</span>
-                            <strong class="small"><?php echo htmlspecialchars($account['email']); ?></strong>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center">
-                            <span class="text-muted small">Account type</span>
-                            <span class="badge bg-primary">Event Organizer</span>
-                        </div>
-                    </div>
+                <div class="auth-details">
+                    <div><span>Registered email</span><strong><?php echo htmlspecialchars($account['email']); ?></strong></div>
+                    <div><span>Account type</span><strong>Event organizer</strong></div>
                 </div>
 
                 <?php if (!$isRejected): ?>
-                    <div class="mb-4">
-                        <h6 class="fw-bold mb-2">What happens next</h6>
-                        <div class="timeline-step">
-                            <span class="dot done"><i class="bi bi-check-lg"></i></span>
-                            <div>
-                                <div class="fw-semibold small">Account created</div>
-                                <div class="text-muted small">Your details have been saved successfully.</div>
-                            </div>
-                        </div>
-                        <div class="timeline-step">
-                            <span class="dot current"><i class="bi bi-hourglass"></i></span>
-                            <div>
-                                <div class="fw-semibold small">Admin review <span class="badge bg-warning text-dark ms-1">In progress</span></div>
-                                <div class="text-muted small">Our team has been notified by email and is reviewing your account.</div>
-                            </div>
-                        </div>
-                        <div class="timeline-step">
-                            <span class="dot todo"><i class="bi bi-envelope"></i></span>
-                            <div>
-                                <div class="fw-semibold small">Approval email</div>
-                                <div class="text-muted small">You will get an email at
-                                    <?php echo htmlspecialchars($account['email']); ?> the moment you are approved.</div>
-                            </div>
-                        </div>
-                        <div class="timeline-step">
-                            <span class="dot todo"><i class="bi bi-box-arrow-in-right"></i></span>
-                            <div>
-                                <div class="fw-semibold small">Sign in &amp; create your first event</div>
-                                <div class="text-muted small">Log in with the same email and password you just registered.</div>
-                            </div>
-                        </div>
-                    </div>
+                    <ol class="auth-timeline">
+                        <li class="done">
+                            <i class="bi bi-check-lg"></i>
+                            <div><strong>Account created</strong><span>Your details have been saved.</span></div>
+                        </li>
+                        <li class="current">
+                            <i class="bi bi-hourglass"></i>
+                            <div><strong>Admin review, in progress</strong><span>Our team has been notified by email.</span></div>
+                        </li>
+                        <li>
+                            <i class="bi bi-envelope"></i>
+                            <div><strong>Approval email</strong><span>We'll email you the moment you're approved.</span></div>
+                        </li>
+                        <li>
+                            <i class="bi bi-box-arrow-in-right"></i>
+                            <div><strong>Log in and create your first event</strong><span>Use the email and password you registered with.</span></div>
+                        </li>
+                    </ol>
                 <?php endif; ?>
 
                 <?php echo renderSupportContactPanel($contactContext); ?>
 
                 <?php if (!$isRejected): ?>
-                    <form method="POST" action="" class="d-grid mt-3">
+                    <form method="POST" action="" class="auth-switch">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                         <input type="hidden" name="action" value="remind">
-                        <button type="submit" class="btn btn-link text-decoration-none">
-                            <i class="bi bi-bell me-1"></i>Send the admins another reminder by email
-                        </button>
+                        <button type="submit" class="auth-link">Send the admins a reminder by email</button>
                     </form>
                 <?php endif; ?>
 
-                <hr class="my-4">
-
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="<?php echo SITE_URL; ?>" class="text-muted text-decoration-none">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Home
-                    </a>
-                    <a href="<?php echo SITE_URL; ?>/login.php" class="text-primary fw-semibold text-decoration-none">
-                        Try logging in again <i class="bi bi-arrow-right ms-1"></i>
-                    </a>
-                </div>
-
-            </div>
-        </div>
+                <p class="auth-switch">Been approved? <a href="<?php echo SITE_URL; ?>/login.php">Try logging in</a></p>
+                <a href="<?php echo SITE_URL; ?>" class="auth-home"><i class="bi bi-arrow-left"></i> Back to home</a>
+            </section>
+        </main>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

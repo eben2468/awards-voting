@@ -135,70 +135,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
-
-    <style>
-        .auth-icon {
-            width: 74px; height: 74px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            background: rgba(42, 82, 152, .1);
-            color: #2a5298;
-            font-size: 2rem;
-            margin: 0 auto 1rem;
-        }
-        .auth-icon.success { background: rgba(25, 135, 84, .12); color: #198754; }
-        .otp-input {
-            font-size: 1.75rem; letter-spacing: .8rem; text-align: center;
-            font-weight: 700; text-indent: .8rem;
-        }
-        .pw-meter { height: 5px; border-radius: 4px; background: #e9ecef; overflow: hidden; }
-        .pw-meter span { display: block; height: 100%; width: 0; transition: width .25s, background .25s; }
-    </style>
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card">
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = 'Get back into your account.';
+            $authIntro = 'Choose a new password and carry on where you left off.';
+            $authImage = authPanelImage('login');
+            include 'includes/auth-panel.php';
+            ?>
+
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
 
                 <?php if ($done): ?>
-                    <div class="text-center mb-4">
-                        <div class="auth-icon success"><i class="bi bi-check-circle-fill"></i></div>
-                        <h3 class="fw-bold mb-2">Password Updated</h3>
-                        <p class="text-muted mb-0">
-                            Your password has been changed. You can now sign in with your new password.
-                        </p>
-                    </div>
+                    <h1>Password updated</h1>
+                    <p class="auth-sub">Your password has been changed. You can now log in with your new password.</p>
 
-                    <div class="alert alert-light border small text-muted">
-                        <i class="bi bi-shield-lock me-1 text-primary"></i>
-                        When you log in we will email a 6-digit verification code to
-                        <strong><?php echo htmlspecialchars(maskEmail($email)); ?></strong> to confirm it is you.
-                    </div>
+                    <a href="<?php echo SITE_URL; ?>/login.php" class="auth-submit">Go to login</a>
 
-                    <a href="<?php echo SITE_URL; ?>/login.php" class="btn btn-primary w-100 btn-lg">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Go to Login
-                    </a>
+                    <p class="auth-note">
+                        <i class="bi bi-shield-lock"></i> When you log in we'll email a 6-digit code to
+                        <strong><?php echo htmlspecialchars(maskEmail($email)); ?></strong> to confirm it's you.
+                    </p>
 
                 <?php else: ?>
-                    <div class="text-center mb-4">
-                        <a href="<?php echo SITE_URL; ?>" class="text-decoration-none">
-                            <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-sm">
-                        </a>
-                        <div class="auth-icon"><i class="bi bi-key-fill"></i></div>
-                        <h3 class="fw-bold mb-2"><?php echo $verified ? 'Choose a New Password' : 'Reset Your Password'; ?></h3>
-                        <p class="text-muted mb-0">
-                            <?php if ($verified): ?>
-                                Almost done &mdash; pick a strong password for
-                                <strong class="text-dark"><?php echo htmlspecialchars($email); ?></strong>.
-                            <?php else: ?>
-                                Enter the 6-digit code we emailed you, or click the reset link in that email.
-                            <?php endif; ?>
-                        </p>
-                    </div>
+                    <h1><?php echo $verified ? 'Choose a new password' : 'Reset your password'; ?></h1>
+                    <p class="auth-sub">
+                        <?php if ($verified): ?>
+                            Pick a strong password for <strong><?php echo htmlspecialchars($email); ?></strong>.
+                        <?php else: ?>
+                            Enter the 6-digit code we emailed you, or click the reset link in that email.
+                        <?php endif; ?>
+                    </p>
 
                     <?php if (!empty($errors)): ?>
                         <div class="alert alert-danger">
-                            <ul class="mb-0 ps-3">
+                            <ul class="mb-0">
                                 <?php foreach ($errors as $error): ?>
                                     <li><?php echo htmlspecialchars($error); ?></li>
                                 <?php endforeach; ?>
@@ -215,33 +191,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="hidden" name="token" value="<?php echo htmlspecialchars($token); ?>">
                             <input type="hidden" name="code" value="<?php echo htmlspecialchars($code); ?>">
 
-                            <div class="mb-3">
-                                <label for="password" class="form-label">New Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                    <input type="password" class="form-control" id="password" name="password"
-                                           placeholder="At least 8 characters" minlength="8" required autofocus>
-                                    <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                </div>
-                                <div class="pw-meter mt-2"><span id="pwMeterBar"></span></div>
-                                <div class="form-text" id="pwHint">Use letters, numbers and a symbol for a stronger password.</div>
+                            <div class="auth-field auth-password">
+                                <label for="password" class="visually-hidden">New password</label>
+                                <input type="password" class="auth-input" id="password" name="password" placeholder="New password"
+                                       autocomplete="new-password" minlength="8" required autofocus>
+                                <button type="button" class="auth-eye" data-toggle-password="password" aria-label="Show password"><i class="bi bi-eye"></i></button>
                             </div>
+                            <div class="auth-meter"><span id="pwMeterBar"></span></div>
+                            <p class="auth-hint" id="pwHint">Use at least 8 characters, with letters, numbers and a symbol.</p>
 
-                            <div class="mb-4">
-                                <label for="confirm_password" class="form-label">Confirm New Password</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-check-circle"></i></span>
-                                    <input type="password" class="form-control" id="confirm_password"
-                                           name="confirm_password" placeholder="Repeat your new password" required>
-                                </div>
-                                <div class="form-text text-danger d-none" id="matchHint">Passwords do not match.</div>
+                            <div class="auth-field">
+                                <label for="confirm_password" class="visually-hidden">Confirm new password</label>
+                                <input type="password" class="auth-input" id="confirm_password" name="confirm_password"
+                                       placeholder="Confirm new password" autocomplete="new-password" required>
                             </div>
+                            <p class="auth-hint text-danger d-none" id="matchHint">Passwords do not match.</p>
 
-                            <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                                <i class="bi bi-shield-check me-2"></i>Update Password
-                            </button>
+                            <button type="submit" class="auth-submit">Update password</button>
                         </form>
 
                     <?php else: ?>
@@ -250,74 +216,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                             <input type="hidden" name="action" value="check_code">
 
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <div class="input-group">
-                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                    <input type="email" class="form-control" id="email" name="email"
-                                           value="<?php echo htmlspecialchars($email); ?>"
-                                           placeholder="you@example.com" required>
-                                </div>
+                            <div class="auth-field">
+                                <label for="email" class="visually-hidden">Email address</label>
+                                <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
+                                       value="<?php echo htmlspecialchars($email); ?>" required>
                             </div>
 
-                            <div class="mb-4">
-                                <label for="code" class="form-label">6-Digit Code</label>
-                                <input type="text" class="form-control otp-input" id="code" name="code"
+                            <div class="auth-field">
+                                <label for="code" class="visually-hidden">6-digit code</label>
+                                <input type="text" class="auth-input auth-code" id="code" name="code"
                                        inputmode="numeric" pattern="[0-9]{6}" maxlength="6"
                                        autocomplete="one-time-code" placeholder="000000" required>
-                                <div class="form-text text-center mt-2">
-                                    The code expires <?php echo RESET_TOKEN_TTL_MINUTES; ?> minutes after it is sent.
-                                </div>
                             </div>
+                            <p class="auth-hint">The code expires <?php echo RESET_TOKEN_TTL_MINUTES; ?> minutes after it is sent.</p>
 
-                            <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                                <i class="bi bi-check2-circle me-2"></i>Verify Code
-                            </button>
+                            <button type="submit" class="auth-submit">Verify code</button>
                         </form>
 
-                        <div class="text-center">
-                            <p class="mb-0 small text-muted">
-                                Code expired or missing?
-                                <a href="<?php echo SITE_URL; ?>/forgot-password.php" class="text-primary fw-semibold">Request a new one</a>
-                            </p>
-                        </div>
+                        <p class="auth-switch">Code expired or missing? <a href="<?php echo SITE_URL; ?>/forgot-password.php">Request a new one</a></p>
                     <?php endif; ?>
                 <?php endif; ?>
 
-                <hr class="my-4">
-
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="<?php echo SITE_URL; ?>/login.php" class="text-muted text-decoration-none">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Login
-                    </a>
-                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener" class="text-success fw-semibold text-decoration-none">
-                        <i class="bi bi-whatsapp me-1"></i>Need help?
-                    </a>
-                </div>
-
-            </div>
-        </div>
+                <p class="auth-switch">Need help? <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener">WhatsApp us</a></p>
+                <a href="<?php echo SITE_URL; ?>/login.php" class="auth-home"><i class="bi bi-arrow-left"></i> Back to login</a>
+            </section>
+        </main>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo assetUrl('assets/js/auth.js'); ?>"></script>
     <script>
         // Numeric-only code field
         const codeInput = document.getElementById('code');
         if (codeInput) {
             codeInput.addEventListener('input', function () {
                 this.value = this.value.replace(/\D/g, '').slice(0, 6);
-            });
-        }
-
-        // Show/hide password
-        const toggle = document.getElementById('togglePassword');
-        if (toggle) {
-            toggle.addEventListener('click', function () {
-                const field = document.getElementById('password');
-                const icon = this.querySelector('i');
-                const showing = field.type === 'text';
-                field.type = showing ? 'password' : 'text';
-                icon.className = showing ? 'bi bi-eye' : 'bi bi-eye-slash';
             });
         }
 
@@ -348,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 const level = levels[Math.max(0, Math.min(score - 1, 4))];
                 bar.style.width = v ? level.w : '0';
                 bar.style.background = level.c;
-                hint.textContent = v ? 'Password strength: ' + level.t : 'Use letters, numbers and a symbol for a stronger password.';
+                hint.textContent = v ? 'Password strength: ' + level.t : 'Use at least 8 characters, with letters, numbers and a symbol.';
             });
         }
 

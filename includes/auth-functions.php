@@ -762,39 +762,17 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
 
         ob_start();
         ?>
-        <div class="support-contact-panel border rounded-4 p-4 bg-light">
-            <h6 class="fw-bold mb-1"><i class="bi bi-headset me-2 text-primary"></i>Need it approved faster?</h6>
-            <p class="text-muted small mb-3">Reach an administrator directly and we will review your account right away.</p>
-
-            <div class="d-grid gap-2">
-                <a href="<?php echo htmlspecialchars($waLink); ?>" target="_blank" rel="noopener"
-                   class="btn btn-success d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-whatsapp fs-5"></i>
-                    <span>Chat on WhatsApp &middot; <?php echo htmlspecialchars(WHATSAPP_NUMBER); ?></span>
-                </a>
-
-                <a href="tel:<?php echo htmlspecialchars($tel); ?>"
-                   class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-telephone-fill"></i>
-                    <span>Call <?php echo htmlspecialchars(SUPPORT_PHONE); ?></span>
-                </a>
-
-                <a href="tel:<?php echo htmlspecialchars($telAlt); ?>"
-                   class="btn btn-outline-primary d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-telephone"></i>
-                    <span>Call <?php echo htmlspecialchars(SUPPORT_PHONE_ALT); ?></span>
-                </a>
-
-                <a href="mailto:<?php echo htmlspecialchars(ADMIN_EMAIL); ?>"
-                   class="btn btn-outline-secondary d-flex align-items-center justify-content-center gap-2">
-                    <i class="bi bi-envelope-fill"></i>
-                    <span><?php echo htmlspecialchars(ADMIN_EMAIL); ?></span>
-                </a>
+        <div class="auth-contacts">
+            <strong>Need it approved faster?</strong>
+            <a href="<?php echo htmlspecialchars($waLink); ?>" target="_blank" rel="noopener" class="auth-contact-whatsapp">
+                <i class="bi bi-whatsapp"></i> Chat on WhatsApp
+            </a>
+            <div class="auth-contact-row">
+                <a href="tel:<?php echo htmlspecialchars($tel); ?>"><i class="bi bi-telephone"></i> <?php echo htmlspecialchars(SUPPORT_PHONE); ?></a>
+                <a href="tel:<?php echo htmlspecialchars($telAlt); ?>"><i class="bi bi-telephone"></i> <?php echo htmlspecialchars(SUPPORT_PHONE_ALT); ?></a>
             </div>
-
-            <p class="text-muted small mb-0 mt-3 text-center">
-                <i class="bi bi-clock me-1"></i>Support hours: Monday &ndash; Saturday, 8:00 AM &ndash; 8:00 PM (GMT)
-            </p>
+            <a href="mailto:<?php echo htmlspecialchars(ADMIN_EMAIL); ?>"><i class="bi bi-envelope"></i> <?php echo htmlspecialchars(ADMIN_EMAIL); ?></a>
+            <p>Support hours: Monday to Saturday, 8:00 AM to 8:00 PM (GMT)</p>
         </div>
         <?php
         return ob_get_clean();

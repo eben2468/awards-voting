@@ -132,6 +132,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     if ($imageError !== '') {
                         $imageErrors[] = ucfirst($stem) . ' picture: ' . $imageError;
                     } elseif ($stored !== null) {
+                        trimImageFile('../uploads/site/' . $stored);
                         deleteStoredImage('../uploads/site', $current);
                         $put($key, $stored);
                     }
@@ -496,7 +497,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                 <input type="hidden" name="form_section" value="auth_images">
 
-                                <p class="text-muted">These appear on the left of the login and signup pages. A PNG with a transparent background looks best. On phones the picture is hidden, so the form comes first.</p>
+                                <p class="text-muted">These appear on the left of the login and signup pages, and the forgot password pages use the login picture. A PNG under 5MB with a transparent background looks best. Empty space around the picture is cut off automatically when you save. On phones the picture is hidden, so the form comes first.</p>
 
                                 <div class="row g-4">
                                     <?php foreach (['login' => 'Login page', 'register' => 'Signup page'] as $page => $label): $field = 'auth_image_' . $page; ?>

@@ -65,21 +65,11 @@ if (!defined('IMAGE_UPLOAD_LOADED')) {
     }
 
     /**
-     * Shrink an image with GD until it fits. Used when a large file reaches the
-     * server without being compressed in the browser.
+     * Load image bytes into GD, turned the right way up.
      *
-     * @return string|null JPEG bytes, or null when this host cannot do it
+     * @return GdImage|null Null when the image cannot be read or is too big
      */
-    function compressImageBytes($bytes, $maxBytes) {
-        if (!function_exists('imagecreatefromstring')) {
-            return null;
-        }
-
-        $info = @getimagesizefromstring($bytes);
-        if ($info === false) {
-            return null;
-        }
-
+    function decodeImageUpright($bytes, array $info) {
         // Decoding needs roughly 5 bytes per pixel, so refuse rather than crash
         @ini_set('memory_limit', '512M');
         $limit = ini_get('memory_limit');
@@ -108,6 +98,30 @@ if (!defined('IMAGE_UPLOAD_LOADED')) {
             }
         }
 
+        return $source;
+    }
+
+    /**
+     * Shrink an image with GD until it fits. Used when a large file reaches the
+     * server without being compressed in the browser.
+     *
+     * @return string|null JPEG bytes, or null when this host cannot do it
+     */
+    function compressImageBytes($bytes, $maxBytes) {
+        if (!function_exists('imagecreatefromstring')) {
+            return null;
+        }
+
+        $info = @getimagesizefromstring($bytes);
+        if ($info === false) {
+            return null;
+        }
+
+        $source = decodeImageUpright($bytes, $info);
+        if ($source === null) {
+            return null;
+        }
+
         $width = imagesx($source);
         $height = imagesy($source);
         $fit = min(1, IMAGE_COMPRESS_SIDE / max($width, $height));
@@ -133,6 +147,121 @@ if (!defined('IMAGE_UPLOAD_LOADED')) {
 
         imagedestroy($source);
         return null;
+    }
+
+    /**
+     * Is this pixel part of the empty margin? Clear pixels always are. On an image
+     * with a solid background, so is anything close to the corner's colour.
+     */
+    function isBlankPixel($pixel, $corner) {
+        $clear = 115; // GD alpha runs from 0 (solid) to 127 (clear)
+        if ((($pixel >> 24) & 0x7F) >= $clear) {
+            return true;
+        }
+        if ((($corner >> 24) & 0x7F) >= $clear) {
+            return false;
+        }
+
+        return abs((($pixel >> 16) & 0xFF) - (($corner >> 16) & 0xFF)) <= 16
+            && abs((($pixel >> 8) & 0xFF) - (($corner >> 8) & 0xFF)) <= 16
+            && abs(($pixel & 0xFF) - ($corner & 0xFF)) <= 16;
+    }
+
+    /**
+     * Cut the empty margins off a stored image, keeping any transparency.
+     * If this host cannot do it, the image simply stays as it was uploaded.
+     *
+     * @return bool True when the file was changed
+     */
+    function trimImageFile($path) {
+        if (!function_exists('imagecreatefromstring')) {
+            return false;
+        }
+
+        $bytes = @file_get_contents($path);
+        $info = $bytes ? @getimagesizefromstring($bytes) : false;
+        // A GIF may be animated, and GD would keep only its first frame
+        if ($info === false || !in_array($info['mime'], ['image/png', 'image/jpeg', 'image/webp'], true)) {
+            return false;
+        }
+
+        $image = decodeImageUpright($bytes, $info);
+        if ($image === null) {
+            return false;
+        }
+
+        imagepalettetotruecolor($image);
+        imagealphablending($image, false);
+        imagesavealpha($image, true);
+
+        $width = imagesx($image);
+        $height = imagesy($image);
+        $corner = imagecolorat($image, 0, 0);
+
+        $rowIsBlank = function ($y) use ($image, $corner, $width) {
+            for ($x = 0; $x < $width; $x++) {
+                if (!isBlankPixel(imagecolorat($image, $x, $y), $corner)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        $columnIsBlank = function ($x, $from, $to) use ($image, $corner) {
+            for ($y = $from; $y <= $to; $y++) {
+                if (!isBlankPixel(imagecolorat($image, $x, $y), $corner)) {
+                    return false;
+                }
+            }
+            return true;
+        };
+
+        $top = 0;
+        $bottom = $height - 1;
+        $left = 0;
+        $right = $width - 1;
+        while ($top < $bottom && $rowIsBlank($top)) {
+            $top++;
+        }
+        while ($bottom > $top && $rowIsBlank($bottom)) {
+            $bottom--;
+        }
+        while ($left < $right && $columnIsBlank($left, $top, $bottom)) {
+            $left++;
+        }
+        while ($right > $left && $columnIsBlank($right, $top, $bottom)) {
+            $right--;
+        }
+
+        $newWidth = $right - $left + 1;
+        $newHeight = $bottom - $top + 1;
+        $nothingToCut = $newWidth === $width && $newHeight === $height;
+        // A nearly empty result means the image was blank, so leave it alone
+        if ($nothingToCut || $newWidth < IMAGE_MIN_DIMENSION || $newHeight < IMAGE_MIN_DIMENSION) {
+            imagedestroy($image);
+            return false;
+        }
+
+        $cropped = imagecrop($image, ['x' => $left, 'y' => $top, 'width' => $newWidth, 'height' => $newHeight]);
+        imagedestroy($image);
+        if ($cropped === false) {
+            return false;
+        }
+
+        imagealphablending($cropped, false);
+        imagesavealpha($cropped, true);
+
+        ob_start();
+        if ($info['mime'] === 'image/png') {
+            $encoded = imagepng($cropped);
+        } elseif ($info['mime'] === 'image/webp') {
+            $encoded = function_exists('imagewebp') && imagewebp($cropped, null, 90);
+        } else {
+            $encoded = imagejpeg($cropped, null, 90);
+        }
+        $result = ob_get_clean();
+        imagedestroy($cropped);
+
+        return $encoded && $result !== '' && @file_put_contents($path, $result) !== false;
     }
 
     /**

@@ -88,79 +88,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
-
-    <style>
-        .auth-icon {
-            width: 74px; height: 74px;
-            display: flex; align-items: center; justify-content: center;
-            border-radius: 50%;
-            background: rgba(42, 82, 152, .1);
-            color: #2a5298;
-            font-size: 2rem;
-            margin: 0 auto 1rem;
-        }
-        .auth-icon.success { background: rgba(25, 135, 84, .12); color: #198754; }
-    </style>
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card">
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = 'Get back into your account.';
+            $authIntro = 'We\'ll email you a secure link to choose a new password.';
+            $authImage = authPanelImage('login');
+            include 'includes/auth-panel.php';
+            ?>
+
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
 
                 <?php if ($sent): ?>
-                    <div class="text-center mb-4">
-                        <div class="auth-icon success"><i class="bi bi-envelope-check-fill"></i></div>
-                        <h3 class="fw-bold mb-2">Check Your Email</h3>
-                        <p class="text-muted mb-0">
-                            If an account exists for<br>
-                            <strong class="text-dark"><?php echo htmlspecialchars($sentTo); ?></strong><br>
-                            we have sent a password reset link to that inbox.
-                        </p>
-                    </div>
+                    <h1>Check your email</h1>
+                    <p class="auth-sub">
+                        If an account exists for <strong><?php echo htmlspecialchars($sentTo); ?></strong>,
+                        we've sent a password reset link to that inbox.
+                    </p>
 
-                    <div class="alert alert-light border small">
-                        <p class="mb-2"><strong><i class="bi bi-1-circle me-1 text-primary"></i>Open the email</strong>
-                            from <?php echo htmlspecialchars(SITE_NAME); ?> and click <em>Reset My Password</em>.</p>
-                        <p class="mb-2"><strong><i class="bi bi-2-circle me-1 text-primary"></i>Prefer a code?</strong>
-                            The email also contains a 6-digit code you can enter manually.</p>
-                        <p class="mb-0 text-muted">
-                            <i class="bi bi-clock me-1"></i>The link and code expire in
-                            <?php echo RESET_TOKEN_TTL_MINUTES; ?> minutes.
-                        </p>
-                    </div>
+                    <ol class="auth-steps">
+                        <li>Open the email from <?php echo htmlspecialchars(SITE_NAME); ?> and click <em>Reset My Password</em>.</li>
+                        <li>Prefer a code? The email also has a 6-digit code you can enter instead.</li>
+                        <li>The link and code expire in <?php echo RESET_TOKEN_TTL_MINUTES; ?> minutes.</li>
+                    </ol>
 
-                    <div class="d-grid gap-2 mt-3">
-                        <a href="<?php echo SITE_URL; ?>/reset-password.php?email=<?php echo rawurlencode($sentTo); ?>"
-                           class="btn btn-primary btn-lg">
-                            <i class="bi bi-key me-2"></i>I have a code - continue
-                        </a>
-                        <a href="<?php echo SITE_URL; ?>/forgot-password.php" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-repeat me-1"></i>Send it again
-                        </a>
-                    </div>
+                    <a href="<?php echo SITE_URL; ?>/reset-password.php?email=<?php echo rawurlencode($sentTo); ?>" class="auth-submit">I have a code</a>
 
-                    <div class="alert alert-light border small text-muted mt-3 mb-0">
-                        <i class="bi bi-info-circle me-1 text-primary"></i>
-                        Nothing after a minute? Check your <strong>Spam</strong> or <strong>Promotions</strong> folder.
-                        Still stuck? WhatsApp or call
-                        <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener" class="fw-semibold"><?php echo WHATSAPP_NUMBER; ?></a>.
-                    </div>
+                    <p class="auth-switch">Didn't get it? <a href="<?php echo SITE_URL; ?>/forgot-password.php">Send it again</a></p>
+                    <p class="auth-note">
+                        Check your Spam or Promotions folder if nothing arrives after a minute. Still stuck? WhatsApp or call
+                        <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener"><?php echo WHATSAPP_NUMBER; ?></a>.
+                    </p>
 
                 <?php else: ?>
-                    <div class="text-center mb-4">
-                        <a href="<?php echo SITE_URL; ?>" class="text-decoration-none">
-                            <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-sm">
-                        </a>
-                        <div class="auth-icon"><i class="bi bi-question-circle-fill"></i></div>
-                        <h3 class="fw-bold mb-2">Forgot Your Password?</h3>
-                        <p class="text-muted mb-0">
-                            Enter the email address on your account and we will send you a link to choose a new password.
-                        </p>
-                    </div>
+                    <h1>Forgot password?</h1>
+                    <p class="auth-sub">Enter the email on your account and we'll send you a reset link.</p>
 
                     <?php if (!empty($errors)): ?>
                         <div class="alert alert-danger">
-                            <ul class="mb-0 ps-3">
+                            <ul class="mb-0">
                                 <?php foreach ($errors as $error): ?>
                                     <li><?php echo htmlspecialchars($error); ?></li>
                                 <?php endforeach; ?>
@@ -171,50 +142,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <form method="POST" action="">
                         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
 
-                        <div class="mb-4">
-                            <label for="email" class="form-label">Email Address</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                                <input type="email"
-                                       class="form-control"
-                                       id="email"
-                                       name="email"
-                                       value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                                       placeholder="you@example.com"
-                                       autofocus
-                                       required>
-                            </div>
-                            <div class="form-text">This is the email you signed up with.</div>
+                        <div class="auth-field">
+                            <label for="email" class="visually-hidden">Email address</label>
+                            <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
+                                   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" autofocus required>
                         </div>
 
-                        <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                            <i class="bi bi-send me-2"></i>Send Reset Link
-                        </button>
+                        <button type="submit" class="auth-submit">Send reset link</button>
                     </form>
 
-                    <div class="text-center">
-                        <p class="mb-0 small text-muted">
-                            Already have a code?
-                            <a href="<?php echo SITE_URL; ?>/reset-password.php" class="text-primary fw-semibold">Enter it here</a>
-                        </p>
-                    </div>
+                    <p class="auth-switch">Already have a code? <a href="<?php echo SITE_URL; ?>/reset-password.php">Enter it here</a></p>
+                    <p class="auth-switch">Don't have an account? <a href="<?php echo SITE_URL; ?>/register.php">Sign up</a></p>
                 <?php endif; ?>
 
-                <hr class="my-4">
-
-                <div class="d-flex justify-content-between align-items-center">
-                    <a href="<?php echo SITE_URL; ?>/login.php" class="text-muted text-decoration-none">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Login
-                    </a>
-                    <a href="<?php echo SITE_URL; ?>/register.php" class="text-primary fw-semibold text-decoration-none">
-                        Create an account
-                    </a>
-                </div>
-
-            </div>
-        </div>
+                <a href="<?php echo SITE_URL; ?>/login.php" class="auth-home"><i class="bi bi-arrow-left"></i> Back to login</a>
+            </section>
+        </main>
     </div>
-
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
