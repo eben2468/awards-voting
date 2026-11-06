@@ -56,7 +56,7 @@ $statsStmt = $pdo->query("
 ");
 $stats = $statsStmt->fetch();
 
-// Fetch top nominees for live results preview
+// The leading nominee for the hero
 $topNomineesStmt = $pdo->prepare("
     SELECT n.*, c.name as category_name, e.title as event_title
     FROM nominees n
@@ -64,30 +64,64 @@ $topNomineesStmt = $pdo->prepare("
     JOIN events e ON c.event_id = e.id
     WHERE e.status = 'active' AND n.status = 'active'
     ORDER BY n.vote_count DESC
-    LIMIT 5
+    LIMIT 1
 ");
 $topNomineesStmt->execute();
 $topNominees = $topNomineesStmt->fetchAll();
 
-// Event posters for the hero wall
+// Event posters for the hero stage
 $posterStmt = $pdo->query("
-    SELECT title, slug, banner
+    SELECT title, slug, banner, start_date, end_date
     FROM events
     WHERE banner IS NOT NULL AND banner != ''
     ORDER BY (status = 'active' AND end_date >= NOW()) DESC, is_featured DESC, created_at DESC
-    LIMIT 8
+    LIMIT 6
 ");
 $posters = $posterStmt->fetchAll();
-$posterColumns = [[], []];
-foreach ($posters as $i => $poster) {
-    $posterColumns[$i % 2][] = $poster;
-}
 
 $openEvents = array_values(array_filter($events, function ($event) {
     return $event['status'] === 'active'
         && strtotime($event['start_date']) <= time()
         && strtotime($event['end_date']) >= time();
 }));
+
+// The next voting deadline to count down to, or failing that the next opening
+$clockStmt = $pdo->query("
+    SELECT id, title, slug, start_date, end_date
+    FROM events
+    WHERE status = 'active' AND end_date >= NOW() AND event_type != 'ticketing'
+    ORDER BY (start_date <= NOW()) DESC, end_date ASC, start_date ASC
+    LIMIT 1
+");
+$clockEvent = $clockStmt->fetch() ?: null;
+$clockNominees = [];
+$clockIsOpen = false;
+$clockTarget = 0;
+$clockLeft = [];
+
+if ($clockEvent) {
+    $clockIsOpen = strtotime($clockEvent['start_date']) <= time();
+    $clockTarget = strtotime($clockIsOpen ? $clockEvent['end_date'] : $clockEvent['start_date']);
+    $secondsLeft = max(0, $clockTarget - time());
+    $clockLeft = [
+        'days'    => intdiv($secondsLeft, 86400),
+        'hours'   => intdiv($secondsLeft % 86400, 3600),
+        'minutes' => intdiv($secondsLeft % 3600, 60),
+        'seconds' => $secondsLeft % 60,
+    ];
+
+    // Random, so the order never hints at who is ahead while counts are hidden
+    $clockNomineesStmt = $pdo->prepare("
+        SELECT n.name, n.photo, c.name AS category_name
+        FROM nominees n
+        JOIN categories c ON n.category_id = c.id
+        WHERE c.event_id = ? AND n.status = 'active' AND c.status = 'active'
+        ORDER BY n.photo IS NULL, RAND()
+        LIMIT 6
+    ");
+    $clockNomineesStmt->execute([$clockEvent['id']]);
+    $clockNominees = $clockNomineesStmt->fetchAll();
+}
 
 $eventImage = function ($event) {
     return $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/800/1000?random=' . $event['id'];
@@ -100,12 +134,36 @@ $nomineeImage = function ($nominee) {
 $plural = function ($count, $one, $many) {
     return number_format($count) . ' ' . ($count == 1 ? $one : $many);
 };
+$eventState = function ($event) use ($plural) {
+    if (strtotime($event['end_date']) < time()) {
+        return ['label' => 'Voting closed', 'action' => 'See results'];
+    }
+    if (strtotime($event['start_date']) > time()) {
+        return ['label' => 'Opens ' . date('j M', strtotime($event['start_date'])), 'action' => 'View details'];
+    }
+    $daysLeft = (int) floor((strtotime($event['end_date']) - time()) / 86400);
+    return ['label' => $daysLeft < 1 ? 'Last day to vote' : $plural($daysLeft, 'day', 'days') . ' left', 'action' => 'Vote now'];
+};
+
+// The curtains play once per visit, so this must run before the first paint
+$extra_css = '<link rel="stylesheet" href="' . assetUrl('assets/css/home.css') . '">'
+    . '<script>try{if(sessionStorage.getItem("vh_intro"))document.documentElement.classList.add("intro-seen")}catch(e){}</script>';
+$extra_js = '<script src="' . assetUrl('assets/js/home-motion.js') . '"></script>';
 
 include 'includes/header.php';
 ?>
 
 <!-- Hero -->
+<div class="read-bar" aria-hidden="true"></div>
+<div class="hx-pin">
 <section class="hx">
+    <div class="hx-lights" aria-hidden="true">
+        <span class="beam beam-1"></span>
+        <span class="beam beam-2"></span>
+        <span class="beam beam-3"></span>
+    </div>
+    <div class="hx-sparks" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+
     <div class="container hx-grid">
         <div class="hx-copy">
             <p class="kicker hx-in" style="--i:0">
@@ -116,9 +174,9 @@ include 'includes/header.php';
                 <?php endif; ?>
             </p>
             <h1 class="hx-title">
-                <span class="hx-line hx-in" style="--i:1">Every vote</span>
-                <span class="hx-line hx-in" style="--i:2">puts someone</span>
-                <span class="hx-line hx-in" style="--i:3"><em class="hx-stage">on stage.</em></span>
+                <span class="hx-line"><span style="--i:1">Every vote</span></span>
+                <span class="hx-line"><span style="--i:2">puts someone</span></span>
+                <span class="hx-line"><span style="--i:3"><em class="hx-stage">on stage.</em></span></span>
             </h1>
             <p class="hx-lead hx-in" style="--i:4">Back your nominee with Mobile Money or card, watch the count move, and book your seat for the big night.</p>
 
@@ -137,17 +195,41 @@ include 'includes/header.php';
         </div>
 
         <?php if (!empty($posters)): ?>
-        <div class="hx-wall" aria-hidden="true">
-            <?php foreach ($posterColumns as $c => $column): ?>
-                <?php if (empty($column)) continue; ?>
-                <div class="wall-col wall-col-<?php echo $c; ?>">
-                    <div class="wall-track">
-                        <?php foreach (array_merge($column, $column) as $poster): ?>
-                            <img src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="" loading="lazy">
+        <div class="hx-show">
+            <div class="mq" data-marquee>
+                <div class="mq-screen">
+                    <?php foreach ($posters as $i => $poster): ?>
+                        <a class="mq-slide<?php echo $i === 0 ? ' is-on' : ''; ?>" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>"<?php echo $i === 0 ? '' : ' tabindex="-1"'; ?>>
+                            <img class="mq-backdrop" src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="">
+                            <img class="mq-poster" src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="<?php echo htmlspecialchars($poster['title']); ?>"<?php echo $i === 0 ? ' fetchpriority="high"' : ''; ?>>
+                        </a>
+                    <?php endforeach; ?>
+                </div>
+
+                <div class="mq-panel">
+                    <p class="mq-sign">Now showing</p>
+
+                    <div class="mq-details">
+                        <?php foreach ($posters as $i => $poster): $state = $eventState($poster); ?>
+                            <div class="mq-info<?php echo $i === 0 ? ' is-on' : ''; ?>">
+                                <h2 class="mq-title"><?php echo htmlspecialchars($poster['title']); ?></h2>
+                                <p class="mq-state"><?php echo $state['label']; ?></p>
+                                <a class="mq-action" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>"<?php echo $i === 0 ? '' : ' tabindex="-1"'; ?>><?php echo $state['action']; ?> <i class="bi bi-arrow-right"></i></a>
+                            </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <?php if (count($posters) > 1): ?>
+                        <div class="mq-rail">
+                            <?php foreach ($posters as $i => $poster): ?>
+                                <a class="mq-thumb<?php echo $i === 0 ? ' is-on' : ''; ?>" href="event-details?slug=<?php echo urlencode($poster['slug']); ?>" data-slide="<?php echo $i; ?>" aria-label="Show <?php echo htmlspecialchars($poster['title']); ?>">
+                                    <img src="uploads/events/<?php echo htmlspecialchars($poster['banner']); ?>" alt="">
+                                </a>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
-            <?php endforeach; ?>
+            </div>
 
             <?php if (!empty($topNominees) && $show_vote_counts): $leader = $topNominees[0]; ?>
                 <div class="lead-card">
@@ -155,14 +237,22 @@ include 'includes/header.php';
                     <div>
                         <span class="lead-card-label">Leading now</span>
                         <strong><?php echo htmlspecialchars($leader['name']); ?></strong>
-                        <span class="lead-card-votes"><?php echo $plural($leader['vote_count'], 'vote', 'votes'); ?></span>
+                        <span class="lead-card-votes"><span class="counter" data-target="<?php echo (int) $leader['vote_count']; ?>"><?php echo number_format($leader['vote_count']); ?></span> <?php echo (int) $leader['vote_count'] === 1 ? 'vote' : 'votes'; ?></span>
                     </div>
                 </div>
             <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>
+
+    <div class="hx-hem" aria-hidden="true"></div>
+    <div class="hx-curtain" aria-hidden="true"><span class="cur-l"></span><span class="cur-r"></span></div>
+    <div class="hx-call" aria-hidden="true">
+        <img src="<?php echo assetUrl('assets/logo/emblem.png'); ?>" alt="" width="150" height="150" loading="lazy">
+        <p>Who gets your vote?</p>
+    </div>
 </section>
+</div>
 
 <!-- Event ticker -->
 <?php if (!empty($events)): ?>
@@ -290,41 +380,45 @@ include 'includes/header.php';
     </div>
 </section>
 
-<!-- Live race -->
-<?php if (!empty($topNominees)): ?>
-<section class="sec sec-night live-results">
-    <div class="container">
-        <header class="sec-head rv">
-            <div>
-                <p class="kicker"><span class="live-dot"></span>Live</p>
-                <h2>The race<br>right now.</h2>
-            </div>
-            <a href="results" class="link-arrow">Full results <i class="bi bi-arrow-right"></i></a>
-        </header>
+<!-- The clock -->
+<?php if ($clockEvent): ?>
+<section class="sec sec-night clock">
+    <div class="container clock-grid<?php echo empty($clockNominees) ? ' is-solo' : ''; ?>">
+        <div class="clock-main rv">
+            <p class="kicker"><span class="live-dot"></span><?php echo $clockIsOpen ? 'Voting is open' : 'Coming up'; ?></p>
+            <h2><?php echo $clockIsOpen ? 'The clock<br>is running.' : 'The countdown<br>is on.'; ?></h2>
+            <p class="clock-for">
+                <?php echo $clockIsOpen ? 'Until voting closes on' : 'Until voting opens on'; ?>
+                <a href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>"><?php echo htmlspecialchars($clockEvent['title']); ?></a>
+            </p>
 
-        <ol class="race">
-            <?php
-            $maxVotes = max(1, (int) $topNominees[0]['vote_count']);
-            foreach ($topNominees as $index => $nominee):
-                $percentage = ($nominee['vote_count'] / $maxVotes) * 100;
-            ?>
-                <li class="result-item animate-on-scroll rv" style="--d:<?php echo $index * 70; ?>ms" data-nominee-id="<?php echo $nominee['id']; ?>">
-                    <span class="race-rank"><?php echo $index + 1; ?></span>
-                    <img src="<?php echo $nomineeImage($nominee); ?>" alt="" class="race-photo" loading="lazy">
-                    <div class="race-who">
-                        <strong><?php echo htmlspecialchars($nominee['name']); ?></strong>
-                        <span><?php echo htmlspecialchars($nominee['category_name']); ?> &middot; <?php echo htmlspecialchars($nominee['event_title']); ?></span>
+            <div class="flip" role="timer" data-deadline="<?php echo $clockTarget; ?>">
+                <?php foreach (['days' => $clockLeft['days'], 'hours' => $clockLeft['hours'], 'minutes' => $clockLeft['minutes'], 'seconds' => $clockLeft['seconds']] as $unit => $value): ?>
+                    <div class="flip-unit">
+                        <span class="flip-tile" data-unit="<?php echo $unit; ?>"><?php echo str_pad((string) $value, 2, '0', STR_PAD_LEFT); ?></span>
+                        <small><?php echo $unit; ?></small>
                     </div>
-                    <?php if ($show_vote_counts): ?>
-                        <span class="vote-count"><?php echo number_format($nominee['vote_count']); ?></span>
-                        <div class="race-bar"><div class="progress-bar" style="width: <?php echo $percentage; ?>%"></div></div>
-                    <?php endif; ?>
-                </li>
-            <?php endforeach; ?>
-        </ol>
+                <?php endforeach; ?>
+            </div>
 
-        <?php if (!$show_vote_counts): ?>
-            <p class="race-note">Vote counts are hidden for now. Nominees can follow their numbers in the <a href="nominee-results">results portal</a>.</p>
+            <a class="clock-action" href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>"><?php echo $clockIsOpen ? 'Vote now' : 'View event'; ?> <i class="bi bi-arrow-right"></i></a>
+        </div>
+
+        <?php if (!empty($clockNominees)): ?>
+            <div class="clock-people">
+                <p class="clock-people-head rv">Meet the nominees</p>
+                <ul class="nom-grid">
+                    <?php foreach ($clockNominees as $i => $nominee): ?>
+                        <li class="rv" style="--d:<?php echo $i * 70; ?>ms">
+                            <a class="nom" href="event-details?slug=<?php echo urlencode($clockEvent['slug']); ?>">
+                                <img src="<?php echo $nomineeImage($nominee); ?>" alt="" loading="lazy">
+                                <strong><?php echo htmlspecialchars($nominee['name']); ?></strong>
+                                <span><?php echo htmlspecialchars($nominee['category_name']); ?></span>
+                            </a>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
         <?php endif; ?>
     </div>
 </section>
