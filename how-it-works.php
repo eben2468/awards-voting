@@ -30,7 +30,7 @@ include 'includes/header.php';
             <!-- Step 1 -->
             <div class="col-lg-3 col-md-6">
                 <div class="step-card-full text-center p-4 h-100">
-                    <div class="step-icon mb-4">
+                    <div class="step-icon mb-3">
                         <div class="step-number-lg">1</div>
                     </div>
                     <h4>Find an Event</h4>
@@ -41,7 +41,7 @@ include 'includes/header.php';
             <!-- Step 2 -->
             <div class="col-lg-3 col-md-6">
                 <div class="step-card-full text-center p-4 h-100">
-                    <div class="step-icon mb-4">
+                    <div class="step-icon mb-3">
                         <div class="step-number-lg">2</div>
                     </div>
                     <h4>Browse Events</h4>
@@ -52,7 +52,7 @@ include 'includes/header.php';
             <!-- Step 3 -->
             <div class="col-lg-3 col-md-6">
                 <div class="step-card-full text-center p-4 h-100">
-                    <div class="step-icon mb-4">
+                    <div class="step-icon mb-3">
                         <div class="step-number-lg">3</div>
                     </div>
                     <h4>Cast Your Vote</h4>
@@ -63,7 +63,7 @@ include 'includes/header.php';
             <!-- Step 4 -->
             <div class="col-lg-3 col-md-6">
                 <div class="step-card-full text-center p-4 h-100">
-                    <div class="step-icon mb-4">
+                    <div class="step-icon mb-3">
                         <div class="step-number-lg">4</div>
                     </div>
                     <h4>Watch Results</h4>
@@ -87,7 +87,7 @@ include 'includes/header.php';
                 <div class="voting-method-card p-4 mb-4">
                     <div class="d-flex align-items-start gap-3">
                         <div class="method-icon bg-primary-soft">
-                            <i class="bi bi-mouse text-primary fs-4"></i>
+                            <i class="bi bi-mouse"></i>
                         </div>
                         <div>
                             <h5 class="mb-2">One-Click Voting</h5>
@@ -99,7 +99,7 @@ include 'includes/header.php';
                 <div class="voting-method-card p-4 mb-4">
                     <div class="d-flex align-items-start gap-3">
                         <div class="method-icon bg-success-soft">
-                            <i class="bi bi-hash text-success fs-4"></i>
+                            <i class="bi bi-hash"></i>
                         </div>
                         <div>
                             <h5 class="mb-2">Shortcode Voting</h5>
@@ -111,7 +111,7 @@ include 'includes/header.php';
                 <div class="voting-method-card p-4">
                     <div class="d-flex align-items-start gap-3">
                         <div class="method-icon bg-warning-soft">
-                            <i class="bi bi-phone text-warning fs-4"></i>
+                            <i class="bi bi-phone"></i>
                         </div>
                         <div>
                             <h5 class="mb-2">Mobile Friendly</h5>
@@ -199,11 +199,11 @@ include 'includes/header.php';
                         </li>
                         <li class="mb-3 d-flex align-items-start">
                             <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">2</span>
-                            <span>Choose **Option 2 (Buy ticket)** from the main menu.</span>
+                            <span>Choose <strong>Option 2 (Buy ticket)</strong> from the main menu.</span>
                         </li>
                         <li class="mb-3 d-flex align-items-start">
                             <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">3</span>
-                            <span>Enter the unique event shortcode (e.g., **CONCERT26**) found on the event card.</span>
+                            <span>Enter the unique event shortcode (e.g., <strong>CONCERT26</strong>) found on the event card.</span>
                         </li>
                         <li class="mb-3 d-flex align-items-start">
                             <span class="badge bg-warning text-dark me-2 rounded-circle" style="width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; font-weight: 700;">4</span>
@@ -405,18 +405,38 @@ include 'includes/header.php';
     box-shadow: var(--shadow-xl);
 }
 
-.step-number-lg {
-    width: 80px;
-    height: 80px;
-    background: var(--gradient-primary);
-    border-radius: 50%;
+.step-number-lg,
+.ticketing-step-num,
+.method-icon,
+.feature-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    font-weight: 800;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    background: rgba(var(--primary-rgb), 0.09);
+    color: var(--navy);
+    font-size: 1.125rem;
+    transition: background var(--transition), color var(--transition);
+}
+
+.step-number-lg,
+.ticketing-step-num {
+    border-radius: 50%;
+    font-family: var(--display);
+    font-weight: 700;
+}
+
+.method-icon,
+.feature-icon { border-radius: 10px; }
+
+.step-number-lg { margin: 0 auto; }
+
+.step-card-full:hover .step-number-lg,
+.feature-card:hover .feature-icon {
+    background: var(--navy);
     color: var(--white);
-    margin: 0 auto;
 }
 
 .voting-method-card {
@@ -430,26 +450,14 @@ include 'includes/header.php';
     box-shadow: var(--shadow-md);
 }
 
-.method-icon {
-    width: 50px;
-    height: 50px;
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
+.method-icon.bg-success-soft {
+    background: rgba(16, 185, 129, 0.12);
+    color: var(--green);
 }
 
-.bg-primary-soft {
-    background: rgba(var(--primary-rgb), 0.1);
-}
-
-.bg-success-soft {
-    background: rgba(16, 185, 129, 0.1);
-}
-
-.bg-warning-soft {
-    background: rgba(245, 158, 11, 0.1);
+.method-icon.bg-warning-soft {
+    background: rgba(224, 165, 38, 0.16);
+    color: var(--gold-deep);
 }
 
 .text-gray-300 {
@@ -463,7 +471,7 @@ include 'includes/header.php';
 .feature-card {
     background: var(--white);
     border-radius: var(--radius-lg);
-    padding: 2rem;
+    padding: 1.5rem;
     box-shadow: var(--shadow);
     transition: all var(--transition);
 }
@@ -471,18 +479,6 @@ include 'includes/header.php';
 .feature-card:hover {
     transform: translateY(-5px);
     box-shadow: var(--shadow-xl);
-}
-
-.feature-icon {
-    width: 60px;
-    height: 60px;
-    background: var(--gradient-primary);
-    border-radius: var(--radius);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.5rem;
-    color: var(--white);
 }
 
 .accordion-button:not(.collapsed) {
@@ -502,17 +498,9 @@ include 'includes/header.php';
 }
 
 .ticketing-step-num {
-    width: 40px;
-    height: 40px;
-    background: var(--gradient-primary);
-    color: var(--white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 700;
-    font-size: 1.1rem;
-    flex-shrink: 0;
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
     margin-top: 2px;
 }
 </style>
