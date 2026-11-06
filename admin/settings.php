@@ -95,8 +95,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $put('smtp_from_email', trim($_POST['smtp_from_email'] ?? ''));
                 $put('smtp_from_name', trim($_POST['smtp_from_name'] ?? SITE_NAME));
 
-                // Only overwrite the app password when a new one is typed in
-                $newPassword = str_replace(' ', '', $_POST['smtp_password'] ?? '');
+                // Only overwrite the password when a new one is typed in. Google shows its
+                // App Passwords with spaces; any other mailbox password may really contain one.
+                $newPassword = $_POST['smtp_password'] ?? '';
+                if (stripos($_POST['smtp_host'] ?? '', 'gmail') !== false) {
+                    $newPassword = str_replace(' ', '', $newPassword);
+                }
                 if ($newPassword !== '') {
                     $put('smtp_password', $newPassword);
                 }
@@ -177,7 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
 
                     $testResult = $sent
-                        ? ['ok' => true, 'text' => 'Test email sent to ' . e($testTo) . '. Check the inbox (and spam folder).']
+                        ? ['ok' => true, 'text' => 'The mail server accepted the email for ' . e($testTo) . '. Ask that person to check their inbox and spam folder.']
                         : ['ok' => false, 'text' => 'Could not send: ' . e(getLastMailError() ?: 'unknown error')];
                 }
             }
@@ -319,6 +323,14 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     </div>
                                 </div>
 
+                                <div class="alert alert-info small">
+                                    <strong>Use a votehubgh.com mailbox for users' codes.</strong>
+                                    Gmail keeps a copy of every email in the Sent folder of the account used here, and
+                                    mail from a personal Gmail is more likely to land in spam. For a Hostinger mailbox such as
+                                    noreply@votehubgh.com, use host <code>smtp.hostinger.com</code>, port <code>465</code>,
+                                    encryption SSL, and that mailbox's address and password.
+                                </div>
+
                                 <div class="row g-3">
                                     <div class="col-md-8">
                                         <label class="form-label">SMTP Host</label>
@@ -340,13 +352,13 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                         </select>
                                     </div>
                                     <div class="col-md-8">
-                                        <label class="form-label">Gmail Address (SMTP username)</label>
+                                        <label class="form-label">Email Address (SMTP username)</label>
                                         <input type="email" class="form-control" name="smtp_username"
                                                value="<?php echo e($settings['smtp_username']); ?>"
                                                placeholder="yourname@gmail.com">
                                     </div>
                                     <div class="col-md-12">
-                                        <label class="form-label">App Password</label>
+                                        <label class="form-label">Password or App Password</label>
                                         <input type="password" class="form-control" name="smtp_password"
                                                placeholder="<?php echo $hasSmtpPassword ? 'Saved - leave blank to keep it' : 'abcd efgh ijkl mnop'; ?>"
                                                autocomplete="new-password">
@@ -355,7 +367,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                                 <i class="bi bi-check-circle text-success me-1"></i>A password is saved.
                                                 Leave this blank unless you want to replace it.
                                             <?php else: ?>
-                                                Paste the 16-character App Password. Spaces are removed automatically.
+                                                Paste the mailbox password, or the 16-character App Password for Gmail.
                                             <?php endif; ?>
                                         </div>
                                     </div>
@@ -396,7 +408,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     </button>
                                 </div>
                                 <div class="col-12">
-                                    <div class="form-text">Save your settings first, then send a test to confirm delivery.</div>
+                                    <div class="form-text">Save your settings first, then test with someone else's address. A test to yourself cannot show that others receive mail.</div>
                                 </div>
                             </form>
                         </div>

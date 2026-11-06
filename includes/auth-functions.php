@@ -135,7 +135,7 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
 
         $sent = sendMailMessage(
             $user['email'],
-            'Your ' . SITE_NAME . ' login code: ' . $code,
+            'Your ' . SITE_NAME . ' login code',
             buildEmailTemplate('Two-Step Verification', $body, 'Your login code is ' . $code)
         );
 
