@@ -355,17 +355,23 @@ include 'includes/header.php';
 }
 
 
-.contact-icon {
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: var(--radius);
+.contact-icon,
+.social-link,
+.quick-help-icon {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.25rem;
-    color: var(--primary-light);
     flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 1.125rem;
+    transition: background var(--transition), color var(--transition);
+}
+
+.contact-icon {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--primary-light);
 }
 
 .contact-icon i {
@@ -382,19 +388,13 @@ include 'includes/header.php';
     box-shadow: var(--shadow);
 }
 
-.social-link {
-    width: 50px;
-    height: 50px;
-    background: var(--gray-100);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.25rem;
-    color: var(--gray-600);
-    transition: all var(--transition);
-    text-decoration: none;
+.social-link,
+.quick-help-icon {
+    background: rgba(var(--primary-rgb), 0.09);
+    color: var(--navy);
 }
+
+.social-link { text-decoration: none; }
 
 .social-link i {
     display: flex;
@@ -404,10 +404,10 @@ include 'includes/header.php';
     margin: 0;
 }
 
-.social-link:hover {
-    background: var(--gradient-primary);
+.social-link:hover,
+.quick-help-card:hover .quick-help-icon {
+    background: var(--navy);
     color: var(--white);
-    transform: translateY(-3px);
 }
 
 .map-container {
@@ -428,7 +428,7 @@ include 'includes/header.php';
     display: block;
     background: var(--gray-50);
     border-radius: var(--radius-lg);
-    padding: 2rem;
+    padding: 1.5rem;
     text-align: center;
     text-decoration: none;
     transition: all var(--transition);
@@ -445,18 +445,7 @@ include 'includes/header.php';
     margin-bottom: 0.5rem;
 }
 
-.quick-help-icon {
-    width: 70px;
-    height: 70px;
-    background: var(--gradient-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.75rem;
-    color: var(--white);
-    margin: 0 auto 1.5rem;
-}
+.quick-help-icon { margin: 0 auto 0.75rem; }
 
 @media (max-width: 991.98px) {
     .contact-form-card,
