@@ -205,13 +205,34 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
     }
 
     /**
-     * Picture for the login or signup panel, set in Settings, or the emblem.
+     * The sign-in pages that can have their own picture in Settings. A page with
+     * no picture of its own borrows the one named by 'fallback'.
+     */
+    function authImagePages() {
+        return [
+            'login'    => ['label' => 'Login', 'stem' => 'login', 'fallback' => null, 'hint' => ''],
+            'register' => ['label' => 'Signup', 'stem' => 'signup', 'fallback' => null, 'hint' => ''],
+            'forgot'   => ['label' => 'Forgot password', 'stem' => 'forgot', 'fallback' => 'login', 'hint' => 'Also shown on the "Check your email" step.'],
+            'reset'    => ['label' => 'Reset password', 'stem' => 'reset', 'fallback' => 'forgot', 'hint' => 'Shown while entering the code and choosing a new password.'],
+            'verify'   => ['label' => 'Login code', 'stem' => 'verify', 'fallback' => 'login', 'hint' => 'The page that asks for the 6-digit code.'],
+            'approval' => ['label' => 'Awaiting approval', 'stem' => 'approval', 'fallback' => 'register', 'hint' => 'Also shown to organizers who were not approved.'],
+        ];
+    }
+
+    /**
+     * Picture for a sign-in page's panel: its own, then its fallback, then the emblem.
      */
     function authPanelImage($page) {
-        $file = basename((string) getSetting('auth_image_' . $page, ''));
-        if ($file !== '' && is_file(dirname(__DIR__) . '/uploads/site/' . $file)) {
-            return SITE_URL . '/uploads/site/' . rawurlencode($file);
+        $pages = authImagePages();
+
+        while ($page !== null) {
+            $file = basename((string) getSetting('auth_image_' . $page, ''));
+            if ($file !== '' && is_file(dirname(__DIR__) . '/uploads/site/' . $file)) {
+                return SITE_URL . '/uploads/site/' . rawurlencode($file);
+            }
+            $page = $pages[$page]['fallback'] ?? null;
         }
+
         return assetUrl('assets/logo/emblem.png');
     }
 

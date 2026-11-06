@@ -137,7 +137,7 @@ $maskedEmail = maskEmail($pending['email']);
             <?php
             $authHeadline = 'One more step to sign in.';
             $authIntro = 'This code keeps your account safe, even if someone else has your password.';
-            $authImage = authPanelImage('login');
+            $authImage = authPanelImage('verify');
             include 'includes/auth-panel.php';
             ?>
 

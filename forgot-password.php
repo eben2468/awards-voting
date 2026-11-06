@@ -95,7 +95,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <?php
             $authHeadline = 'Get back into your account.';
             $authIntro = 'We\'ll email you a secure link to choose a new password.';
-            $authImage = authPanelImage('login');
+            $authImage = authPanelImage('forgot');
             include 'includes/auth-panel.php';
             ?>
 

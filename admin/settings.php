@@ -42,9 +42,13 @@ $loadSettings = function () {
         'login_max_attempts'          => getSetting('login_max_attempts', '5'),
         'login_lockout_minutes'       => getSetting('login_lockout_minutes', '15'),
         'session_timeout_minutes'     => getSetting('session_timeout_minutes', '30'),
-        // Login and signup pictures
+        // Sign-in page pictures
         'auth_image_login'            => getSetting('auth_image_login', ''),
         'auth_image_register'         => getSetting('auth_image_register', ''),
+        'auth_image_forgot'           => getSetting('auth_image_forgot', ''),
+        'auth_image_reset'            => getSetting('auth_image_reset', ''),
+        'auth_image_verify'           => getSetting('auth_image_verify', ''),
+        'auth_image_approval'         => getSetting('auth_image_approval', ''),
     ];
 };
 
@@ -115,10 +119,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $message = 'Security settings saved.';
             }
 
-            // ---------------- Login and signup pictures ----------------
+            // ---------------- Sign-in page pictures ----------------
             if ($formSection === 'auth_images') {
                 $imageErrors = [];
-                foreach (['auth_image_login' => 'login', 'auth_image_register' => 'signup'] as $key => $stem) {
+                foreach (authImagePages() as $page => $picture) {
+                    $key = 'auth_image_' . $page;
                     $current = getSetting($key, '');
 
                     if (isset($_POST[$key . '_remove'])) {
@@ -128,9 +133,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
 
                     $imageError = '';
-                    $stored = storeImageFromForm($key, '../uploads/site', $stem . '-image', $imageError);
+                    $stored = storeImageFromForm($key, '../uploads/site', $picture['stem'] . '-image', $imageError);
                     if ($imageError !== '') {
-                        $imageErrors[] = ucfirst($stem) . ' picture: ' . $imageError;
+                        $imageErrors[] = $picture['label'] . ' picture: ' . $imageError;
                     } elseif ($stored !== null) {
                         trimImageFile('../uploads/site/' . $stored);
                         deleteStoredImage('../uploads/site', $current);
@@ -139,7 +144,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
 
                 $success = empty($writeFailures) && empty($imageErrors);
-                $message = empty($imageErrors) ? 'Login and signup pictures saved.' : implode(' ', array_map('htmlspecialchars', $imageErrors));
+                $message = empty($imageErrors) ? 'Sign-in page pictures saved.' : implode(' ', array_map('htmlspecialchars', $imageErrors));
             }
 
             if (!empty($writeFailures)) {
@@ -490,28 +495,34 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                     <!-- Login and signup pictures -->
                     <div class="card border-0 shadow-sm mt-4 mb-4">
                         <div class="card-header bg-white">
-                            <h5 class="mb-0"><i class="bi bi-image me-2"></i>Login &amp; Signup Pictures</h5>
+                            <h5 class="mb-0"><i class="bi bi-image me-2"></i>Sign-in Page Pictures</h5>
                         </div>
                         <div class="card-body">
                             <form method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                                 <input type="hidden" name="form_section" value="auth_images">
 
-                                <p class="text-muted">These appear on the left of the login and signup pages, and the forgot password pages use the login picture. A PNG under 5MB with a transparent background looks best. Empty space around the picture is cut off automatically when you save. On phones the picture is hidden, so the form comes first.</p>
+                                <p class="text-muted">These appear on the left of each sign-in page. A page without its own picture borrows another one, as shown under it. A PNG under 5MB with a transparent background looks best. Empty space around the picture is cut off automatically when you save. On phones the picture is hidden, so the form comes first.</p>
 
                                 <div class="row g-4">
-                                    <?php foreach (['login' => 'Login page', 'register' => 'Signup page'] as $page => $label): $field = 'auth_image_' . $page; ?>
+                                    <?php $authPictures = authImagePages(); ?>
+                                    <?php foreach ($authPictures as $page => $picture): $field = 'auth_image_' . $page; ?>
                                         <div class="col-md-6">
-                                            <label class="form-label" for="<?php echo $field; ?>"><?php echo $label; ?></label>
+                                            <label class="form-label" for="<?php echo $field; ?>"><?php echo htmlspecialchars($picture['label']); ?></label>
                                             <div class="auth-image-preview">
                                                 <img src="<?php echo htmlspecialchars(authPanelImage($page)); ?>" alt="">
                                             </div>
                                             <input type="file" class="form-control" id="<?php echo $field; ?>" name="<?php echo $field; ?>" accept="image/*" data-compress-max="5242880">
+                                            <?php if ($picture['hint'] !== ''): ?>
+                                                <div class="form-text"><?php echo htmlspecialchars($picture['hint']); ?></div>
+                                            <?php endif; ?>
                                             <?php if ($settings[$field] !== ''): ?>
                                                 <div class="form-check mt-2">
                                                     <input class="form-check-input" type="checkbox" id="<?php echo $field; ?>_remove" name="<?php echo $field; ?>_remove">
                                                     <label class="form-check-label" for="<?php echo $field; ?>_remove">Remove this picture</label>
                                                 </div>
+                                            <?php elseif ($picture['fallback'] !== null): ?>
+                                                <div class="form-text">No picture yet, so this page borrows the <?php echo htmlspecialchars($authPictures[$picture['fallback']]['label']); ?> picture.</div>
                                             <?php endif; ?>
                                         </div>
                                     <?php endforeach; ?>

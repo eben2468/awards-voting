@@ -100,7 +100,7 @@ $contactContext = $isRejected
             $authIntro = $isRejected
                 ? 'Talk to our team and we\'ll take another look at your account.'
                 : 'Once you\'re approved, you can create your first event.';
-            $authImage = authPanelImage('register');
+            $authImage = authPanelImage('approval');
             include 'includes/auth-panel.php';
             ?>
 

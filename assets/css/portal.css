@@ -639,6 +639,7 @@
 
 .auth-image-preview {
     display: grid;
+    grid-template: minmax(0, 1fr) / minmax(0, 1fr);
     place-items: center;
     height: 170px;
     overflow: hidden;
