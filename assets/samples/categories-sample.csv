@@ -1,0 +1,4 @@
+name,description,display_order,access_code,status
+Artist of the Year,The artist with the biggest year,1,,active
+Best New Artist,"For artists releasing their first project, single or album",2,,active
+Song of the Year,The most loved song of the year,3,,active

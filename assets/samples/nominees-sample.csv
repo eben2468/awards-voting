@@ -1,0 +1,5 @@
+category,name,description,shortcode,status
+Artist of the Year,Sample Nominee One,A short description of this nominee,,active
+Artist of the Year,Sample Nominee Two,,,active
+Best New Artist,Sample Nominee Three,"Text with a comma, like this, goes in double quotes",,active
+Song of the Year,Sample Nominee Four,,,active

@@ -95,9 +95,14 @@ $categories = $stmt->fetchAll();
                     <h2 class="mb-1">Categories</h2>
                     <p class="text-muted mb-0">Manage award categories</p>
                 </div>
-                <a href="add.php<?php echo $eventId ? "?event=$eventId" : ''; ?>" class="btn btn-primary">
-                    <i class="bi bi-plus-lg me-2"></i>Add Category
-                </a>
+                <div class="d-flex flex-wrap gap-2">
+                    <a href="bulk.php<?php echo $eventId ? "?event=$eventId" : ''; ?>" class="btn btn-outline-primary">
+                        <i class="bi bi-upload me-2"></i>Bulk Upload
+                    </a>
+                    <a href="add.php<?php echo $eventId ? "?event=$eventId" : ''; ?>" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>Add Category
+                    </a>
+                </div>
             </div>
 
             <?php $flash = getFlash(); if ($flash): ?>
