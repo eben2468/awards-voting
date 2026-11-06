@@ -12,6 +12,8 @@ if (!isLoggedIn() || !isAdmin()) {
     redirect('login.php');
 }
 
+require_once '../../includes/event-list.php';
+
 $page_title = 'Manage Events';
 $pdo = getDBConnection();
 
@@ -36,6 +38,7 @@ $stmt = $pdo->query("
            COUNT(DISTINCT c.id) as category_count,
            COUNT(DISTINCT n.id) as nominee_count,
            COALESCE(SUM(n.vote_count), 0) as total_votes,
+           " . eventListTicketColumns() . ",
            u.fullname as created_by_name
     FROM events e
     LEFT JOIN categories c ON e.id = c.event_id
@@ -75,7 +78,7 @@ $events = $stmt->fetchAll();
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h2 class="mb-1">Events</h2>
-                    <p class="text-muted mb-0">Manage all voting events</p>
+                    <p class="text-muted mb-0">All awards and ticketed events on the platform</p>
                 </div>
                 <a href="add.php" class="btn btn-primary">
                     <i class="bi bi-plus-lg me-2"></i>Add Event
@@ -108,10 +111,9 @@ $events = $stmt->fetchAll();
                                 <thead class="table-light">
                                     <tr>
                                         <th>Event</th>
-                                        <th>Status</th>
-                                        <th>Categories</th>
-                                        <th>Nominees</th>
-                                        <th>Votes</th>
+                                        <th>Type &amp; Status</th>
+                                        <th>Setup</th>
+                                        <th>Activity</th>
                                         <th>End Date</th>
                                         <th>Actions</th>
                                     </tr>
@@ -122,43 +124,39 @@ $events = $stmt->fetchAll();
                                             <td>
                                                 <div class="d-flex align-items-center">
                                                     <img src="<?php echo $event['banner'] ? '../../uploads/events/' . $event['banner'] : 'https://picsum.photos/60/40?random=' . $event['id']; ?>" 
-                                                         class="rounded me-3" style="width: 60px; height: 40px; object-fit: cover;">
+                                                         class="rounded me-3 flex-shrink-0" style="width: 60px; height: 40px; object-fit: cover;">
                                                     <div>
                                                         <strong><?php echo e($event['title']); ?></strong>
                                                         <?php if ($event['is_featured']): ?>
                                                             <span class="badge bg-warning text-dark ms-2">Featured</span>
                                                         <?php endif; ?>
                                                         <br>
-                                                        <small class="text-muted"><?php echo $event['slug']; ?></small>
+                                                        <small class="text-muted text-truncate d-block" style="max-width: 9rem;" title="<?php echo e($event['slug']); ?>"><?php echo e($event['slug']); ?></small>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td>
-                                                <span class="badge bg-<?php echo match($event['status']) {
-                                                    'active' => 'success',
-                                                    'completed' => 'secondary',
-                                                    'draft' => 'warning',
-                                                    default => 'danger'
-                                                }; ?>"><?php echo ucfirst($event['status']); ?></span>
-                                            </td>
-                                            <td><?php echo $event['category_count']; ?></td>
-                                            <td><?php echo $event['nominee_count']; ?></td>
-                                            <td><strong class="text-primary"><?php echo number_format($event['total_votes']); ?></strong></td>
-                                            <td><?php echo date('M d, Y', strtotime($event['end_date'])); ?></td>
+                                            <?php include '../../includes/event-list-cells.php'; ?>
                                             <td>
                                                 <div class="btn-group btn-group-sm">
                                                     <a href="edit.php?id=<?php echo $event['id']; ?>" class="btn btn-outline-primary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <a href="../categories/?event=<?php echo $event['id']; ?>" class="btn btn-outline-secondary" title="Manage Categories">
-                                                        <i class="bi bi-collection"></i>
-                                                    </a>
+                                                    <?php if (eventHasVoting($event)): ?>
+                                                        <a href="../categories/?event=<?php echo $event['id']; ?>" class="btn btn-outline-secondary" title="Manage Categories">
+                                                            <i class="bi bi-collection"></i>
+                                                        </a>
+                                                    <?php endif; ?>
+                                                    <?php if (eventHasTickets($event)): ?>
+                                                        <a href="../transactions.php?tab=tickets&event=<?php echo $event['id']; ?>" class="btn btn-outline-success" title="Ticket Sales">
+                                                            <i class="bi bi-ticket-perforated"></i>
+                                                        </a>
+                                                    <?php endif; ?>
                                                     <a href="<?php echo SITE_URL; ?>/event-details.php?slug=<?php echo $event['slug']; ?>" class="btn btn-outline-info" title="View" target="_blank">
                                                         <i class="bi bi-eye"></i>
                                                     </a>
                                                     <a href="?delete=<?php echo $event['id']; ?>&token=<?php echo generateCSRFToken(); ?>" 
                                                        class="btn btn-outline-danger" 
-                                                       data-confirm="Are you sure you want to delete this event? This will also delete all categories, nominees, and votes."
+                                                       data-confirm="<?php echo e(eventDeleteWarning($event)); ?>"
                                                        title="Delete">
                                                         <i class="bi bi-trash"></i>
                                                     </a>
