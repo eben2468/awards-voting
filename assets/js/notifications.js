@@ -1,37 +1,41 @@
 /**
- * Real-time Notifications using SSE
+ * Notifications: a short check once a minute while the tab is on screen.
+ * A long-running stream would use up the hosting account's database connections.
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     const notificationBadge = document.getElementById('notificationBadge');
     const notificationList = document.getElementById('notificationList');
     const markAllReadBtn = document.getElementById('markAllRead');
+    const CHECK_EVERY_MS = 60000;
     let lastId = 0;
+    let checkTimer = null;
 
     if (!notificationBadge) return;
 
-    // Initialize SSE
-    function initSSE() {
-        const eventSource = new EventSource(`${window.SITE_URL}/api/notifications_stream.php?last_id=${lastId}`);
+    function checkForNew() {
+        if (document.hidden) return;
 
-        eventSource.onmessage = function (event) {
-            const data = JSON.parse(event.data);
-            if (data.id) {
-                addNotificationToList(data, true);
-                updateBadgeCount(1);
-                lastId = data.id;
+        fetch(`${window.SITE_URL}/api/get_notifications.php`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    // Signed out: nothing more to check on this page
+                    clearInterval(checkTimer);
+                    return;
+                }
 
-                // Optional: Show a browser notification if supported
-                showBrowserNotification(data);
-            }
-        };
-
-        eventSource.onerror = function (err) {
-            console.error("SSE connection failed:", err);
-            eventSource.close();
-            // Retry after 5 seconds
-            setTimeout(initSSE, 5000);
-        };
+                data.notifications
+                    .filter(n => Number(n.id) > lastId)
+                    .sort((a, b) => Number(a.id) - Number(b.id))
+                    .forEach(n => {
+                        addNotificationToList(n, true);
+                        updateBadgeCount(1);
+                        lastId = Number(n.id);
+                        showBrowserNotification(n);
+                    });
+            })
+            .catch(() => { /* try again at the next check */ });
     }
 
     function addNotificationToList(notification, isNew = false) {
@@ -156,10 +160,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 data.notifications.forEach(n => {
                     addNotificationToList(n);
                     if (n.is_read == 0) updateBadgeCount(1);
-                    if (n.id > lastId) lastId = n.id;
+                    if (Number(n.id) > lastId) lastId = Number(n.id);
                 });
             }
-            // Start SSE after initial load
-            initSSE();
-        });
+
+            if (data.status === 'success') {
+                checkTimer = setInterval(checkForNew, CHECK_EVERY_MS);
+                document.addEventListener('visibilitychange', checkForNew);
+            }
+        })
+        .catch(() => { /* the bell stays as it is until the next page load */ });
 });

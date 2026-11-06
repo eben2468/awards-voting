@@ -14,6 +14,27 @@ define('DB_CHARSET', env('DB_CHARSET', 'utf8mb4'));
 
 // PDO Connection
 function getDBConnection() {
+    // One connection per request. Shared hosting limits how many connections an
+    // account may hold, and opening a second one while a page still holds its
+    // first is what made settings fail to save when that limit was close.
+    static $pdo = null;
+    static $lastUsed = 0;
+
+    // After a long wait (a slow payment or SMS call) the server may have dropped
+    // an idle connection, so check it before handing it out again.
+    if ($pdo !== null && time() - $lastUsed > 30 && !$pdo->inTransaction()) {
+        try {
+            @$pdo->query('SELECT 1');
+        } catch (PDOException $e) {
+            $pdo = null;
+        }
+    }
+
+    $lastUsed = time();
+    if ($pdo !== null) {
+        return $pdo;
+    }
+
     try {
         $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=" . DB_CHARSET;
         $options = [
@@ -21,7 +42,8 @@ function getDBConnection() {
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => false,
         ];
-        return new PDO($dsn, DB_USER, DB_PASS, $options);
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, $options);
+        return $pdo;
     } catch (PDOException $e) {
         throw new Exception("Database connection failed: " . $e->getMessage());
     }
@@ -249,14 +271,23 @@ function saveSetting($key, $value) {
         if ((string) $stored !== $value) {
             error_log("Save Setting mismatch for '$key': wanted '" . substr($value, 0, 40)
                 . "', stored '" . substr((string) $stored, 0, 40) . "'");
+            $GLOBALS['__last_setting_error'] = 'The database did not keep the new value.';
             return false;
         }
 
         return true;
     } catch (Exception $e) {
         error_log("Save Setting Error for '$key': " . $e->getMessage());
+        $GLOBALS['__last_setting_error'] = $e->getMessage();
         return false;
     }
+}
+
+/**
+ * The reason the last saveSetting() call failed, for showing to an admin.
+ */
+function lastSettingError() {
+    return (string) ($GLOBALS['__last_setting_error'] ?? '');
 }
 
 /**

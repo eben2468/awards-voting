@@ -143,9 +143,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             if (!empty($writeFailures)) {
                 $message = 'These settings could not be saved: <strong>'
-                    . htmlspecialchars(implode(', ', $writeFailures)) . '</strong>. '
-                    . 'Open <a href="' . SITE_URL . '/admin/diagnostics.php" class="alert-link">Diagnostics</a> '
-                    . 'to see the exact database error.';
+                    . htmlspecialchars(implode(', ', $writeFailures)) . '</strong>.'
+                    . '<br>Database reply: ' . htmlspecialchars(lastSettingError() ?: 'none')
+                    . '<br>Please try again in a minute. If it keeps happening, open '
+                    . '<a href="' . SITE_URL . '/admin/diagnostics.php" class="alert-link">Diagnostics</a> '
+                    . 'to check the connection limit.';
             }
 
             // ---------------- Send a test email ----------------

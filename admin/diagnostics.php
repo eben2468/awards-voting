@@ -148,9 +148,38 @@ addCheck($checks, 'Settings', 'Write a setting and read it back',
     ($writeOk && $readBack === $probeValue) ? 'ok' : 'fail',
     ($writeOk && $readBack === $probeValue)
         ? 'Settings save correctly on this server.'
-        : 'Write failed. Wrote "' . htmlspecialchars($probeValue) . '", read back "' . htmlspecialchars((string) $readBack) . '".',
+        : 'Write failed. Wrote "' . htmlspecialchars($probeValue) . '", read back "' . htmlspecialchars((string) $readBack) . '". '
+            . 'Database reply: ' . htmlspecialchars(lastSettingError() ?: 'none'),
     ($writeOk && $readBack === $probeValue) ? ''
-        : 'Check the PHP error log for "Save Setting Error". The database user may lack UPDATE/INSERT rights on the settings table.');
+        : 'The database user may lack UPDATE/INSERT rights on the settings table.');
+
+// How close this account is to its connection limits. Shared hosts set these per
+// user, and going over makes saves fail at some moments and work at others.
+try {
+    $limits = [];
+    $grants = implode(' ', $pdo->query('SHOW GRANTS')->fetchAll(PDO::FETCH_COLUMN));
+    if (preg_match_all('/MAX_(USER_CONNECTIONS|CONNECTIONS_PER_HOUR)\s+(\d+)/i', $grants, $found, PREG_SET_ORDER)) {
+        foreach ($found as $limit) {
+            $limits[strtoupper($limit[1])] = (int) $limit[2];
+        }
+    }
+
+    $simultaneous = $limits['USER_CONNECTIONS'] ?? 0;
+    if ($simultaneous === 0) {
+        $simultaneous = (int) $pdo->query('SELECT @@max_user_connections')->fetchColumn();
+    }
+    $openNow = count($pdo->query('SHOW PROCESSLIST')->fetchAll());
+    $hourly = $limits['CONNECTIONS_PER_HOUR'] ?? 0;
+
+    $nearLimit = $simultaneous > 0 && $openNow >= $simultaneous * 0.8;
+    addCheck($checks, 'Settings', 'Database connections',
+        $nearLimit ? 'warn' : 'ok',
+        'Open now: ' . $openNow . ' of ' . ($simultaneous > 0 ? $simultaneous : 'no set limit')
+            . '. Hourly limit: ' . ($hourly > 0 ? $hourly : 'none set') . '.',
+        $nearLimit ? 'The site is close to its limit. Wait a minute and refresh this page.' : '');
+} catch (Exception $e) {
+    addCheck($checks, 'Settings', 'Database connections', 'info', 'Could not read the limits: ' . $e->getMessage());
+}
 
 // Tidy the probe away
 try {

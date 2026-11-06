@@ -50,7 +50,7 @@
 
         <input type="hidden" id="global_csrf_token" value="<?php echo generateCSRFToken(); ?>">
         <script>window.SITE_URL = '<?php echo SITE_URL; ?>';</script>
-        <script src="<?php echo SITE_URL; ?>/assets/js/notifications.js"></script>
+        <script src="<?php echo SITE_URL; ?>/assets/js/notifications.js?v=<?php echo filemtime(__DIR__ . '/../../assets/js/notifications.js'); ?>"></script>
         <?php renderSessionTimeoutScript(); ?>
 
         <!-- User Dropdown -->
