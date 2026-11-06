@@ -17,25 +17,14 @@ $reference = $_GET['order_id'] ?? $_GET['reference'] ?? $_GET['id'] ?? $_GET['se
 // Log incoming request
 error_log("Payment Callback Received: " . $_SERVER['REQUEST_METHOD'] . " - GET: " . json_encode($_GET) . " - POST: " . file_get_contents('php://input'));
 
-$isWebhook = false;
-$webhookStatus = '';
-$webhookData = [];
-
-// Check for POST data (Webhook)
+// A POST only tells us which payment to look at. Whether it was paid is always
+// confirmed with NaloPay below, because anyone can send this page a request.
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $isWebhook = true;
-    $input = file_get_contents('php://input');
-    $payload = json_decode($input, true);
-    
-    if (!empty($payload)) {
-        $reference = $payload['order_id'] ?? $payload['reference'] ?? $payload['id'] ?? $payload['session_id'] ?? $reference;
-        $webhookStatus = $payload['status'] ?? $payload['success'] ?? $payload['sucess'] ?? '';
-        $webhookData = $payload;
-    } else {
-        $reference = $_POST['order_id'] ?? $_POST['reference'] ?? $_POST['id'] ?? $_POST['session_id'] ?? $reference;
-        $webhookStatus = $_POST['status'] ?? $_POST['success'] ?? $_POST['sucess'] ?? '';
-        $webhookData = $_POST;
+    $payload = json_decode(file_get_contents('php://input'), true);
+    if (empty($payload)) {
+        $payload = $_POST;
     }
+    $reference = $payload['order_id'] ?? $payload['reference'] ?? $payload['id'] ?? $payload['session_id'] ?? $reference;
 }
 
 if (empty($reference)) {
@@ -76,26 +65,21 @@ try {
         // If not successful yet, we can try to verify with Nalo API 
         // Note: works for MoMo STK push but may fail for Nalo hosted checkout sessions
         try {
-            $naloResponse = verifyNaloTransaction($reference);
-            $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
-            if ($isSuccess) {
-                $paymentStatus = $naloResponse['data']['status'] ?? '';
-                if ($paymentStatus === 'COMPLETED' || $paymentStatus === 'SUCCESS') {
-                    // It actually worked! Let's process it
-                    $result = processSuccessfulPayment($pdo, $transaction, $naloResponse['data']);
-                    if ($result['success']) {
-                        if ($isTicket) {
-                            setFlash('success', 'Thank you! Your ticket purchase was successful. Your ticket code has been sent via SMS.');
-                            ob_end_clean();
-                            redirect('ticketing.php');
-                        } else {
-                            setFlash('success', 'Thank you! Your vote has been recorded successfully.');
-                            $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
-                            $eventStmt->execute([$transaction['event_id']]);
-                            $eventSlug = $eventStmt->fetchColumn();
-                            ob_end_clean();
-                            redirect('event-details.php?slug=' . $eventSlug);
-                        }
+            $confirmation = confirmNaloPayment($transaction);
+            if ($confirmation['paid']) {
+                $result = processSuccessfulPayment($pdo, $transaction, $confirmation['data']);
+                if ($result['success']) {
+                    if ($isTicket) {
+                        setFlash('success', 'Thank you! Your ticket purchase was successful. Your ticket code has been sent via SMS.');
+                        ob_end_clean();
+                        redirect('ticketing.php');
+                    } else {
+                        setFlash('success', 'Thank you! Your vote has been recorded successfully.');
+                        $eventStmt = $pdo->prepare("SELECT slug FROM events WHERE id = ?");
+                        $eventStmt->execute([$transaction['event_id']]);
+                        $eventSlug = $eventStmt->fetchColumn();
+                        ob_end_clean();
+                        redirect('event-details.php?slug=' . $eventSlug);
                     }
                 }
             }
@@ -120,35 +104,12 @@ try {
     }
 
     // Handle Webhook (POST)
-    $isSuccess = false;
-    $paymentStatus = '';
-    $data = [];
-
-    // Nalo webhook status values can vary
-    $isWebhookStatusSuccess = ($webhookStatus === 'SUCCESS' || $webhookStatus === 'COMPLETED' || $webhookStatus === '100' || $webhookStatus === 'success' || $webhookStatus === true || strtolower((string)$webhookStatus) === 'true');
-
-    if ($isWebhook && $isWebhookStatusSuccess) {
-        $isSuccess = true;
-        $paymentStatus = 'SUCCESS';
-        $data = $webhookData;
-    } else {
-        // Fallback to verifying with NaloPay directly if webhook isn't definitive
-        $naloResponse = verifyNaloTransaction($reference);
-        $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
-        
-        if (!$isSuccess) {
-            throw new Exception('Payment verification failed or connection error.');
-        }
-        
-        $data = $naloResponse['data'] ?? [];
-        $paymentStatus = $data['status'] ?? '';
+    $confirmation = confirmNaloPayment($transaction);
+    if (!$confirmation['paid']) {
+        throw new Exception('Payment not confirmed. Status: ' . $confirmation['status']);
     }
-    
-    // Check if status is one of the definitive success strings
-    if ($paymentStatus !== 'COMPLETED' && $paymentStatus !== 'SUCCESS') {
-        throw new Exception('Payment not successful. Status: ' . $paymentStatus);
-    }
-    
+    $data = $confirmation['data'];
+
     // Real-time check: Block vote recording if event has expired (skip for tickets)
     $isTicket = !empty($transaction['ticket_category_id']);
     if (!$isTicket && isEventExpired($transaction['event_id'])) {

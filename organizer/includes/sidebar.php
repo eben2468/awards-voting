@@ -2,8 +2,9 @@
 <aside class="admin-sidebar" id="organizerSidebar">
     <div class="sidebar-header">
         <a href="<?php echo SITE_URL; ?>/organizer/" class="sidebar-brand">
+            <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="sidebar-logo-full" width="138" height="66">
             <img src="<?php echo assetUrl('assets/logo/favicon.png'); ?>" alt="" class="sidebar-logo me-2">
-            <span>Organizer Portal</span>
+            <span class="sidebar-role">Organizer</span>
         </a>
         <button class="btn btn-sm d-lg-none" id="closeSidebar">
             <i class="bi bi-x-lg text-white"></i>

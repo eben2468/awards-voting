@@ -6,6 +6,7 @@
 
 require_once '../config/database.php';
 require_once '../includes/profile-email.php';
+require_once '../includes/image-upload.php';
 
 // Require organizer login
 if (!isLoggedIn() || !isOrganizer()) {
@@ -41,34 +42,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             // Handle avatar upload
+            // Oversized photos are compressed, not refused
             $avatar = $user['avatar'];
-            if (isset($_FILES['avatar']) && $_FILES['avatar']['error'] === UPLOAD_ERR_OK) {
-                $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-                $maxSize = 2 * 1024 * 1024; // 2MB
-                
-                if (!in_array($_FILES['avatar']['type'], $allowedTypes)) {
-                    $errors[] = 'Invalid image type. Allowed: JPG, PNG, GIF, WEBP.';
-                } elseif ($_FILES['avatar']['size'] > $maxSize) {
-                    $errors[] = 'Image size must be less than 2MB.';
-                } else {
-                    $extension = pathinfo($_FILES['avatar']['name'], PATHINFO_EXTENSION);
-                    $avatar = 'avatar-' . $userId . '-' . time() . '.' . $extension;
-                    $uploadPath = '../uploads/avatars/' . $avatar;
-                    
-                    if (!is_dir('../uploads/avatars/')) {
-                        mkdir('../uploads/avatars/', 0755, true);
-                    }
-                    
-                    if (move_uploaded_file($_FILES['avatar']['tmp_name'], $uploadPath)) {
-                        // Delete old avatar if exists
-                        if ($user['avatar'] && file_exists('../uploads/avatars/' . $user['avatar'])) {
-                            unlink('../uploads/avatars/' . $user['avatar']);
-                        }
-                    } else {
-                        $errors[] = 'Failed to upload avatar.';
-                        $avatar = $user['avatar'];
-                    }
-                }
+            $avatarError = '';
+            $newAvatar = storeImageFromForm('avatar', '../uploads/avatars', 'avatar-' . $userId, $avatarError, 2 * 1024 * 1024);
+            if ($avatarError !== '') {
+                $errors[] = $avatarError;
+            } elseif ($newAvatar !== null) {
+                deleteStoredImage('../uploads/avatars', $user['avatar']);
+                $avatar = $newAvatar;
             }
             
             if (empty($errors)) {
@@ -134,13 +116,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -148,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -196,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div class="card border-0 shadow-sm">
                         <div class="card-body text-center py-5">
                             <div class="avatar-wrapper mb-3">
-                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=150&background=6366f1&color=fff'; ?>" 
+                                <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=150&background=0F2C7A&color=fff'; ?>" 
                                      alt="Profile" 
                                      class="rounded-circle mb-3 shadow-sm"
                                      style="width: 120px; height: 120px; object-fit: cover; border: 4px solid #f8f9fa;">
@@ -241,14 +224,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <div class="col-md-12 mb-3">
                                         <label for="avatar" class="form-label fw-bold">Profile Picture</label>
                                         <div class="d-flex align-items-center gap-3">
-                                            <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=100&background=6366f1&color=fff'; ?>" 
+                                            <img src="<?php echo $user['avatar'] ? SITE_URL . '/uploads/avatars/' . $user['avatar'] : 'https://ui-avatars.com/api/?name=' . urlencode($user['fullname']) . '&size=100&background=0F2C7A&color=fff'; ?>" 
                                                  alt="Current Avatar" 
                                                  id="avatarPreview"
                                                  class="rounded-circle shadow-sm"
                                                  style="width: 80px; height: 80px; object-fit: cover;">
                                             <div class="flex-grow-1">
-                                                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" onchange="previewAvatar(this)">
-                                                <div class="form-text">Recommended: Square image, max 2MB.</div>
+                                                <input type="file" class="form-control" id="avatar" name="avatar" accept="image/*" data-compress-max="2097152" onchange="previewAvatar(this)">
+                                                <div class="form-text">Recommended: square image. Large photos are compressed automatically.</div>
                                             </div>
                                         </div>
                                     </div>
@@ -339,5 +322,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
     </script>
+    <script src="<?php echo assetUrl('assets/js/image-compress.js'); ?>"></script>
 </body>
 </html>

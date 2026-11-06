@@ -1,11 +1,11 @@
 <!-- Ticket Purchase Modal -->
 <div class="modal fade" id="ticketPurchaseModal" tabindex="-1" aria-labelledby="ticketPurchaseModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-fullscreen-sm-down pay-modal">
         <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
             <div class="modal-header border-0 pb-0 position-relative">
                 <button type="button" class="btn-close position-absolute top-0 end-0 m-3" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4 pt-0">
+            <div class="modal-body">
 
                 <!-- STK Push Banner (hidden by default) -->
                 <div id="ticketStkPushBanner" class="stk-push-banner d-none">
@@ -13,153 +13,91 @@
                         <i class="bi bi-phone-vibrate"></i>
                     </div>
                     <p class="stk-push-text">
-                        An STK Push has been sent to your phone. Please approve to complete your purchase.
+                        Check your phone and approve the payment to get your ticket.
                     </p>
                     <button type="button" class="stk-push-close" id="ticketStkBannerClose" aria-label="Close">&times;</button>
                 </div>
 
                 <!-- Event Info -->
-                <div id="ticketFormSection" class="text-center mb-4">
-                    <div class="ticket-modal-banner mb-3">
-                        <img src="" id="ticketModalBanner" class="rounded-3 w-100" style="max-height: 150px; object-fit: cover;">
+                <div id="ticketFormSection" class="pay-head">
+                    <img src="" id="ticketModalBanner" class="pay-thumb" alt="">
+                    <div class="pay-head-text">
+                        <h4 id="ticketModalEventTitle">Event Title</h4>
+                        <p>Choose your ticket and pay.</p>
                     </div>
-                    <h4 id="ticketModalEventTitle" class="fw-bold mb-1 text-dark">Event Title</h4>
-                    <p class="text-muted small mb-0">Select your ticket category and complete purchase</p>
                 </div>
 
                 <!-- Ticket Purchase Form -->
                 <form id="ticketPurchaseForm">
                     <input type="hidden" id="ticketEventId">
 
-                    <div class="mb-4">
-                        <label for="ticketCategory" class="form-label fw-bold text-dark mb-2">Ticket Category</label>
-                        <select class="form-select rounded-3 py-2" id="ticketCategory" required>
+                    <fieldset class="pay-field">
+                        <legend>Ticket type</legend>
+                        <select class="pay-native" id="ticketCategory" required tabindex="-1" aria-hidden="true">
                             <option value="" selected disabled>Choose a category...</option>
                         </select>
-                    </div>
+                        <div class="pay-tiles" data-pay-for="ticketCategory" data-pay-auto></div>
+                        <p class="pay-error" hidden>Choose a ticket type.</p>
+                    </fieldset>
 
-                    <div class="mb-4">
-                        <label for="ticketQuantity" class="form-label fw-bold text-dark mb-2">Number of Tickets</label>
+                    <div class="pay-field">
+                        <label for="ticketQuantity" class="pay-label">Number of tickets</label>
                         <div class="input-group vote-counter-group">
-                            <button class="btn btn-counter" type="button" id="ticketBtnMinus">-</button>
+                            <button class="btn btn-counter" type="button" id="ticketBtnMinus" aria-label="One fewer ticket">&minus;</button>
                             <input type="number" class="form-control vote-input text-center fw-bold" id="ticketQuantity" value="1" min="1" max="50" required>
-                            <button class="btn btn-counter" type="button" id="ticketBtnPlus">+</button>
+                            <button class="btn btn-counter" type="button" id="ticketBtnPlus" aria-label="One more ticket">+</button>
                         </div>
                     </div>
 
-                    <div class="mb-4">
-                        <label for="ticketNetwork" class="form-label fw-bold text-dark mb-2">Payment Method</label>
-                        <select class="form-select rounded-3 py-2" id="ticketNetwork" required>
+                    <fieldset class="pay-field">
+                        <legend>How do you want to pay?</legend>
+                        <select class="pay-native" id="ticketNetwork" required tabindex="-1" aria-hidden="true">
                             <option value="" selected disabled>Choose your payment method...</option>
                             <option value="MTN">MTN Mobile Money</option>
                             <option value="TELECEL">Telecel Cash (Vodafone)</option>
                             <option value="AT">AT Money (AirtelTigo)</option>
                             <option value="CARD">Debit / Credit Card (VISA/MasterCard)</option>
                         </select>
-                    </div>
+                        <div class="pay-tiles pay-tiles-method" data-pay-for="ticketNetwork"></div>
+                        <p class="pay-error" hidden>Choose how you want to pay.</p>
+                    </fieldset>
 
                     <!-- MoMo Phone Number -->
-                    <div class="mb-4" id="ticketPhoneSection">
-                        <label for="ticketPhone" class="form-label fw-bold text-dark mb-2">
-                            MoMo Number <span class="text-muted fw-normal">(for STK Push)</span>
-                        </label>
+                    <div class="pay-field" id="ticketPhoneSection">
+                        <label for="ticketPhone" class="pay-label">MoMo number</label>
                         <div class="input-group phone-input-group">
-                            <span class="input-group-text bg-white border-end-0">+233</span>
-                            <input type="tel" class="form-control border-start-0 ps-0" id="ticketPhone" placeholder="24 XXX XXXX" maxlength="10" required>
+                            <span class="input-group-text">+233</span>
+                            <input type="tel" class="form-control ps-0 pay-phone" id="ticketPhone" placeholder="24 XXX XXXX" maxlength="16" pattern="0?[1-9][0-9]{8}" inputmode="tel" autocomplete="tel-national" required>
                         </div>
-                        <div class="form-text small text-muted mt-2">Enter your mobile money number to receive a payment prompt.</div>
+                        <div class="form-text small text-muted mt-2">We'll send a payment prompt to this number.</div>
+                        <p class="pay-error" hidden>Enter a valid phone number, such as 024 123 4567.</p>
                     </div>
 
-                    <!-- Card Details Section (hidden by default) -->
-                    <div id="ticketCardSection" class="card-details-section d-none">
-                        <div class="card-details-header mb-3">
-                            <i class="bi bi-credit-card-2-front"></i>
-                            <span>Enter Card Details</span>
-                            <div class="card-brands">
-                                <img src="https://img.icons8.com/color/32/visa.png" alt="Visa" width="28" height="20">
-                                <img src="https://img.icons8.com/color/32/mastercard-logo.png" alt="Mastercard" width="28" height="20">
-                            </div>
+                    <div class="pay-bar">
+                        <div class="pay-total">
+                            <small>Total</small>
+                            <strong>GHS <span id="ticketTotalAmount">0.00</span></strong>
+                            <small>GHS <span id="ticketUnitPrice">0.00</span> per ticket</small>
                         </div>
-
-                        <div class="mb-3">
-                            <label for="ticketCardholderName" class="form-label small fw-semibold text-dark">Cardholder Name</label>
-                            <input type="text" class="form-control card-input" id="ticketCardholderName" placeholder="Ebenezer Owusu" autocomplete="cc-name">
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="ticketCardNumber" class="form-label small fw-semibold text-dark">Card Number</label>
-                            <div class="input-group card-number-group">
-                                <span class="input-group-text card-input-icon"><i class="bi bi-credit-card"></i></span>
-                                <input type="text" class="form-control card-input" id="ticketCardNumber" placeholder="1234 5678 9012 3456" maxlength="19" autocomplete="cc-number" inputmode="numeric">
-                            </div>
-                        </div>
-
-                        <div class="row g-2 mb-3">
-                            <div class="col-7">
-                                <label class="form-label small fw-semibold text-dark">Expiry Date</label>
-                                <div class="d-flex gap-2">
-                                    <select class="form-select card-input card-select" id="ticketCardExpiryMonth" autocomplete="cc-exp-month">
-                                        <option value="" disabled selected>MM</option>
-                                        <option value="01">01</option>
-                                        <option value="02">02</option>
-                                        <option value="03">03</option>
-                                        <option value="04">04</option>
-                                        <option value="05">05</option>
-                                        <option value="06">06</option>
-                                        <option value="07">07</option>
-                                        <option value="08">08</option>
-                                        <option value="09">09</option>
-                                        <option value="10">10</option>
-                                        <option value="11">11</option>
-                                        <option value="12">12</option>
-                                    </select>
-                                    <select class="form-select card-input card-select" id="ticketCardExpiryYear" autocomplete="cc-exp-year">
-                                        <option value="" disabled selected>YY</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-5">
-                                <label for="ticketCardCvv" class="form-label small fw-semibold text-dark">CVV</label>
-                                <div class="input-group card-cvv-group">
-                                    <input type="password" class="form-control card-input" id="ticketCardCvv" placeholder="•••" maxlength="4" autocomplete="cc-csc" inputmode="numeric">
-                                    <span class="input-group-text card-cvv-info" data-bs-toggle="tooltip" data-bs-placement="top" title="3-digit security code on the back of your card"><i class="bi bi-question-circle"></i></span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="form-text small text-success mt-2 d-flex align-items-center gap-1">
-                            <i class="bi bi-shield-check"></i> Your card details are encrypted and processed securely.
-                        </div>
+                        <button type="submit" class="btn btn-proceed-payment" id="btnBuyTicket"><i class="bi bi-ticket-perforated me-2"></i>Purchase Ticket</button>
                     </div>
-
-                    <div class="payment-summary-box rounded-4 p-4 mb-4">
-                        <div class="d-flex justify-content-between align-items-center mb-3">
-                            <span class="text-muted">Price per ticket:</span>
-                            <span class="fw-bold text-dark">GHS <span id="ticketUnitPrice">0.00</span></span>
-                        </div>
-                        <div class="d-flex justify-content-between align-items-center pt-3 border-top border-light">
-                            <span class="fw-bold text-dark">Total Amount:</span>
-                            <span class="fw-bold text-primary fs-4">GHS <span id="ticketTotalAmount">0.00</span></span>
-                        </div>
-                    </div>
-
-                    <button type="submit" class="btn btn-proceed-payment w-100 rounded-pill py-3 fw-bold shadow-lg" id="btnBuyTicket">
-                        <i class="bi bi-ticket-perforated me-2"></i>Purchase Ticket
-                    </button>
                 </form>
 
                 <!-- STK Push Pending State -->
                 <div id="ticketPendingSection" class="stk-pending-section d-none">
                     <div class="text-center">
                         <div class="ticket-modal-banner mb-3">
-                            <img src="" id="pendingTicketBanner" class="rounded-3 w-100" style="max-height: 120px; object-fit: cover;">
+                            <img src="" id="pendingTicketBanner" class="pay-thumb" alt="">
                         </div>
                         <h4 id="pendingTicketTitle" class="fw-bold mb-1 text-dark">Event Title</h4>
 
                         <div class="voting-progress-container mt-3 mb-4">
-                            <p class="text-muted mb-2">Processing ticket purchase</p>
+                            <p class="text-muted mb-2">Waiting for your approval</p>
                             <div class="voting-progress-bar">
                                 <div class="voting-progress-fill"></div>
                             </div>
+
+                            <p class="pay-approval" data-approval hidden>No prompt on your phone? <a data-approval-link href="#"></a> to approve.</p>
                         </div>
 
                         <button type="button" class="btn btn-pending-status w-100 rounded-pill py-3" disabled>
@@ -203,7 +141,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const networkSelect = document.getElementById('ticketNetwork');
     const phoneInput = document.getElementById('ticketPhone');
     const phoneSection = document.getElementById('ticketPhoneSection');
-    const cardSection = document.getElementById('ticketCardSection');
     const unitPriceSpan = document.getElementById('ticketUnitPrice');
     const totalAmountSpan = document.getElementById('ticketTotalAmount');
     const eventIdInput = document.getElementById('ticketEventId');
@@ -240,6 +177,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 opt.value = cat.id;
                 opt.textContent = cat.name + ' - GHS ' + parseFloat(cat.price).toFixed(2);
                 opt.dataset.price = cat.price;
+                opt.dataset.name = cat.name;
                 categorySelect.appendChild(opt);
             });
             
@@ -253,6 +191,10 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             phoneInput.value = '';
             
+            // A checkout left open from an earlier attempt must not stay on screen
+            const oldCheckout = document.getElementById('ticketIframeContainer');
+            if (oldCheckout) oldCheckout.remove();
+
             // Show form, hide others
             formSection.classList.remove('d-none');
             form.classList.remove('d-none');
@@ -300,22 +242,20 @@ document.addEventListener('DOMContentLoaded', function() {
             phoneSection.classList.remove('d-none');
             phoneInput.setAttribute('required', 'required');
             if (phoneLabel) {
-                phoneLabel.innerHTML = 'Phone Number <span class="text-muted fw-normal">(for Ticket SMS)</span>';
+                phoneLabel.textContent = 'Phone number';
             }
             if (phoneHelp) {
-                phoneHelp.textContent = 'Enter your phone number to receive your ticket code via SMS.';
+                phoneHelp.textContent = "You'll enter your card on NaloPay's secure page next. Your ticket code comes here by SMS.";
             }
-            cardSection.classList.remove('d-none');
         } else {
             phoneSection.classList.remove('d-none');
             phoneInput.setAttribute('required', 'required');
             if (phoneLabel) {
-                phoneLabel.innerHTML = 'MoMo Number <span class="text-muted fw-normal">(for STK Push)</span>';
+                phoneLabel.textContent = 'MoMo number';
             }
             if (phoneHelp) {
-                phoneHelp.textContent = 'Enter your mobile money number to receive a payment prompt.';
+                phoneHelp.textContent = "We'll send a payment prompt to this number.";
             }
-            cardSection.classList.add('d-none');
         }
     });
 
@@ -325,97 +265,6 @@ document.addEventListener('DOMContentLoaded', function() {
         stkBannerCloseBtn.addEventListener('click', function() {
             stkBanner.classList.add('d-none');
         });
-    }
-
-    // Populate card expiry year options dynamically
-    (function() {
-        const yearSelect = document.getElementById('ticketCardExpiryYear');
-        if (yearSelect) {
-            const currentYear = new Date().getFullYear();
-            for (let i = 0; i < 10; i++) {
-                const yr = currentYear + i;
-                const opt = document.createElement('option');
-                opt.value = String(yr).slice(-2);
-                opt.textContent = String(yr).slice(-2);
-                yearSelect.appendChild(opt);
-            }
-        }
-
-        // Card number formatting (add spaces every 4 digits)
-        const cardNumberInput = document.getElementById('ticketCardNumber');
-        if (cardNumberInput) {
-            cardNumberInput.addEventListener('input', function(e) {
-                let value = e.target.value.replace(/\D/g, '');
-                value = value.replace(/(.{4})/g, '$1 ').trim();
-                e.target.value = value;
-            });
-        }
-
-        // CVV - only allow digits
-        const cvvInput = document.getElementById('ticketCardCvv');
-        if (cvvInput) {
-            cvvInput.addEventListener('input', function(e) {
-                e.target.value = e.target.value.replace(/\D/g, '');
-            });
-        }
-    })();
-
-    function validateTicketCardDetails() {
-        const cardNumber = document.getElementById('ticketCardNumber').value.replace(/\s/g, '');
-        const expiryMonth = document.getElementById('ticketCardExpiryMonth').value;
-        const expiryYear = document.getElementById('ticketCardExpiryYear').value;
-        const cvv = document.getElementById('ticketCardCvv').value;
-        const cardholderName = document.getElementById('ticketCardholderName').value.trim();
-
-        if (!cardholderName) {
-            alert('Please enter the cardholder name.');
-            return false;
-        }
-
-        if (cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) {
-            alert('Please enter a valid card number.');
-            return false;
-        }
-
-        if (!luhnCheck(cardNumber)) {
-            alert('Invalid card number. Please check and try again.');
-            return false;
-        }
-
-        if (!expiryMonth || !expiryYear) {
-            alert('Please select the card expiry date.');
-            return false;
-        }
-
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = parseInt(String(now.getFullYear()).slice(-2));
-        const expMonth = parseInt(expiryMonth);
-        const expYear = parseInt(expiryYear);
-
-        if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-            alert('Your card has expired. Please use a different card.');
-            return false;
-        }
-
-        if (cvv.length < 3 || !/^\d+$/.test(cvv)) {
-            alert('Please enter a valid CVV (3-4 digits).');
-            return false;
-        }
-
-        return true;
-    }
-
-    function luhnCheck(num) {
-        let arr = (num + '').split('').reverse().map(x => parseInt(x));
-        let sum = arr.reduce((acc, val, i) => {
-            if (i % 2 !== 0) {
-                val *= 2;
-                if (val > 9) val -= 9;
-            }
-            return acc + val;
-        }, 0);
-        return sum % 10 === 0;
     }
 
     // Reset modal on close
@@ -436,11 +285,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (!categoryId) { alert('Please select a ticket category.'); return; }
         if (!network) { alert('Please select a payment method.'); return; }
-        if (network !== 'CARD' && !phone) { alert('Please enter your phone number.'); return; }
-
-        if (network === 'CARD') {
-            if (!validateTicketCardDetails()) return;
-        }
+        if (!phone) { alert('Please enter your phone number.'); return; }
 
         // Disable button
         btnBuy.disabled = true;
@@ -455,14 +300,6 @@ document.addEventListener('DOMContentLoaded', function() {
             formData.append('phone', phone);
             formData.append('csrf_token', csrfToken);
 
-            if (network === 'CARD') {
-                formData.append('cardholder_name', document.getElementById('ticketCardholderName').value.trim());
-                formData.append('card_number', document.getElementById('ticketCardNumber').value.replace(/\s/g, ''));
-                formData.append('expiry_month', document.getElementById('ticketCardExpiryMonth').value);
-                formData.append('expiry_year', document.getElementById('ticketCardExpiryYear').value);
-                formData.append('cvv', document.getElementById('ticketCardCvv').value);
-            }
-
             const response = await fetch(`${window.SITE_URL}/buy-ticket.php`, {
                 method: 'POST',
                 body: formData,
@@ -476,6 +313,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (data.payment_data.direct_push) {
                         // STK Push sent - show pending state
                         showTicketPending(data.payment_data.reference);
+                        window.showPayApproval(data.payment_data.approval_code);
                     } else if (data.payment_data.checkout_url) {
                         // Card / hosted checkout - show in iframe or redirect
                         showCardCheckout(data.payment_data.checkout_url, data.payment_data.reference);

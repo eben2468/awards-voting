@@ -68,7 +68,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Format phone number
         $formattedPhone = '';
         if (!empty($voterPhone)) {
-            $voterPhone = ltrim($voterPhone, '0');
+            $voterPhone = normalizeGhanaPhone($voterPhone);
+            if ($voterPhone === null) {
+                throw new Exception('Enter a valid phone number, such as 024 123 4567.');
+            }
             $formattedPhone = '+233' . $voterPhone;
         }
         
@@ -101,67 +104,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $metadata
         ]);
         
-        // If network is CARD, process payment directly using simulated success
-        if ($voterNetwork === 'CARD') {
-            $cardholderName = trim($_POST['cardholder_name'] ?? '');
-            $cardNumber = str_replace(' ', '', $_POST['card_number'] ?? '');
-            $expiryMonth = $_POST['expiry_month'] ?? '';
-            $expiryYear = $_POST['expiry_year'] ?? '';
-            $cvv = $_POST['cvv'] ?? '';
-            
-            // Validate card fields
-            if (empty($cardholderName)) {
-                throw new Exception('Cardholder Name is required.');
-            }
-            if (strlen($cardNumber) < 13 || strlen($cardNumber) > 19 || !ctype_digit($cardNumber)) {
-                throw new Exception('Invalid Card Number.');
-            }
-            if (empty($expiryMonth) || empty($expiryYear)) {
-                throw new Exception('Card expiry date is required.');
-            }
-            if (strlen($cvv) < 3 || strlen($cvv) > 4 || !ctype_digit($cvv)) {
-                throw new Exception('Invalid CVV.');
-            }
-            
-            // Retrieve the newly inserted transaction
-            $txId = $pdo->lastInsertId();
-            $txStmt = $pdo->prepare("SELECT * FROM transactions WHERE id = ?");
-            $txStmt->execute([$txId]);
-            $transaction = $txStmt->fetch();
-            
-            if (!$transaction) {
-                throw new Exception('Failed to record transaction.');
-            }
-            
-            // Simulate NaloPay details
-            $naloData = [
-                'status' => 'COMPLETED',
-                'order_id' => $reference,
-                'payment_type' => 'card',
-                'network' => 'CARD'
-            ];
-            
-            // Process successful payment
-            $result = processSuccessfulPayment($pdo, $transaction, $naloData);
-            
-            if ($result['success']) {
-                ob_clean();
-                header('Content-Type: application/json');
-                echo json_encode([
-                    'success' => true,
-                    'payment_required' => false,
-                    'payment_data' => [
-                        'reference' => $reference
-                    ],
-                    'message' => 'Card payment processed successfully! Your ticket purchase has been confirmed.'
-                ]);
-                exit;
-            } else {
-                throw new Exception($result['message']);
-            }
-        }
-        
-        // Initialize payment
         $products = [
             [
                 'name' => $event['title'] . ' - ' . $category['name'] . ' x' . $quantity,
@@ -197,7 +139,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $response['payment_data'] = [
                     'direct_push' => true,
                     'reference' => $reference,
-                    'message' => 'An STK Push has been sent to your phone. Please approve to complete your ticket purchase.'
+                    'approval_code' => naloApprovalCode($naloResponse),
+                    'message' => 'Check your phone and approve the payment to get your ticket.'
                 ];
                 $response['message'] = 'STK Push initiated...';
                 
@@ -207,10 +150,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 exit;
             }
             // If direct push fails, fall back to hosted checkout
-            error_log("NaloPay Direct Push failed for ticket $reference: " . ($naloResponse['message'] ?? 'Unknown error'));
+            error_log("NaloPay Direct Push failed for ticket $reference: " . naloErrorMessage($naloResponse));
         }
 
-        // Fallback to Hosted Checkout
+        // Card payments, and any MoMo push that could not start, use NaloPay's own
+        // secure checkout. Card details never touch this site.
         $naloResponse = createNaloCheckoutSession(
             $reference,
             $customerName,
@@ -236,11 +180,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ];
             $response['message'] = 'Redirecting to payment...';
         } else {
-            $errorMsg = $naloResponse['message'] ?? 'Unknown error';
-            if (isset($naloResponse['errors'])) {
-                $errorMsg .= ': ' . json_encode($naloResponse['errors']);
-            }
-            throw new Exception('Failed to initialize payment: ' . $errorMsg);
+            // Nothing was charged, so this must not sit in the pending list
+            $pdo->prepare("UPDATE transactions SET status = 'failed' WHERE reference = ?")->execute([$reference]);
+            throw new Exception('Your payment could not start: ' . naloErrorMessage($naloResponse));
         }
         
         ob_clean();

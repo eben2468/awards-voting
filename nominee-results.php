@@ -147,7 +147,7 @@ include 'includes/header.php';
                                         <div class="mt-4 pt-3 border-top">
                                             <h6 class="fw-bold mb-3">Current Leader</h6>
                                             <div class="d-flex align-items-center p-3 rounded-4 bg-primary bg-opacity-10 border border-primary border-opacity-10">
-                                                <img src="<?php echo $standings[0]['photo'] ? 'uploads/nominees/' . $standings[0]['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($standings[0]['name']) . '&size=45&background=6366f1&color=fff'; ?>" 
+                                                <img src="<?php echo $standings[0]['photo'] ? 'uploads/nominees/' . $standings[0]['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($standings[0]['name']) . '&size=45&background=0F2C7A&color=fff'; ?>" 
                                                      class="rounded-circle me-3" style="width: 45px; height: 45px; object-fit: cover;">
                                                 <div>
                                                     <h6 class="mb-0 fw-bold"><?php echo htmlspecialchars($standings[0]['name']); ?></h6>
@@ -244,9 +244,9 @@ include 'includes/header.php';
 
 <style>
 :root {
-    --portal-primary: #6366f1;
-    --portal-secondary: #a855f7;
-    --portal-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    --portal-primary: var(--primary);
+    --portal-secondary: var(--purple);
+    --portal-gradient: linear-gradient(135deg, var(--primary) 0%, var(--purple) 100%);
 }
 
 .portal-hero {
@@ -340,7 +340,7 @@ include 'includes/header.php';
 
 .btn-modern:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 15px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 8px 15px rgba(var(--primary-rgb), 0.3);
 }
 
 .login-card {

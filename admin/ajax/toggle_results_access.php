@@ -8,6 +8,11 @@ if (!isLoggedIn() || !isAdmin()) {
     exit;
 }
 
+if (!verifyCSRFToken($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+    echo json_encode(['success' => false, 'message' => 'Your session expired. Refresh the page and try again.']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     

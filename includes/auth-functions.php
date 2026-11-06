@@ -205,6 +205,101 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
     }
 
     /**
+     * Picture for the login or signup panel, set in Settings, or the emblem.
+     */
+    function authPanelImage($page) {
+        $file = basename((string) getSetting('auth_image_' . $page, ''));
+        if ($file !== '' && is_file(dirname(__DIR__) . '/uploads/site/' . $file)) {
+            return SITE_URL . '/uploads/site/' . rawurlencode($file);
+        }
+        return assetUrl('assets/logo/emblem.png');
+    }
+
+    /**
+     * The email a login attempt is filed under.
+     */
+    function loginAttemptEmail($email) {
+        return strtolower(trim($email));
+    }
+
+    /**
+     * Failed attempts for this email from this connection, and how long is left.
+     *
+     * The count is per email and connection on purpose. Counting by email alone
+     * would let anyone lock the admin out on demand, and the site sits behind a
+     * CDN, so counting by IP alone could lock out many visitors at once.
+     *
+     * @return array locked (bool), left (attempts remaining), wait (seconds), max
+     */
+    function loginLockState(PDO $pdo, $email) {
+        $max = max(0, min(50, (int) getSetting('login_max_attempts', '5')));
+        if ($max === 0) {
+            return ['locked' => false, 'left' => null, 'wait' => 0, 'max' => 0];
+        }
+
+        $minutes = max(1, min(1440, (int) getSetting('login_lockout_minutes', '15')));
+        $key = loginAttemptEmail($email);
+
+        // new_values is a JSON column on MySQL, which reformats what is stored, so
+        // read the field out of it rather than comparing the whole value
+        $emailField = "LOWER(JSON_UNQUOTE(JSON_EXTRACT(new_values, '$.email')))";
+
+        $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS failures,
+                   TIMESTAMPDIFF(SECOND, NOW(), MAX(created_at) + INTERVAL $minutes MINUTE) AS wait_seconds
+            FROM audit_logs
+            WHERE action = 'failed_login'
+              AND $emailField = ?
+              AND ip_address <=> ?
+              AND created_at >= NOW() - INTERVAL $minutes MINUTE
+              AND id > COALESCE((SELECT MAX(id) FROM (
+                      SELECT id FROM audit_logs WHERE action = 'login_attempts_cleared' AND $emailField = ?
+                  ) AS cleared), 0)
+        ");
+        $stmt->execute([$key, $_SERVER['REMOTE_ADDR'] ?? null, $key]);
+        $row = $stmt->fetch();
+
+        $failures = (int) $row['failures'];
+        return [
+            'locked' => $failures >= $max,
+            'left'   => max(0, $max - $failures),
+            'wait'   => max(0, (int) $row['wait_seconds']),
+            'max'    => $max,
+        ];
+    }
+
+    function loginLockedMessage($waitSeconds) {
+        $minutes = max(1, (int) ceil($waitSeconds / 60));
+        return 'Too many failed attempts. Please try again in ' . $minutes . ($minutes === 1 ? ' minute.' : ' minutes.');
+    }
+
+    /**
+     * Record a wrong password and return what to tell the person. The wording is
+     * the same whether or not the account exists, so emails cannot be discovered.
+     */
+    function recordFailedLogin(PDO $pdo, $email) {
+        $pdo->prepare("INSERT INTO audit_logs (action, ip_address, user_agent, new_values) VALUES ('failed_login', ?, ?, ?)")
+            ->execute([$_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['email' => loginAttemptEmail($email)])]);
+
+        $state = loginLockState($pdo, $email);
+        if ($state['locked']) {
+            return loginLockedMessage($state['wait']);
+        }
+        if ($state['max'] > 0 && $state['left'] <= 2) {
+            return 'Invalid email or password. ' . $state['left'] . ($state['left'] === 1 ? ' attempt' : ' attempts') . ' left.';
+        }
+        return 'Invalid email or password.';
+    }
+
+    /**
+     * A correct password or a password reset wipes the slate clean.
+     */
+    function clearFailedLogins(PDO $pdo, $email) {
+        $pdo->prepare("INSERT INTO audit_logs (action, ip_address, user_agent, new_values) VALUES ('login_attempts_cleared', ?, ?, ?)")
+            ->execute([$_SERVER['REMOTE_ADDR'] ?? null, $_SERVER['HTTP_USER_AGENT'] ?? null, json_encode(['email' => loginAttemptEmail($email)])]);
+    }
+
+    /**
      * Establish the logged-in session for a verified user and return the
      * destination URL (relative to SITE_URL).
      */
@@ -216,6 +311,7 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
         $_SESSION['user_email']  = $user['email'];
         $_SESSION['user_role']   = $user['role'];
         $_SESSION['user_avatar'] = $user['avatar'] ?? null;
+        $_SESSION['last_activity'] = time();
 
         unset($_SESSION['pending_login'], $_SESSION['pending_2fa_user_id']);
 
@@ -229,7 +325,7 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
 
         $default = $user['role'] === 'admin'
             ? 'admin/'
-            : ($user['role'] === 'organizer' ? 'organizer/' : 'user/dashboard.php');
+            : ($user['role'] === 'organizer' ? 'organizer/' : '');
 
         $redirect = $_SESSION['redirect_url'] ?? $default;
         unset($_SESSION['redirect_url']);

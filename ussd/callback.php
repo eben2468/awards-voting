@@ -31,12 +31,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $paystackSignature = $_SERVER['HTTP_X_PAYSTACK_SIGNATURE'] ?? '';
 $input = file_get_contents('php://input');
 
-if ($paystackSignature) {
-    $computedSignature = hash_hmac('sha512', $input, PAYSTACK_SECRET_KEY);
-    if ($paystackSignature !== $computedSignature) {
-        http_response_code(401);
-        exit('Invalid signature');
-    }
+if ($paystackSignature === '' || !hash_equals(hash_hmac('sha512', $input, PAYSTACK_SECRET_KEY), $paystackSignature)) {
+    http_response_code(401);
+    exit('Invalid signature');
 }
 
 $data = json_decode($input, true);
@@ -162,29 +159,16 @@ if ($status === 'success') {
         }
 
         // 6. Create Notifications
-        $eventStmt = $db->prepare("SELECT created_by, title FROM events WHERE id = ?");
+        $eventStmt = $db->prepare("SELECT organizer_id, created_by, title FROM events WHERE id = ?");
         $eventStmt->execute([$transaction['event_id']]);
         $event = $eventStmt->fetch();
         
         if ($event) {
-            // Notify Organizer
-            if ($event['created_by']) {
-                createNotification(
-                    $event['created_by'],
-                    "New Vote Recorded",
-                    "A new vote has been cast for " . $details['nominee_name'] . " in your event: " . $event['title'],
-                    "success",
-                    "organizer/event-details.php?id=" . $transaction['event_id']
-                );
-            }
-            
-            // Notify Admin
-            createNotification(
-                1, // Admin ID
-                "New Vote Recorded",
-                "A new vote has been cast for " . $details['nominee_name'] . " in " . $event['title'],
-                "info",
-                "admin/votes.php"
+            notifyEventActivity(
+                $event['organizer_id'] ?: $event['created_by'],
+                'New Vote Recorded',
+                'A new vote has been cast for ' . $details['nominee_name'] . ' in ' . $event['title'],
+                'votes/?event=' . $transaction['event_id']
             );
         }
 

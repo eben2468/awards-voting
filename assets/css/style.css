@@ -17,6 +17,12 @@
     --secondary: #ec4899;
     --secondary-dark: #db2777;
     --secondary-light: #f472b6;
+    --secondary-rgb: 236, 72, 153;
+    --violet: #8b5cf6;
+    --violet-dark: #7c3aed;
+    --violet-pale: #c4b5fd;
+    --violet-rgb: 139, 92, 246;
+    --purple: #a855f7;
 
     /* Accent Colors */
     --accent: #f59e0b;
@@ -1000,8 +1006,8 @@ section {
     justify-content: center;
     background-color: #f8fafc;
     background-image: 
-        radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
-        radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.12) 0px, transparent 50%),
+        radial-gradient(at 0% 0%, rgba(var(--primary-rgb), 0.15) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, rgba(var(--secondary-rgb), 0.12) 0px, transparent 50%),
         radial-gradient(at 50% 0%, rgba(245, 158, 11, 0.06) 0px, transparent 50%);
     padding: 4rem 0;
     position: relative;
@@ -1014,7 +1020,7 @@ section {
     width: 400px;
     height: 400px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(99, 102, 241, 0) 70%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, rgba(var(--primary-rgb), 0) 70%);
     top: 5%;
     left: 10%;
     z-index: 0;
@@ -1028,7 +1034,7 @@ section {
     width: 450px;
     height: 450px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0) 70%);
+    background: radial-gradient(circle, rgba(var(--secondary-rgb), 0.1) 0%, rgba(var(--secondary-rgb), 0) 70%);
     bottom: 5%;
     right: 10%;
     z-index: 0;
@@ -1059,7 +1065,7 @@ section {
     -webkit-backdrop-filter: blur(24px);
     border: 1px solid rgba(255, 255, 255, 0.6) !important;
     border-radius: var(--radius-xl);
-    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 80px rgba(99, 102, 241, 0.02);
+    box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 80px rgba(var(--primary-rgb), 0.02);
     padding: 3.5rem;
     width: 100%;
     max-width: 480px;
@@ -1069,7 +1075,7 @@ section {
 
 .auth-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 35px 70px -15px rgba(15, 23, 42, 0.12), 0 0 100px rgba(99, 102, 241, 0.04);
+    box-shadow: 0 35px 70px -15px rgba(15, 23, 42, 0.12), 0 0 100px rgba(var(--primary-rgb), 0.04);
 }
 
 .auth-logo {
@@ -1125,17 +1131,17 @@ section {
 .auth-card .form-control:focus {
     box-shadow: none;
     background-color: #ffffff !important;
-    border-color: #6366f1 !important;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15) !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15) !important;
 }
 
 .auth-card .input-group:focus-within .input-group-text {
-    border-color: #6366f1 !important;
-    color: #6366f1 !important;
+    border-color: var(--primary) !important;
+    color: var(--primary) !important;
 }
 
 .auth-card .input-group:focus-within .form-control {
-    border-color: #6366f1 !important;
+    border-color: var(--primary) !important;
 }
 
 .auth-card .btn-outline-secondary {
@@ -1149,24 +1155,24 @@ section {
 .auth-card .btn-outline-secondary:hover {
     background-color: #f1f5f9 !important;
     color: #0f172a !important;
-    border-color: #6366f1 !important;
+    border-color: var(--primary) !important;
 }
 
 .auth-card .input-group:focus-within #togglePassword {
-    border-color: #6366f1 !important;
+    border-color: var(--primary) !important;
 }
 
 .auth-card .btn-primary {
     background: var(--gradient-primary) !important;
     border: none !important;
     color: #ffffff !important;
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3) !important;
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.3) !important;
     transition: all 0.3s ease !important;
 }
 
 .auth-card .btn-primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(99, 102, 241, 0.45) !important;
+    box-shadow: 0 8px 25px rgba(var(--primary-rgb), 0.45) !important;
 }
 
 .auth-card .btn-lg {
@@ -1182,7 +1188,7 @@ section {
 
 .auth-card a.text-primary, 
 .auth-card .text-primary {
-    color: #4f46e5 !important;
+    color: var(--primary-dark) !important;
     text-decoration: none;
     transition: color 0.2s ease;
 }
@@ -1875,7 +1881,7 @@ section {
 }
 
 .btn-proceed-payment {
-    background: linear-gradient(90deg, #a855f7 0%, #ec4899 100%);
+    background: linear-gradient(90deg, var(--purple) 0%, var(--secondary) 100%);
     border: none;
     color: white;
     font-size: 1.1rem;
@@ -1885,7 +1891,7 @@ section {
 
 .btn-proceed-payment:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px -5px rgba(236, 72, 153, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(var(--secondary-rgb), 0.4);
     opacity: 0.9;
 }
 
@@ -2067,7 +2073,7 @@ section {
 }
 
 .hero-main-title span {
-    background: linear-gradient(135deg, #fbbf24, #f472b6, #c4b5fd);
+    background: linear-gradient(135deg, #fbbf24, var(--secondary-light), var(--violet-pale));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -2098,7 +2104,7 @@ section {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    background: linear-gradient(135deg, #f59e0b, var(--secondary));
     color: #fff;
     padding: 1rem 2.25rem;
     border-radius: 50px;
@@ -2192,7 +2198,7 @@ section {
 }
 
 .btn-search-submit {
-    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    background: linear-gradient(135deg, #f59e0b, var(--secondary));
     color: #fff;
     border: none;
     padding: 0.7rem 1.5rem;
@@ -2349,13 +2355,13 @@ section {
 }
 
 .stat-bar-item:hover {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(236, 72, 153, 0.05));
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.05), rgba(var(--secondary-rgb), 0.05));
 }
 
 .stat-bar-icon {
     width: 55px;
     height: 55px;
-    background: linear-gradient(135deg, #f59e0b, #ec4899);
+    background: linear-gradient(135deg, #f59e0b, var(--secondary));
     border-radius: 15px;
     display: flex;
     align-items: center;
@@ -2420,7 +2426,7 @@ section {
 .step-icon-circle {
     width: 80px;
     height: 80px;
-    background: linear-gradient(135deg, #f59e0b, #ec4899, #8b5cf6);
+    background: linear-gradient(135deg, #f59e0b, var(--secondary), var(--violet));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -2444,7 +2450,7 @@ section {
 .step-connector {
     width: 60px;
     height: 3px;
-    background: linear-gradient(90deg, #f59e0b, #ec4899);
+    background: linear-gradient(90deg, #f59e0b, var(--secondary));
     opacity: 0.4;
     margin-top: 4.5rem;
     border-radius: 3px;
@@ -2543,7 +2549,7 @@ section {
     right: -20%;
     width: 600px;
     height: 600px;
-    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(236, 72, 153, 0.15));
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(var(--secondary-rgb), 0.15));
     border-radius: 50%;
     filter: blur(80px);
 }
@@ -2555,7 +2561,7 @@ section {
     left: -20%;
     width: 500px;
     height: 500px;
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.15), rgba(var(--violet-rgb), 0.15));
     border-radius: 50%;
     filter: blur(80px);
 }
@@ -2813,7 +2819,7 @@ section {
 }
 
 #mainNav .navbar-brand .bi-trophy-fill {
-    color: #c4b5fd;
+    color: var(--violet-pale);
     /* Soft purple accent */
 }
 
@@ -2841,7 +2847,7 @@ section {
         transform: translateX(-50%);
         width: 0;
         height: 2px;
-        background: linear-gradient(90deg, #f472b6, #c4b5fd);
+        background: linear-gradient(90deg, var(--secondary-light), var(--violet-pale));
         transition: width 0.3s ease;
         border-radius: 2px;
     }
@@ -2853,7 +2859,7 @@ section {
 }
 
 #mainNav .btn-primary {
-    background: linear-gradient(135deg, #f472b6, #8b5cf6);
+    background: linear-gradient(135deg, var(--secondary-light), var(--violet));
     border: none;
     border-radius: 50px;
     padding: 0.6rem 1.8rem;
@@ -2865,7 +2871,7 @@ section {
 #mainNav .btn-primary:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(244, 114, 182, 0.5);
-    background: linear-gradient(135deg, #ec4899, #7c3aed);
+    background: linear-gradient(135deg, var(--secondary), var(--violet-dark));
 }
 
 #mainNav .navbar-toggler {
@@ -3008,7 +3014,7 @@ section {
     height: 100%;
     width: 65%;
     border-radius: var(--radius-full);
-    background: linear-gradient(90deg, #3b82f6 0%, #6366f1 50%, #ec4899 100%);
+    background: linear-gradient(90deg, #3b82f6 0%, var(--primary) 50%, var(--secondary) 100%);
     background-size: 200% 100%;
     animation: progressSlide 2s ease-in-out infinite;
 }
@@ -3317,7 +3323,7 @@ section {
     right: -20%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--primary-rgb), 0.15) 0%, transparent 70%);
     border-radius: 50%;
 }
 
@@ -3328,7 +3334,7 @@ section {
     left: -10%;
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, rgba(236, 72, 153, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(var(--secondary-rgb), 0.1) 0%, transparent 70%);
     border-radius: 50%;
 }
 
@@ -3342,7 +3348,7 @@ section {
 
 .ticket-event-card:hover {
     transform: translateY(-8px);
-    box-shadow: 0 12px 30px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 12px 30px rgba(var(--primary-rgb), 0.15);
 }
 
 .ticket-image-wrapper {
@@ -3399,7 +3405,7 @@ section {
     position: absolute;
     top: 12px;
     right: 12px;
-    background: rgba(99, 102, 241, 0.9);
+    background: rgba(var(--primary-rgb), 0.9);
     color: #fff;
     padding: 0.3rem 0.75rem;
     border-radius: 2rem;
@@ -3415,7 +3421,7 @@ section {
 }
 
 .btn-ticket-buy {
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    background: linear-gradient(135deg, var(--primary), var(--violet));
     color: #fff;
     border: none;
     font-size: 0.95rem;
@@ -3424,10 +3430,10 @@ section {
 }
 
 .btn-ticket-buy:hover {
-    background: linear-gradient(135deg, #4f46e5, #7c3aed);
+    background: linear-gradient(135deg, var(--primary-dark), var(--violet-dark));
     color: #fff;
     transform: scale(1.02);
-    box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+    box-shadow: 0 4px 15px rgba(var(--primary-rgb), 0.4);
 }
 
 .ticket-modal-banner img {
@@ -3435,7 +3441,7 @@ section {
 }
 
 .ticket-success-ref {
-    border: 2px dashed #6366f1;
+    border: 2px dashed var(--primary);
 }
 
 .ticketing-hero .breadcrumb-item + .breadcrumb-item::before {
@@ -3481,7 +3487,7 @@ section {
 @media (hover: none) {
     .auth-card:hover {
         transform: none;
-        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 80px rgba(99, 102, 241, 0.02);
+        box-shadow: 0 25px 60px -15px rgba(15, 23, 42, 0.08), 0 0 80px rgba(var(--primary-rgb), 0.02);
     }
 }
 
@@ -3658,7 +3664,7 @@ section {
 }
 
 
-/* Site logo. The logo has navy lettering, so it sits on white over dark areas. */
+/* Site logo on sign-in pages */
 .brand-logo {
     display: block;
     width: 240px;
@@ -3670,20 +3676,4 @@ section {
 .brand-logo-sm {
     width: 180px;
     margin-bottom: 1.5rem;
-}
-
-.brand-logo-chip {
-    width: auto;
-    margin: 0;
-    padding: 4px 10px;
-    background: #fff;
-    border-radius: 10px;
-}
-
-#mainNav .brand-logo-chip {
-    height: 52px;
-}
-
-.footer-brand .brand-logo-chip {
-    height: 76px;
 }

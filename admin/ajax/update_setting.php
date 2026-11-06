@@ -8,13 +8,20 @@ if (!isLoggedIn() || !isAdmin()) {
     exit;
 }
 
+if (!verifyCSRFToken($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '')) {
+    echo json_encode(['success' => false, 'message' => 'Your session expired. Refresh the page and try again.']);
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $data = json_decode(file_get_contents('php://input'), true);
     
     $key = $data['key'] ?? '';
     $value = $data['value'] ?? '';
     
-    if (empty($key)) {
+    // Only switches flipped straight from the page. Everything else goes through
+    // the Settings forms, which validate what is saved.
+    if (!in_array($key, ['show_vote_counts'], true)) {
         echo json_encode(['success' => false, 'message' => 'Missing key']);
         exit;
     }

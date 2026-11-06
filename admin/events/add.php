@@ -5,6 +5,7 @@
  */
 
 require_once '../../config/database.php';
+require_once '../../includes/image-upload.php';
 
 // Require admin
 if (!isLoggedIn() || !isAdmin()) {
@@ -25,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $start_date = $_POST['start_date'] ?? '';
         $end_date = $_POST['end_date'] ?? '';
         $status = $_POST['status'] ?? 'draft';
-        $voting_type = $_POST['voting_type'] ?? 'paid';
+        $voting_type = 'paid'; // All voting on VoteHubGH is paid
         $vote_price = floatval($_POST['vote_price'] ?? 0);
         $is_featured = isset($_POST['is_featured']) ? 1 : 0;
         $event_type = sanitize($_POST['event_type'] ?? 'voting');
@@ -39,6 +40,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($start_date)) $errors[] = 'Start date is required.';
         if (empty($end_date)) $errors[] = 'End date is required.';
         if (strtotime($end_date) <= strtotime($start_date)) $errors[] = 'End date must be after start date.';
+        if ($event_type !== 'ticketing' && $voting_type === 'paid' && $vote_price <= 0) $errors[] = 'Enter a vote price above GHS 0.00.';
         
         if ($event_type === 'ticketing' || $event_type === 'both') {
             if (empty($event_code)) {
@@ -65,32 +67,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $slug .= '-' . time();
         }
         
-        // Handle file upload
-        $banner = null;
-        if (isset($_FILES['banner']) && $_FILES['banner']['error'] === UPLOAD_ERR_OK) {
-            $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-            $maxSize = 5 * 1024 * 1024; // 5MB
-            
-            if (!in_array($_FILES['banner']['type'], $allowedTypes)) {
-                $errors[] = 'Invalid image type. Allowed: JPG, PNG, GIF, WebP';
-            } elseif ($_FILES['banner']['size'] > $maxSize) {
-                $errors[] = 'Image size must be less than 5MB.';
-            } else {
-                $extension = pathinfo($_FILES['banner']['name'], PATHINFO_EXTENSION);
-                $banner = $slug . '-' . time() . '.' . $extension;
-                $uploadPath = '../../uploads/events/' . $banner;
-                
-                if (!is_dir('../../uploads/events/')) {
-                    mkdir('../../uploads/events/', 0755, true);
-                }
-                
-                if (!move_uploaded_file($_FILES['banner']['tmp_name'], $uploadPath)) {
-                    $errors[] = 'Failed to upload image.';
-                    $banner = null;
-                }
-            }
+        // Handle file upload. Oversized images are compressed, not refused.
+        $bannerError = '';
+        $banner = empty($errors) ? storeImageFromForm('banner', '../../uploads/events', $slug, $bannerError) : null;
+        if ($bannerError !== '') {
+            $errors[] = $bannerError;
         }
-        
+
         if (empty($errors)) {
             try {
                 $pdo->beginTransaction();
@@ -134,14 +117,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -253,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label for="banner" class="form-label">Banner Image</label>
-                                    <input type="file" class="form-control" id="banner" name="banner" accept="image/*" onchange="previewImage(this, 'bannerPreview')">
+                                    <input type="file" class="form-control" id="banner" name="banner" accept="image/*" data-compress-max="5242880" onchange="previewImage(this, 'bannerPreview')">
                                     <img id="bannerPreview" class="mt-2 rounded" style="max-width: 100%; display: none;">
                                 </div>
                                 
@@ -276,17 +260,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </div>
 
                                 <div id="votingFields">
-                                    <div class="mb-3">
-                                        <label for="voting_type" class="form-label">Voting Type</label>
-                                        <select class="form-select" id="voting_type" name="voting_type">
-                                            <option value="free" <?php echo ($_POST['voting_type'] ?? '') === 'free' ? 'selected' : ''; ?>>Free Voting</option>
-                                            <option value="paid" <?php echo ($_POST['voting_type'] ?? 'paid') === 'paid' ? 'selected' : ''; ?>>Paid Voting</option>
-                                        </select>
-                                    </div>
-                                    
                                     <div class="mb-3" id="priceField">
-                                        <label for="vote_price" class="form-label">Vote Price (GHS)</label>
-                                        <input type="number" class="form-control" id="vote_price" name="vote_price" step="0.01" min="0" value="<?php echo $_POST['vote_price'] ?? '0.00'; ?>">
+                                        <label for="vote_price" class="form-label">Vote Price (GHS) *</label>
+                                        <input type="number" class="form-control" id="vote_price" name="vote_price" step="0.01" min="0.01" placeholder="e.g. 1.00" value="<?php echo htmlspecialchars($_POST['vote_price'] ?? ''); ?>">
+                                        <div class="invalid-feedback">Enter a vote price above GHS 0.00.</div>
                                     </div>
                                 </div>
 
@@ -378,13 +355,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const votingFields = document.getElementById('votingFields');
             const ticketingFields = document.getElementById('ticketingFields');
             const priceField = document.getElementById('priceField');
-            const votingTypeSelect = document.getElementById('voting_type');
             const eventCodeInput = document.getElementById('event_code');
             const container = document.getElementById('ticketCategoriesContainer');
             const btnAdd = document.getElementById('btnAddCategory');
 
             function toggleFields() {
                 const type = eventTypeSelect.value;
+
+                // Ticket-only events hide the price, so it must not block the form
+                const priceInput = document.getElementById('vote_price');
+                priceInput.required = type !== 'ticketing';
+                priceInput.min = type !== 'ticketing' ? '0.01' : '0';
+
                 if (type === 'voting') {
                     votingFields.classList.remove('d-none');
                     ticketingFields.classList.add('d-none');
@@ -403,16 +385,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (eventTypeSelect) {
                 eventTypeSelect.addEventListener('change', toggleFields);
                 toggleFields();
-            }
-
-            if (votingTypeSelect) {
-                votingTypeSelect.addEventListener('change', function() {
-                    if (this.value === 'free') {
-                        priceField.classList.add('d-none');
-                    } else {
-                        priceField.classList.remove('d-none');
-                    }
-                });
             }
 
             function addCategoryRow(id = '', name = '', price = '') {
@@ -460,5 +432,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ?>
         });
     </script>
+    <script src="<?php echo assetUrl('assets/js/image-compress.js'); ?>"></script>
 </body>
 </html>

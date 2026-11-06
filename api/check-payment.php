@@ -34,35 +34,21 @@ try {
         exit;
     }
     
-    // 2. If not success, call NaloPay to verify
-    // If we have an external_id, use it. Otherwise use reference.
-    $lookupId = $transaction['external_id'] ?? $transaction['reference'];
-    $naloResponse = verifyNaloTransaction($lookupId);
-    
-    // Handle NaloPay's 'sucess' typo
-    $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
-    
-    if (!$isSuccess) {
-        echo json_encode(['success' => false, 'message' => 'Payment still pending or verification failed.', 'status' => 'PENDING']);
-        exit;
-    }
-    
-    $data = $naloResponse['data'];
-    $paymentStatus = $data['status'] ?? '';
-    
-    // 3. If NaloPay says COMPLETED, process it
-    if ($paymentStatus === 'COMPLETED' || $paymentStatus === 'SUCCESS') {
-        $result = processSuccessfulPayment($pdo, $transaction, $data);
-        
+    // 2. If not success, ask NaloPay
+    $confirmation = confirmNaloPayment($transaction);
+
+    if ($confirmation['paid']) {
+        $result = processSuccessfulPayment($pdo, $transaction, $confirmation['data']);
+
         if ($result['success']) {
             echo json_encode(['success' => true, 'status' => 'COMPLETED', 'message' => 'Payment verified and processed.']);
         } else {
             echo json_encode(['success' => false, 'message' => $result['message']]);
         }
     } else {
-        echo json_encode(['success' => true, 'status' => $paymentStatus, 'message' => 'Payment is ' . $paymentStatus]);
+        echo json_encode(['success' => true, 'status' => $confirmation['status'], 'message' => 'Payment is ' . $confirmation['status']]);
     }
-    
+
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

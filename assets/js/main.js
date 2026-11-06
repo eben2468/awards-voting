@@ -102,7 +102,6 @@ function initVoteModal() {
     const stkPushBanner = document.getElementById('stkPushBanner');
     const stkPendingSection = document.getElementById('stkPendingSection');
     const voteFormSection = document.getElementById('voteFormSection');
-    const cardDetailsSection = document.getElementById('cardDetailsSection');
     const phoneInputSection = document.getElementById('phoneInputSection');
 
     let currentPrice = 0;
@@ -126,15 +125,7 @@ function initVoteModal() {
         if (voteFormSection) voteFormSection.classList.remove('d-none');
         if (stkPendingSection) stkPendingSection.classList.add('d-none');
         if (stkPushBanner) stkPushBanner.classList.add('d-none');
-        if (cardDetailsSection) cardDetailsSection.classList.add('d-none');
         if (phoneInputSection) phoneInputSection.style.display = 'block';
-
-        // Reset card fields
-        const cardFields = ['cardholderName', 'cardNumber', 'cardExpiryMonth', 'cardExpiryYear', 'cardCvv'];
-        cardFields.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.value = el.tagName === 'SELECT' ? '' : '';
-        });
 
         // Reset network select
         const voterNetworkSelect = document.getElementById('voterNetwork');
@@ -155,7 +146,7 @@ function initVoteModal() {
         }
 
         // Remove any card payment iframe
-        const existingIframe = document.getElementById('cardPaymentIframe');
+        const existingIframe = document.getElementById('cardPaymentIframeContainer');
         if (existingIframe) existingIframe.remove();
     }
 
@@ -273,29 +264,23 @@ function initVoteModal() {
             if (this.value === 'CARD') {
                 // Keep phone input visible, update label/help text
                 if (phoneInputSection) phoneInputSection.style.display = 'block';
-                if (cardDetailsSection) cardDetailsSection.classList.remove('d-none');
                 if (voterPhoneInput) voterPhoneInput.setAttribute('required', 'required');
                 if (phoneLabel) {
-                    phoneLabel.innerHTML = 'Phone Number <span class="text-muted fw-normal">(for Vote SMS)</span>';
+                    phoneLabel.textContent = 'Phone number';
                 }
                 if (phoneHelp) {
-                    phoneHelp.textContent = 'Enter your phone number to receive your vote confirmation via SMS.';
+                    phoneHelp.textContent = "You'll enter your card on NaloPay's secure page next. Your confirmation comes here by SMS.";
                 }
-                // Set card fields as required
-                setCardFieldsRequired(true);
             } else {
                 // Show phone input, hide card form, reset labels
                 if (phoneInputSection) phoneInputSection.style.display = 'block';
-                if (cardDetailsSection) cardDetailsSection.classList.add('d-none');
                 if (voterPhoneInput) voterPhoneInput.setAttribute('required', 'required');
                 if (phoneLabel) {
-                    phoneLabel.innerHTML = 'MoMo Number <span class="text-muted fw-normal">(for STK Push)</span>';
+                    phoneLabel.textContent = 'MoMo number';
                 }
                 if (phoneHelp) {
-                    phoneHelp.textContent = 'Enter your mobile money number to receive a payment prompt.';
+                    phoneHelp.textContent = "We'll send a payment prompt to this number.";
                 }
-                // Remove card fields required
-                setCardFieldsRequired(false);
             }
         });
 
@@ -303,20 +288,6 @@ function initVoteModal() {
         if (voterNetworkSelect.value) {
             voterNetworkSelect.dispatchEvent(new Event('change'));
         }
-    }
-
-    function setCardFieldsRequired(required) {
-        const cardFields = ['cardholderName', 'cardNumber', 'cardExpiryMonth', 'cardExpiryYear', 'cardCvv'];
-        cardFields.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) {
-                if (required) {
-                    el.setAttribute('required', 'required');
-                } else {
-                    el.removeAttribute('required');
-                }
-            }
-        });
     }
 
     /**
@@ -331,7 +302,7 @@ function initVoteModal() {
         if (stkPushBanner) {
             const bannerText = stkPushBanner.querySelector('.stk-push-text');
             if (bannerText) {
-                bannerText.textContent = `An STK Push has been sent to your phone. Please approve to complete your vote.`;
+                bannerText.textContent = `Check your phone and approve the payment to complete your vote.`;
             }
             stkPushBanner.classList.remove('d-none');
         }
@@ -370,72 +341,6 @@ function initVoteModal() {
         }
     }
 
-    /**
-     * Validate card details before submission
-     */
-    function validateCardDetails() {
-        const cardNumber = document.getElementById('cardNumber').value.replace(/\s/g, '');
-        const expiryMonth = document.getElementById('cardExpiryMonth').value;
-        const expiryYear = document.getElementById('cardExpiryYear').value;
-        const cvv = document.getElementById('cardCvv').value;
-        const cardholderName = document.getElementById('cardholderName').value.trim();
-
-        if (!cardholderName) {
-            showToast('warning', 'Please enter the cardholder name.');
-            return false;
-        }
-
-        if (cardNumber.length < 13 || cardNumber.length > 19 || !/^\d+$/.test(cardNumber)) {
-            showToast('warning', 'Please enter a valid card number.');
-            return false;
-        }
-
-        // Luhn check
-        if (!luhnCheck(cardNumber)) {
-            showToast('warning', 'Invalid card number. Please check and try again.');
-            return false;
-        }
-
-        if (!expiryMonth || !expiryYear) {
-            showToast('warning', 'Please select the card expiry date.');
-            return false;
-        }
-
-        // Check if card is not expired
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = parseInt(String(now.getFullYear()).slice(-2));
-        const expMonth = parseInt(expiryMonth);
-        const expYear = parseInt(expiryYear);
-
-        if (expYear < currentYear || (expYear === currentYear && expMonth < currentMonth)) {
-            showToast('warning', 'Your card has expired. Please use a different card.');
-            return false;
-        }
-
-        if (cvv.length < 3 || !/^\d+$/.test(cvv)) {
-            showToast('warning', 'Please enter a valid CVV (3-4 digits).');
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Luhn algorithm check for card numbers
-     */
-    function luhnCheck(num) {
-        let arr = (num + '').split('').reverse().map(x => parseInt(x));
-        let sum = arr.reduce((acc, val, i) => {
-            if (i % 2 !== 0) {
-                val *= 2;
-                if (val > 9) val -= 9;
-            }
-            return acc + val;
-        }, 0);
-        return sum % 10 === 0;
-    }
-
     // ===== FORM SUBMISSION =====
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -449,85 +354,7 @@ function initVoteModal() {
         const phoneValue = phoneInput ? phoneInput.value.replace(/\D/g, '') : '';
         const networkValue = networkInput ? networkInput.value : '';
 
-        // ===== CARD PAYMENT FLOW =====
-        if (networkValue === 'CARD') {
-            if (!validateCardDetails()) return;
-
-            submitBtn.disabled = true;
-            submitBtn.innerHTML = '<span class="loading"></span> Processing Card Payment...';
-
-            // Get nominee info for display
-            const nomineeName = nomineeNameSpan ? nomineeNameSpan.textContent : 'Nominee';
-            const nomineePhoto = nomineePhotoImg ? nomineePhotoImg.src : '';
-
-            try {
-                const formData = new FormData();
-
-                if (currentForm) {
-                    // Card-initiated vote from event page
-                    const hiddenInputs = currentForm.querySelectorAll('input[type="hidden"]');
-                    hiddenInputs.forEach(input => {
-                        formData.append(input.name, input.value);
-                    });
-                } else if (nomineeData) {
-                    // Shortcode-initiated vote
-                    formData.append('nominee_id', nomineeData.id);
-                    formData.append('category_id', nomineeData.category_id);
-                    formData.append('event_id', nomineeData.event_id);
-                }
-
-                formData.append('quantity', quantityInput.value);
-                formData.append('cardholder_name', document.getElementById('cardholderName').value.trim());
-                formData.append('card_number', document.getElementById('cardNumber').value.replace(/\s/g, ''));
-                formData.append('expiry_month', document.getElementById('cardExpiryMonth').value);
-                formData.append('expiry_year', document.getElementById('cardExpiryYear').value);
-                formData.append('cvv', document.getElementById('cardCvv').value);
-                formData.append('phone', phoneValue);
-                formData.append('network', networkValue);
-
-                // Get CSRF token
-                const csrfToken = document.querySelector('input[name="csrf_token"]')?.value;
-                if (csrfToken) formData.append('csrf_token', csrfToken);
-
-                const response = await fetch(`${window.SITE_URL}/api/process-card.php`, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    if (result.payment_required && result.payment_data && result.payment_data.checkout_url) {
-                        // Show checkout in an iframe inside the modal
-                        handleCardPaymentInModal(result.payment_data, nomineeName, nomineePhoto);
-                    } else {
-                        // Card processed directly & successfully!
-                        if (bsModal) {
-                            try { bsModal.hide(); } catch (e) {}
-                        }
-                        showToast('success', result.message || 'Payment successful! Your vote has been recorded.');
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 2000);
-                    }
-                } else {
-                    showToast('danger', result.message || 'Card payment failed. Please try again.');
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalBtnText;
-                }
-            } catch (error) {
-                console.error('Card payment error:', error);
-                showToast('danger', 'An error occurred processing your card payment. Please try again.');
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = originalBtnText;
-            }
-            return;
-        }
-
-        // ===== MOBILE MONEY / STK PUSH FLOW =====
+        // ===== PAYMENT: the server replies with a phone prompt or NaloPay's checkout =====
         submitBtn.disabled = true;
         submitBtn.innerHTML = '<span class="loading"></span> Processing...';
 
@@ -593,6 +420,7 @@ function initVoteModal() {
                         if (result.payment_data.direct_push) {
                             // STK Push was sent - show pending state IN the modal
                             showStkPendingState(currentNomineeName, currentNomineePhoto, shortcode, phoneValue);
+                            window.showPayApproval(result.payment_data.approval_code);
                             showToast('success', result.payment_data.message || 'Payment prompt sent! Please check your phone.');
 
                             if (result.payment_data.reference) {
@@ -649,6 +477,7 @@ function initVoteModal() {
                         if (result.payment_data.direct_push) {
                             // STK Push sent - show pending state IN the modal
                             showStkPendingState(currentNomineeName, currentNomineePhoto, shortcode, phoneValue);
+                            window.showPayApproval(result.payment_data.approval_code);
                             showToast('success', result.payment_data.message || 'Payment prompt sent! Please check your phone.');
 
                             if (result.payment_data.reference) {
@@ -696,7 +525,7 @@ function initVoteModal() {
         iframeContainer.innerHTML = `
             <div class="text-center mb-3">
                 <p class="fw-semibold text-dark mb-1">Complete your card payment</p>
-                <p class="text-muted small mb-0">Enter your card details in the secure form below</p>
+                <p class="text-muted small mb-0">You're paying on NaloPay's secure page</p>
             </div>
             <div class="iframe-wrapper">
                 <iframe id="cardPaymentIframe" src="${paymentData.checkout_url}" frameborder="0" allowpaymentrequest="true"></iframe>

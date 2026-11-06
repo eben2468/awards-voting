@@ -51,13 +51,14 @@
         <input type="hidden" id="global_csrf_token" value="<?php echo generateCSRFToken(); ?>">
         <script>window.SITE_URL = '<?php echo SITE_URL; ?>';</script>
         <script src="<?php echo SITE_URL; ?>/assets/js/notifications.js"></script>
+        <?php renderSessionTimeoutScript(); ?>
 
         <!-- User Dropdown -->
         <div class="dropdown">
             <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none" type="button" data-bs-toggle="dropdown">
                 <?php 
                 $avatar = $_SESSION['user_avatar'] ?? null;
-                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['user_name']) . '&background=6366f1&color=fff';
+                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['user_name']) . '&background=0F2C7A&color=fff';
                 ?>
                 <img src="<?php echo $avatarUrl; ?>" 
                      class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover;">
@@ -68,7 +69,7 @@
                 <li><h6 class="dropdown-header"><?php echo htmlspecialchars($_SESSION['user_email']); ?></h6></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/admin/profile.php"><i class="bi bi-person me-2"></i>Profile</a></li>
-                <li><a class="dropdown-item" href="settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
+                <li><a class="dropdown-item" href="<?php echo SITE_URL; ?>/admin/settings.php"><i class="bi bi-gear me-2"></i>Settings</a></li>
                 <li><hr class="dropdown-divider"></li>
                 <li><a class="dropdown-item text-danger" href="<?php echo SITE_URL; ?>/logout.php"><i class="bi bi-box-arrow-right me-2"></i>Logout</a></li>
             </ul>

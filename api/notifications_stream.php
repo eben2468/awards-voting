@@ -39,6 +39,7 @@ while (true) {
 
         if (!empty($notifications)) {
             foreach ($notifications as $notification) {
+                $notification['link'] = notificationUrl($notification['link']);
                 echo "data: " . json_encode($notification) . "\n\n";
                 $last_id = $notification['id'];
             }

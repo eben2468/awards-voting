@@ -6,6 +6,7 @@
 
 require_once '../config/database.php';
 require_once '../includes/auth-functions.php';
+require_once '../includes/image-upload.php';
 
 if (!isLoggedIn() || !isAdmin()) {
     setFlash('danger', 'Access denied.');
@@ -38,6 +39,12 @@ $loadSettings = function () {
         'two_factor_fallback'         => getSetting('two_factor_fallback', '1'),
         'organizer_approval_required' => getSetting('organizer_approval_required', '1'),
         'approval_notify_email'       => getSetting('approval_notify_email', ''),
+        'login_max_attempts'          => getSetting('login_max_attempts', '5'),
+        'login_lockout_minutes'       => getSetting('login_lockout_minutes', '15'),
+        'session_timeout_minutes'     => getSetting('session_timeout_minutes', '30'),
+        // Login and signup pictures
+        'auth_image_login'            => getSetting('auth_image_login', ''),
+        'auth_image_register'         => getSetting('auth_image_register', ''),
     ];
 };
 
@@ -100,9 +107,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $put('two_factor_fallback', isset($_POST['two_factor_fallback']) ? '1' : '0');
                 $put('organizer_approval_required', isset($_POST['organizer_approval_required']) ? '1' : '0');
                 $put('approval_notify_email', trim($_POST['approval_notify_email'] ?? ''));
+                $put('login_max_attempts', (string) max(0, min(50, (int) ($_POST['login_max_attempts'] ?? 5))));
+                $put('login_lockout_minutes', (string) max(1, min(1440, (int) ($_POST['login_lockout_minutes'] ?? 15))));
+                $put('session_timeout_minutes', (string) max(0, min(1440, (int) ($_POST['session_timeout_minutes'] ?? 30))));
 
                 $success = empty($writeFailures);
                 $message = 'Security settings saved.';
+            }
+
+            // ---------------- Login and signup pictures ----------------
+            if ($formSection === 'auth_images') {
+                $imageErrors = [];
+                foreach (['auth_image_login' => 'login', 'auth_image_register' => 'signup'] as $key => $stem) {
+                    $current = getSetting($key, '');
+
+                    if (isset($_POST[$key . '_remove'])) {
+                        deleteStoredImage('../uploads/site', $current);
+                        $put($key, '');
+                        continue;
+                    }
+
+                    $imageError = '';
+                    $stored = storeImageFromForm($key, '../uploads/site', $stem . '-image', $imageError);
+                    if ($imageError !== '') {
+                        $imageErrors[] = ucfirst($stem) . ' picture: ' . $imageError;
+                    } elseif ($stored !== null) {
+                        deleteStoredImage('../uploads/site', $current);
+                        $put($key, $stored);
+                    }
+                }
+
+                $success = empty($writeFailures) && empty($imageErrors);
+                $message = empty($imageErrors) ? 'Login and signup pictures saved.' : implode(' ', array_map('htmlspecialchars', $imageErrors));
             }
 
             if (!empty($writeFailures)) {
@@ -156,13 +192,14 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -419,8 +456,66 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                                     </div>
                                 </div>
 
+                                <div class="row g-3 mb-3">
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="login_max_attempts">Failed logins before lockout</label>
+                                        <input type="number" class="form-control" id="login_max_attempts" name="login_max_attempts" min="0" max="50"
+                                               value="<?php echo (int) $settings['login_max_attempts']; ?>">
+                                        <div class="form-text">Set to 0 to turn lockout off.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="login_lockout_minutes">Lockout time (minutes)</label>
+                                        <input type="number" class="form-control" id="login_lockout_minutes" name="login_lockout_minutes" min="1" max="1440"
+                                               value="<?php echo (int) $settings['login_lockout_minutes']; ?>">
+                                        <div class="form-text">Resetting the password ends a lockout early.</div>
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <label class="form-label" for="session_timeout_minutes">Automatic logout after (minutes)</label>
+                                        <input type="number" class="form-control" id="session_timeout_minutes" name="session_timeout_minutes" min="0" max="1440"
+                                               value="<?php echo (int) $settings['session_timeout_minutes']; ?>">
+                                        <div class="form-text">Counts time with no activity. Set to 0 to turn it off.</div>
+                                    </div>
+                                </div>
+
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-check-lg me-2"></i>Save Security Settings
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Login and signup pictures -->
+                    <div class="card border-0 shadow-sm mt-4 mb-4">
+                        <div class="card-header bg-white">
+                            <h5 class="mb-0"><i class="bi bi-image me-2"></i>Login &amp; Signup Pictures</h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" enctype="multipart/form-data">
+                                <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                                <input type="hidden" name="form_section" value="auth_images">
+
+                                <p class="text-muted">These appear on the left of the login and signup pages. A PNG with a transparent background looks best. On phones the picture is hidden, so the form comes first.</p>
+
+                                <div class="row g-4">
+                                    <?php foreach (['login' => 'Login page', 'register' => 'Signup page'] as $page => $label): $field = 'auth_image_' . $page; ?>
+                                        <div class="col-md-6">
+                                            <label class="form-label" for="<?php echo $field; ?>"><?php echo $label; ?></label>
+                                            <div class="auth-image-preview">
+                                                <img src="<?php echo htmlspecialchars(authPanelImage($page)); ?>" alt="">
+                                            </div>
+                                            <input type="file" class="form-control" id="<?php echo $field; ?>" name="<?php echo $field; ?>" accept="image/*" data-compress-max="5242880">
+                                            <?php if ($settings[$field] !== ''): ?>
+                                                <div class="form-check mt-2">
+                                                    <input class="form-check-input" type="checkbox" id="<?php echo $field; ?>_remove" name="<?php echo $field; ?>_remove">
+                                                    <label class="form-check-label" for="<?php echo $field; ?>_remove">Remove this picture</label>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary mt-3">
+                                    <i class="bi bi-check-lg me-2"></i>Save Pictures
                                 </button>
                             </form>
                         </div>
@@ -499,6 +594,7 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'X-CSRF-Token': document.getElementById('global_csrf_token').value,
                 },
                 body: JSON.stringify({
                     key: 'show_vote_counts',
@@ -508,8 +604,6 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    // Show a toast or notification if needed
-                    console.log('Setting updated');
                 } else {
                     alert('Failed to update setting: ' + data.message);
                     // Revert toggle state
@@ -523,5 +617,6 @@ $hasSmtpPassword = $settings['smtp_password'] !== '';
             });
         });
     </script>
+    <script src="<?php echo assetUrl('assets/js/image-compress.js'); ?>"></script>
 </body>
 </html>

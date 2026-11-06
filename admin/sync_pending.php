@@ -27,14 +27,13 @@ foreach ($pending as $transaction) {
     if (!$lookupId) continue;
 
     try {
-        $naloResponse = verifyNaloTransaction($lookupId);
-        $isSuccess = $naloResponse['success'] ?? $naloResponse['sucess'] ?? false;
+        $confirmation = confirmNaloPayment($transaction);
+        $paymentStatus = $confirmation['status'];
+        $data = $confirmation['data'];
 
-        if ($isSuccess && isset($naloResponse['data'])) {
-            $data = $naloResponse['data'];
-            $paymentStatus = $data['status'] ?? '';
+        if (!empty($data)) {
 
-            if ($paymentStatus === 'COMPLETED' || $paymentStatus === 'SUCCESS') {
+            if ($confirmation['paid']) {
                 $result = processSuccessfulPayment($pdo, $transaction, $data);
                 if ($result['success']) {
                     $updated++;

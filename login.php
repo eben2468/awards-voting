@@ -18,7 +18,7 @@ if (isLoggedIn()) {
     } elseif (isOrganizer()) {
         redirect('organizer/');
     } else {
-        redirect('user/dashboard.php');
+        redirect('');
     }
 }
 
@@ -45,6 +45,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $errors[] = 'Password is required.';
         }
 
+        // A locked login is refused before the password is even looked at
+        if (empty($errors)) {
+            try {
+                $lock = loginLockState(getDBConnection(), $email);
+                if ($lock['locked']) {
+                    $errors[] = loginLockedMessage($lock['wait']);
+                }
+            } catch (PDOException $e) {
+                error_log('Login lock check error: ' . $e->getMessage());
+            }
+        }
+
         // Process login
         if (empty($errors)) {
             try {
@@ -59,16 +71,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $user = $stmt->fetch();
 
                 if (!$user || !password_verify($password, $user['password'])) {
-                    $errors[] = 'Invalid email or password.';
-
-                    // Log failed attempt
-                    $logStmt = $pdo->prepare("INSERT INTO audit_logs (action, ip_address, user_agent, new_values) VALUES ('failed_login', ?, ?, ?)");
-                    $logStmt->execute([
-                        $_SERVER['REMOTE_ADDR'] ?? null,
-                        $_SERVER['HTTP_USER_AGENT'] ?? null,
-                        json_encode(['email' => $email])
-                    ]);
+                    $errors[] = recordFailedLogin($pdo, $email);
                 } else {
+                    clearFailedLogins($pdo, $email);
                     $approvalStatus = $user['approval_status'] ?? 'approved';
 
                     if ($user['status'] === 'suspended') {
@@ -152,8 +157,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -166,17 +171,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card">
-                <div class="auth-logo">
-                    <a href="<?php echo SITE_URL; ?>">
-                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo">
-                    </a>
-                    <p class="text-muted">Welcome back! Please login to continue.</p>
-                </div>
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = 'Run your awards night from one place.';
+            $authIntro = 'Follow votes, ticket sales and payouts as they come in.';
+            $authImage = authPanelImage('login');
+            include 'includes/auth-panel.php';
+            ?>
+
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
+                <h1>Welcome back</h1>
+                <p class="auth-sub">Please log in to your account</p>
+
+                <?php if (isset($_GET['timeout'])): ?>
+                    <div class="alert alert-warning">You were signed out because you were inactive. Please sign in again.</div>
+                <?php endif; ?>
 
                 <?php $flash = getFlash(); if ($flash): ?>
                     <div class="alert alert-<?php echo htmlspecialchars($flash['type']); ?>">
@@ -197,91 +215,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <form method="POST" action="" id="loginForm">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                            <input type="email"
-                                   class="form-control"
-                                   id="email"
-                                   name="email"
-                                   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                                   placeholder="Enter your email"
-                                   required>
-                        </div>
+                    <div class="auth-field">
+                        <label for="email" class="visually-hidden">Email address</label>
+                        <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
+                               value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                            <input type="password"
-                                   class="form-control"
-                                   id="password"
-                                   name="password"
-                                   placeholder="Enter your password"
-                                   required>
-                            <button class="btn btn-outline-secondary" type="button" id="togglePassword">
-                                <i class="bi bi-eye"></i>
-                            </button>
-                        </div>
+                    <div class="auth-field auth-password">
+                        <label for="password" class="visually-hidden">Password</label>
+                        <input type="password" class="auth-input" id="password" name="password" placeholder="Password" autocomplete="current-password" required>
+                        <button type="button" class="auth-eye" data-toggle-password="password" aria-label="Show password"><i class="bi bi-eye"></i></button>
                     </div>
 
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="remember" name="remember">
-                            <label class="form-check-label" for="remember">Remember me</label>
-                        </div>
-                        <a href="forgot-password.php" class="text-primary">Forgot Password?</a>
+                    <div class="auth-forgot">
+                        <a href="forgot-password.php">Forgot password?</a>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                        <i class="bi bi-box-arrow-in-right me-2"></i>Login
-                    </button>
-
-                    <div class="alert alert-light border d-flex align-items-start gap-2 small mb-3">
-                        <i class="bi bi-shield-lock-fill text-primary mt-1"></i>
-                        <div class="text-muted">
-                            <strong class="d-block text-dark">Protected by two-step verification</strong>
-                            After entering your password we will email a 6-digit code to your inbox to confirm it is really you.
-                        </div>
-                    </div>
-
-                    <div class="text-center">
-                        <p class="mb-0">Don't have an account? <a href="register.php" class="text-primary fw-semibold">Sign Up</a></p>
-                    </div>
+                    <button type="submit" class="auth-submit">Log in</button>
                 </form>
 
-                <hr class="my-4">
+                <p class="auth-note"><i class="bi bi-shield-lock"></i> We'll email you a 6-digit code to confirm it's you.</p>
 
-                <div class="text-center">
-                    <a href="<?php echo SITE_URL; ?>" class="text-muted">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Home
-                    </a>
-                </div>
-            </div>
-        </div>
+                <p class="auth-switch">Don't have an account? <a href="register.php">Sign up</a></p>
+                <a href="<?php echo SITE_URL; ?>" class="auth-home"><i class="bi bi-arrow-left"></i> Back to home</a>
+            </section>
+        </main>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-    <script>
-        // Toggle password visibility
-        document.getElementById('togglePassword').addEventListener('click', function() {
-            const password = document.getElementById('password');
-            const icon = this.querySelector('i');
-
-            if (password.type === 'password') {
-                password.type = 'text';
-                icon.classList.remove('bi-eye');
-                icon.classList.add('bi-eye-slash');
-            } else {
-                password.type = 'password';
-                icon.classList.remove('bi-eye-slash');
-                icon.classList.add('bi-eye');
-            }
-        });
-    </script>
+    <script src="<?php echo assetUrl('assets/js/auth.js'); ?>"></script>
 </body>
 </html>

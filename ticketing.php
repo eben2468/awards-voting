@@ -97,7 +97,7 @@ include 'includes/header.php';
             <?php endif; ?>
         </p>
 
-        <div class="row g-4">
+        <div class="ev-grid">
             <?php if (empty($events)): ?>
                 <div class="col-12">
                     <div class="text-center py-5 bg-white rounded-3 shadow-sm">
@@ -114,7 +114,7 @@ include 'includes/header.php';
                     </div>
                 </div>
             <?php else: ?>
-                <?php foreach ($events as $event): ?>
+                <?php $ticketIndex = 0; foreach ($events as $event): ?>
                     <?php
                         $daysLeft = floor((strtotime($event['end_date']) - time()) / (60 * 60 * 24));
                         
@@ -130,58 +130,34 @@ include 'includes/header.php';
                             $priceRange = 'GHS ' . number_format($event['min_price'], 2) . ' - ' . number_format($event['max_price'], 2);
                         }
                     ?>
-                    <div class="col-md-6 col-lg-4">
-                        <div class="card ticket-event-card h-100">
-                            <div class="ticket-image-wrapper">
-                                <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" 
-                                     alt="<?php echo htmlspecialchars($event['title']); ?>"
-                                     class="card-img-top">
-                                
-                                <div class="ticket-overlay">
-                                    <span class="ticket-badge-price"><?php echo $priceRange; ?></span>
-                                </div>
-
+                    <div class="rv" style="--d:<?php echo ($ticketIndex++ % 4) * 70; ?>ms">
+                        <article class="ev">
+                            <span class="ev-img">
+                                <img src="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>" alt="<?php echo htmlspecialchars($event['title']); ?>" loading="lazy">
                                 <?php if ($event['is_featured']): ?>
-                                    <span class="ticket-badge-featured">
-                                        <i class="bi bi-star-fill me-1"></i>Featured
-                                    </span>
+                                    <span class="ev-star" title="Featured"><i class="bi bi-star-fill" aria-hidden="true"></i><span class="visually-hidden">Featured</span></span>
                                 <?php endif; ?>
-
-                                <?php if ($event['event_code']): ?>
-                                    <span class="ticket-badge-code">
-                                        <i class="bi bi-qr-code me-1"></i><?php echo htmlspecialchars($event['event_code']); ?>
-                                    </span>
-                                <?php endif; ?>
-                            </div>
-
-                            <div class="card-body d-flex flex-column">
-                                <h5 class="card-title fw-bold mb-2"><?php echo htmlspecialchars($event['title']); ?></h5>
-                                <p class="card-text text-muted small flex-grow-1">
-                                    <?php echo strlen($event['description']) > 100 ? substr(htmlspecialchars($event['description']), 0, 100) . '...' : htmlspecialchars($event['description']); ?>
-                                </p>
-                                
-                                <div class="ticket-meta mb-3">
-                                    <div class="d-flex justify-content-between align-items-center text-muted small mb-2">
-                                        <span><i class="bi bi-calendar3 me-1"></i><?php echo date('M d, Y', strtotime($event['start_date'])); ?></span>
-                                        <span><i class="bi bi-clock me-1"></i><?php echo $daysLeft; ?> days left</span>
-                                    </div>
-                                    <div class="d-flex justify-content-between align-items-center text-muted small">
-                                        <span><i class="bi bi-tags me-1"></i><?php echo $event['category_count']; ?> tier<?php echo $event['category_count'] > 1 ? 's' : ''; ?></span>
-                                        <span><i class="bi bi-ticket me-1"></i><?php echo number_format($event['tickets_sold']); ?> sold</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="card-footer bg-transparent border-0 pb-3 px-3">
-                                <button type="button" class="btn btn-ticket-buy w-100 rounded-pill py-2 fw-bold"
+                            </span>
+                            <span class="ev-body">
+                                <span class="ev-state is-open"><?php echo $daysLeft < 1 ? 'Last day' : number_format($daysLeft) . ($daysLeft == 1 ? ' day left' : ' days left'); ?></span>
+                                <span class="ev-title"><?php echo htmlspecialchars($event['title']); ?></span>
+                                <span class="ev-meta">
+                                    <span><?php echo $event['category_count']; ?> tier<?php echo $event['category_count'] == 1 ? '' : 's'; ?></span>
+                                    <span><?php echo number_format($event['tickets_sold']); ?> sold</span>
+                                    <?php if ($event['event_code']): ?>
+                                        <span>Code <?php echo htmlspecialchars($event['event_code']); ?></span>
+                                    <?php endif; ?>
+                                </span>
+                                <span class="ev-price"><?php echo $priceRange; ?></span>
+                                <button type="button" class="btn btn-ticket-buy ev-buy"
                                         data-event-id="<?php echo $event['id']; ?>"
                                         data-event-title="<?php echo htmlspecialchars($event['title']); ?>"
                                         data-event-banner="<?php echo $event['banner'] ? 'uploads/events/' . $event['banner'] : 'https://picsum.photos/600/400?random=' . $event['id']; ?>"
                                         data-categories='<?php echo json_encode($categories); ?>'>
-                                    <i class="bi bi-ticket-perforated me-2"></i>Buy Ticket
+                                    Buy ticket
                                 </button>
-                            </div>
-                        </div>
+                            </span>
+                        </article>
                     </div>
                 <?php endforeach; ?>
             <?php endif; ?>

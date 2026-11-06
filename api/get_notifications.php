@@ -25,6 +25,10 @@ try {
     ");
     $stmt->execute([$user_id]);
     $notifications = $stmt->fetchAll();
+    foreach ($notifications as &$notification) {
+        $notification['link'] = notificationUrl($notification['link']);
+    }
+    unset($notification);
     
     echo json_encode(['status' => 'success', 'notifications' => $notifications]);
 } catch (Exception $e) {

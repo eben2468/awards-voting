@@ -106,12 +106,12 @@ include 'includes/header.php';
                             <i class="bi bi-phone me-1"></i> Dial *920*137# to Vote
                         </span>
                         <?php if (!$show_vote_counts): ?>
-                            <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm d-inline-flex align-items-center">
-                                <i class="bi bi-graph-up-arrow me-2"></i>Live Results Portal
+                            <a href="nominee-results.php" class="btn-live">
+                                <span class="btn-live-dot"></span>Live Results Portal
                             </a>
                         <?php endif; ?>
                     </div>
-                    <p class="text-white-75 lead mb-5 fs-4"><?php echo htmlspecialchars($event['description']); ?></p>
+                    <p class="text-white-75 lead mb-5 fs-4"><?php echo htmlspecialchars($event['description'], ENT_QUOTES, 'UTF-8', false); ?></p>
                     
                     <div class="d-flex flex-wrap gap-5 text-white fs-5">
                         <div class="d-flex align-items-center">
@@ -248,14 +248,14 @@ include 'includes/header.php';
                                 $maxVotes = !empty($nominees) ? max(array_column($nominees, 'vote_count')) : 1;
                                 ?>
 
-                                <div class="row g-4">
+                                <div class="row g-3">
                                     <?php foreach ($nominees as $nominee): ?>
                                         <?php 
                                         $percentage = $maxVotes > 0 ? ($nominee['vote_count'] / $maxVotes) * 100 : 0;
                                         $hasVoted = false;
                                         $votedForThis = false;
                                         ?>
-                                        <div class="col-md-6 col-lg-4">
+                                        <div class="col-6 col-md-4 col-xl-3">
                                             <div class="card nominee-card h-100 border-0 shadow-sm rounded-4 <?php echo $votedForThis ? 'ring-success' : ''; ?>">
                                                 <?php if ($votedForThis): ?>
                                                     <div class="voted-badge position-absolute top-0 end-0 m-2">
@@ -265,10 +265,10 @@ include 'includes/header.php';
                                                 
                                                 <div class="nominee-photo-wrapper text-center pt-4">
                                                     <div class="position-relative d-inline-block">
-                                                        <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=6366f1&color=fff&size=150'; ?>" 
+                                                        <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=150'; ?>" 
                                                              alt="<?php echo htmlspecialchars($nominee['name']); ?>"
                                                              class="nominee-photo rounded-circle shadow-sm"
-                                                             style="width: 100px; height: 100px; object-fit: cover; border: 4px solid #fff;">
+                                                             style="object-fit: cover;">
                                                     </div>
                                                 </div>
                                                 

@@ -61,8 +61,31 @@ define('LOGIN_CODE_MAX_ATTEMPTS', 5);   // Wrong-code attempts before the code i
 define('RESET_TOKEN_TTL_MINUTES', 60);  // How long a password reset link stays valid
 define('EMAIL_CHANGE_TTL_MINUTES', 30); // How long an email-change code stays valid
 
+// Android browsers hide the phone model unless the site asks for it. Adding it to
+// the user agent means every audit log entry records it without further changes.
+if (PHP_SAPI !== 'cli') {
+    if (!headers_sent()) {
+        header('Accept-CH: Sec-CH-UA-Model');
+    }
+    $reportedModel = trim((string) ($_SERVER['HTTP_SEC_CH_UA_MODEL'] ?? ''), " \"");
+    if ($reportedModel !== '' && preg_match('/^[\w .+-]{1,40}$/', $reportedModel)) {
+        $_SERVER['HTTP_USER_AGENT'] = ($_SERVER['HTTP_USER_AGENT'] ?? '') . ' [Model: ' . $reportedModel . ']';
+    }
+}
+
 // Start session if not started
 if (session_status() === PHP_SESSION_NONE) {
+    // The auto logout setting decides when a session ends, not PHP's own cleanup,
+    // whose default of 24 minutes would cut longer sessions short
+    ini_set('session.gc_maxlifetime', '90000');
+    ini_set('session.use_strict_mode', '1');
+
+    // Scripts cannot read the cookie, it only travels over HTTPS on the live
+    // site, and other sites cannot make a logged-in request with it
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+        || ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
+    session_set_cookie_params(['lifetime' => 0, 'path' => '/', 'secure' => $isHttps, 'httponly' => true, 'samesite' => 'Lax']);
+
     session_start();
 }
 
@@ -284,6 +307,42 @@ function createNotification($user_id, $title, $message, $type = 'info', $link = 
         error_log("Notification Error: " . $e->getMessage());
         return false;
     }
+}
+
+/**
+ * Tell an event's owner and the main admin about activity, once each. When they
+ * are the same person they get one notification, not two.
+ *
+ * @param int|null $ownerId The event's organizer or creator
+ * @param string   $path    Page inside the portal, e.g. 'votes/?event=5'
+ */
+function notifyEventActivity($ownerId, $title, $message, $path) {
+    $pdo = getDBConnection();
+    $roleStmt = $pdo->prepare("SELECT role FROM users WHERE id = ?");
+
+    foreach (array_unique(array_filter([(int) $ownerId, 1])) as $userId) {
+        $roleStmt->execute([$userId]);
+        $role = $roleStmt->fetchColumn();
+        if ($role) {
+            createNotification($userId, $title, $message, 'success', ($role === 'admin' ? 'admin/' : 'organizer/') . $path);
+        }
+    }
+}
+
+/**
+ * Full address for a notification link, from any page. Older notifications
+ * pointed at pages that never existed, so those are corrected here.
+ */
+function notificationUrl($link) {
+    if (empty($link)) {
+        return '';
+    }
+
+    $portal = isAdmin() ? 'admin' : 'organizer';
+    $link = preg_replace('#^organizer/event-details\.php\?id=(\d+)$#', $portal . '/votes/?event=$1', $link);
+    $link = strtr($link, ['admin/votes.php' => 'admin/votes/', 'admin/events.php' => 'admin/events/']);
+
+    return SITE_URL . '/' . $link;
 }
 
 /**
@@ -617,7 +676,7 @@ function deactivateExpiredEvents() {
                         "Event Auto-Deactivated: " . $event['title'],
                         "Event '" . $event['title'] . "' has been automatically deactivated. $nomineesAffected nominee(s) were set to inactive.",
                         "info",
-                        "admin/events.php"
+                        "admin/events/"
                     );
                     
                     $results['events'][] = [
@@ -645,3 +704,65 @@ function deactivateExpiredEvents() {
         return ['error' => $e->getMessage()];
     }
 }
+
+/**
+ * Minutes of inactivity before signing out. 0 means never.
+ */
+function sessionTimeoutMinutes() {
+    return max(0, min(1440, (int) getSetting('session_timeout_minutes', '30')));
+}
+
+/**
+ * Sign out anyone who has been idle too long.
+ *
+ * Background polling must not count as activity, or the notification checks
+ * would keep every session alive forever. The extra 90 seconds lets the browser
+ * warn first, since it reports activity at most once a minute.
+ */
+function enforceSessionTimeout() {
+    if (PHP_SAPI === 'cli' || empty($_SESSION['user_id'])) {
+        return;
+    }
+
+    $now = time();
+    $minutes = sessionTimeoutMinutes();
+    $last = (int) ($_SESSION['last_activity'] ?? $now);
+
+    if ($minutes > 0 && $now - $last > $minutes * 60 + 90) {
+        logAudit($_SESSION['user_id'], 'session_timeout');
+        $_SESSION = [];
+        session_regenerate_id(true);
+        setFlash('warning', 'You were signed out after ' . $minutes . ($minutes === 1 ? ' minute' : ' minutes') . ' of inactivity.');
+
+        // Public pages simply carry on for a signed-out visitor
+        if (preg_match('#/(admin|organizer)/#', $_SERVER['SCRIPT_NAME'] ?? '')) {
+            redirect('login.php');
+        }
+        return;
+    }
+
+    $script = $_SERVER['SCRIPT_NAME'] ?? '';
+    $isBackground = ($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'GET'
+        && (strpos($script, '/api/') !== false || !empty($_SERVER['HTTP_X_REQUESTED_WITH']));
+
+    if (!$isBackground || !isset($_SESSION['last_activity'])) {
+        $_SESSION['last_activity'] = $now;
+    }
+}
+
+/**
+ * Add the browser side of auto logout for a signed-in user.
+ */
+function renderSessionTimeoutScript() {
+    $minutes = sessionTimeoutMinutes();
+    if ($minutes === 0 || !isLoggedIn()) {
+        return;
+    }
+
+    echo '<script src="' . assetUrl('assets/js/session-timeout.js') . '"'
+        . ' data-timeout="' . ($minutes * 60) . '"'
+        . ' data-ping="' . SITE_URL . '/api/session-ping.php"'
+        . ' data-logout="' . SITE_URL . '/logout.php?timeout=1"></script>' . "\n";
+}
+
+enforceSessionTimeout();

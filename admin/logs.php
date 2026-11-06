@@ -5,6 +5,7 @@
  */
 
 require_once '../config/database.php';
+require_once '../includes/device-info.php';
 
 if (!isLoggedIn() || !isAdmin()) {
     setFlash('danger', 'Access denied.');
@@ -62,6 +63,8 @@ $actions = $pdo->query("SELECT DISTINCT action FROM audit_logs ORDER BY action")
 
 // Get users for filter
 $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchAll();
+
+$ipLocations = cachedIpLocations();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -71,13 +74,14 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -120,7 +124,7 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
                                 <?php endforeach; ?>
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        <div class="col-md-auto d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-funnel me-1"></i>Filter
                             </button>
@@ -147,9 +151,9 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
                                         <th>ID</th>
                                         <th>User</th>
                                         <th>Action</th>
-                                        <th>Table</th>
-                                        <th>Record ID</th>
-                                        <th>IP Address</th>
+                                        <th>Device</th>
+                                        <th>Location</th>
+                                        <th>Record</th>
                                         <th>Date/Time</th>
                                     </tr>
                                 </thead>
@@ -178,9 +182,41 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
                                                     <?php echo ucwords(str_replace('_', ' ', $log['action'])); ?>
                                                 </span>
                                             </td>
-                                            <td><?php echo $log['table_name'] ?: '-'; ?></td>
-                                            <td><?php echo $log['record_id'] ?: '-'; ?></td>
-                                            <td><code class="small"><?php echo $log['ip_address']; ?></code></td>
+                                            <td>
+                                                <?php $device = describeDevice($log['user_agent'] ?? ''); ?>
+                                                <span class="log-device" title="<?php echo htmlspecialchars((string) ($log['user_agent'] ?? '')); ?>">
+                                                    <i class="bi <?php echo $device['icon']; ?>" aria-hidden="true"></i>
+                                                    <span>
+                                                        <strong><?php echo htmlspecialchars($device['name']); ?></strong>
+                                                        <?php if ($device['browser'] !== ''): ?>
+                                                            <small class="text-muted"><?php echo htmlspecialchars($device['browser']); ?></small>
+                                                        <?php endif; ?>
+                                                    </span>
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <?php $ip = (string) ($log['ip_address'] ?? ''); ?>
+                                                <?php if (isPublicIp($ip)): ?>
+                                                    <?php if (isset($ipLocations[$ip])): ?>
+                                                        <span>Near <?php echo htmlspecialchars($ipLocations[$ip]); ?></span>
+                                                    <?php else: ?>
+                                                        <span data-ip-location="<?php echo htmlspecialchars($ip); ?>">Looking up...</span>
+                                                    <?php endif; ?>
+                                                <?php elseif ($ip === 'SYSTEM' || $ip === ''): ?>
+                                                    <span class="text-muted">Not applicable</span>
+                                                <?php else: ?>
+                                                    <span class="text-muted">This computer</span>
+                                                <?php endif; ?>
+                                                <?php if ($ip !== '' && $ip !== 'SYSTEM'): ?>
+                                                    <code class="small d-block"><?php echo htmlspecialchars($ip); ?></code>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <?php echo htmlspecialchars((string) ($log['table_name'] ?: '-')); ?>
+                                                <?php if ($log['record_id']): ?>
+                                                    <small class="text-muted">#<?php echo (int) $log['record_id']; ?></small>
+                                                <?php endif; ?>
+                                            </td>
                                             <td>
                                                 <small>
                                                     <?php echo date('M d, Y', strtotime($log['created_at'])); ?>
@@ -192,6 +228,10 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
                                 </tbody>
                             </table>
                         </div>
+
+                        <p class="small text-muted mt-3 mb-0">
+                            Locations from an IP address are approximate and can show the network's area rather than the person's. Phone models are shown only when the browser reveals them. IP location data by <a href="https://db-ip.com" target="_blank" rel="noopener">DB-IP</a>.
+                        </p>
 
                         <!-- Pagination -->
                         <?php if ($totalPages > 1): ?>
@@ -223,5 +263,6 @@ $users = $pdo->query("SELECT id, fullname FROM users ORDER BY fullname")->fetchA
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="<?php echo assetUrl('assets/js/admin.js'); ?>"></script>
+    <script src="<?php echo assetUrl('assets/js/log-locations.js'); ?>" data-url="<?php echo SITE_URL; ?>/admin/ajax/ip_location.php"></script>
 </body>
 </html>

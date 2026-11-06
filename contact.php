@@ -223,7 +223,7 @@ include 'includes/header.php';
                 <!-- Social Links -->
                 <div class="social-card">
                     <h5 class="mb-3">Follow Us</h5>
-                    <div class="d-flex gap-3">
+                    <div class="d-flex flex-wrap gap-2">
                         <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" class="social-link" title="WhatsApp" style="color: #25D366;">
                             <i class="bi bi-whatsapp"></i>
                         </a>

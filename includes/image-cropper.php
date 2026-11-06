@@ -146,6 +146,7 @@ if (!defined('IMAGE_CROPPER_LOADED')) {
         ?>
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.css">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.6.2/cropper.min.js"></script>
+        <script src="<?php echo assetUrl('assets/js/image-compress.js'); ?>"></script>
 
         <style>
             /* ---- Field layout ---- */
@@ -286,7 +287,7 @@ if (!defined('IMAGE_CROPPER_LOADED')) {
         <script>
         (function () {
             var FIELDS = <?php echo json_encode($fields); ?>;
-            var MAX_SOURCE_BYTES = 12 * 1024 * 1024; // guard against huge originals
+            var MAX_SOURCE_BYTES = 12 * 1024 * 1024; // larger originals are shrunk first
 
             var modalEl = document.getElementById('imageCropModal');
             var stageImg = document.getElementById('cropStageImage');
@@ -497,16 +498,22 @@ if (!defined('IMAGE_CROPPER_LOADED')) {
                             this.value = '';
                             return;
                         }
+                        showError(id, '');
+
+                        function crop(source) {
+                            if (lastObjectUrl) { URL.revokeObjectURL(lastObjectUrl); }
+                            lastObjectUrl = URL.createObjectURL(source);
+                            openCropper(id, lastObjectUrl);
+                        }
+
                         if (file.size > MAX_SOURCE_BYTES) {
-                            showError(id, 'That image is very large. Please choose one under 12MB.');
-                            this.value = '';
+                            window.compressImageFile(file, MAX_SOURCE_BYTES).then(function (smaller) {
+                                crop(smaller || file);
+                            });
                             return;
                         }
 
-                        showError(id, '');
-                        if (lastObjectUrl) { URL.revokeObjectURL(lastObjectUrl); }
-                        lastObjectUrl = URL.createObjectURL(file);
-                        openCropper(id, lastObjectUrl);
+                        crop(file);
                     });
                 }
 

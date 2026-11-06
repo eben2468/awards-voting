@@ -39,5 +39,11 @@ if (isset($_GET['cancel'])) {
     redirect('login.php');
 }
 
+// Sent by the browser when the auto logout timer runs out. This goes in the URL
+// because the session cookie was deleted above, which would lose a flash message.
+if (isset($_GET['timeout'])) {
+    redirect('login.php?timeout=1');
+}
+
 setFlash('success', 'You have been successfully logged out.');
 redirect('');

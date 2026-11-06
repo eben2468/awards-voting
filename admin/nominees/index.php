@@ -36,8 +36,26 @@ if (isset($_GET['delete']) && isset($_GET['token'])) {
 $eventsStmt = $pdo->query("SELECT id, title FROM events ORDER BY title");
 $events = $eventsStmt->fetchAll();
 
-$categoriesStmt = $pdo->query("SELECT c.id, c.name, e.title as event_title FROM categories c JOIN events e ON c.event_id = e.id ORDER BY e.title, c.name");
-$categories = $categoriesStmt->fetchAll();
+// A category always belongs to one event. A link may send only the category, so
+// work out its event, and drop a category left over from a different event.
+if ($categoryId > 0) {
+    $ownerStmt = $pdo->prepare("SELECT event_id FROM categories WHERE id = ?");
+    $ownerStmt->execute([$categoryId]);
+    $categoryEventId = (int) $ownerStmt->fetchColumn();
+
+    if ($categoryEventId === 0 || ($eventId > 0 && $eventId !== $categoryEventId)) {
+        $categoryId = 0;
+    } else {
+        $eventId = $categoryEventId;
+    }
+}
+
+$categories = [];
+if ($eventId > 0) {
+    $categoriesStmt = $pdo->prepare("SELECT id, name FROM categories WHERE event_id = ? ORDER BY name");
+    $categoriesStmt->execute([$eventId]);
+    $categories = $categoriesStmt->fetchAll();
+}
 
 // Fetch nominees
 $sql = "
@@ -63,13 +81,14 @@ $nominees = $pdo->query($sql)->fetchAll();
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include '../includes/sidebar.php'; ?>
@@ -110,13 +129,19 @@ $nominees = $pdo->query($sql)->fetchAll();
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Filter by Category</label>
-                            <select name="category" class="form-select" onchange="this.form.submit()">
-                                <option value="">All Categories</option>
-                                <?php foreach ($categories as $cat): ?>
-                                    <option value="<?php echo $cat['id']; ?>" <?php echo $categoryId == $cat['id'] ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($cat['name'] . ' (' . $cat['event_title'] . ')'); ?>
-                                    </option>
-                                <?php endforeach; ?>
+                            <select name="category" class="form-select" onchange="this.form.submit()" <?php echo ($eventId === 0 || empty($categories)) ? 'disabled' : ''; ?>>
+                                <?php if ($eventId === 0): ?>
+                                    <option value="">Select an event first</option>
+                                <?php elseif (empty($categories)): ?>
+                                    <option value="">No categories in this event</option>
+                                <?php else: ?>
+                                    <option value="">All Categories</option>
+                                    <?php foreach ($categories as $cat): ?>
+                                        <option value="<?php echo $cat['id']; ?>" <?php echo $categoryId == $cat['id'] ? 'selected' : ''; ?>>
+                                            <?php echo htmlspecialchars($cat['name']); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </select>
                         </div>
                     </form>

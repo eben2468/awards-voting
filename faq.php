@@ -208,7 +208,7 @@ include 'includes/header.php';
 }
 
 .accordion-button:not(.collapsed) {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(236, 72, 153, 0.1) 100%);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.1) 0%, rgba(var(--secondary-rgb), 0.1) 100%);
     color: var(--primary);
 }
 

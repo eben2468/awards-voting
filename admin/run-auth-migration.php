@@ -10,18 +10,18 @@
  *   - Email-based password reset
  *   - Gmail / SMTP settings
  *
- * Open in a browser:  https://yourdomain.com/database/run_auth_migration.php
+ * Linked from Diagnostics and Organizer Approvals when a column is missing.
  * Safe to run more than once - every step is skipped if it already exists.
- *
- * DELETE THIS FILE (or the whole /database folder) once the migration succeeds.
  */
 
 require_once __DIR__ . '/../config/database.php';
 
-// Only an administrator may run this, unless no admin is logged in yet on a
-// fresh install - in which case the one-time key below is required.
-$setupKey = 'votehub-migrate';
-$authorised = (isLoggedIn() && isAdmin()) || (($_GET['key'] ?? '') === $setupKey);
+if (!isLoggedIn() || !isAdmin()) {
+    setFlash('danger', 'Access denied.');
+    redirect('login.php');
+}
+
+$authorised = true;
 
 $steps = [];
 
@@ -76,7 +76,7 @@ function indexExists(PDO $pdo, $table, $index) {
 $ran = false;
 $hasError = false;
 
-if ($authorised && ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['run']))) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && verifyCSRFToken($_POST['csrf_token'] ?? '')) {
     $ran = true;
     $pdo = getDBConnection();
 
@@ -251,7 +251,6 @@ if ($authorised && ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['run'])
                     <p class="mb-2">Log in as an administrator first, then reload this page.</p>
                     <p class="mb-0 small">
                         Locked out? Append the setup key to the URL:
-                        <code>run_auth_migration.php?key=<?php echo htmlspecialchars($setupKey); ?></code>
                     </p>
                 </div>
 
@@ -270,6 +269,7 @@ if ($authorised && ($_SERVER['REQUEST_METHOD'] === 'POST' || isset($_GET['run'])
                     so it is safe to run this more than once. Existing accounts stay approved and can keep logging in.
                 </div>
                 <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
                     <button type="submit" class="btn btn-primary btn-lg">
                         <i class="bi bi-play-fill me-2"></i>Run Migration
                     </button>

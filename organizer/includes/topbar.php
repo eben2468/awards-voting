@@ -41,13 +41,14 @@
         <input type="hidden" id="global_csrf_token" value="<?php echo generateCSRFToken(); ?>">
         <script>window.SITE_URL = '<?php echo SITE_URL; ?>';</script>
         <script src="<?php echo SITE_URL; ?>/assets/js/notifications.js"></script>
+        <?php renderSessionTimeoutScript(); ?>
 
         <!-- User Dropdown -->
         <div class="dropdown">
             <button class="btn btn-link d-flex align-items-center gap-2 text-decoration-none" type="button" data-bs-toggle="dropdown">
                 <?php 
                 $avatar = $_SESSION['user_avatar'] ?? null;
-                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['user_name']) . '&background=6366f1&color=fff';
+                $avatarUrl = $avatar ? SITE_URL . '/uploads/avatars/' . $avatar : 'https://ui-avatars.com/api/?name=' . urlencode($_SESSION['user_name']) . '&background=0F2C7A&color=fff';
                 ?>
                 <img src="<?php echo $avatarUrl; ?>" 
                      class="rounded-circle" style="width: 35px; height: 35px; object-fit: cover;">

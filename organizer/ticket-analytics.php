@@ -200,14 +200,15 @@ $recentTickets = $recentTicketsStmt->fetchAll();
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
         .metric-card { border: none; border-radius: 1rem; transition: transform 0.2s; }
@@ -514,8 +515,8 @@ $recentTickets = $recentTicketsStmt->fetchAll();
                 {
                     label: 'Revenue (GHS)',
                     data: <?php echo json_encode($chartRevenue); ?>,
-                    borderColor: '#10b981',
-                    backgroundColor: 'rgba(16, 185, 129, 0.08)',
+                    borderColor: '#00693C',
+                    backgroundColor: 'rgba(0, 105, 60, 0.08)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2.5,
@@ -526,8 +527,8 @@ $recentTickets = $recentTicketsStmt->fetchAll();
                 {
                     label: 'Tickets Sold',
                     data: <?php echo json_encode($chartTickets); ?>,
-                    borderColor: '#6366f1',
-                    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+                    borderColor: '#0F2C7A',
+                    backgroundColor: 'rgba(15, 44, 122, 0.08)',
                     fill: true,
                     tension: 0.4,
                     borderWidth: 2.5,
@@ -558,8 +559,8 @@ $recentTickets = $recentTicketsStmt->fetchAll();
             datasets: [{
                 label: 'Revenue (GHS)',
                 data: <?php echo json_encode($monthRevenue); ?>,
-                backgroundColor: 'rgba(16, 185, 129, 0.7)',
-                borderColor: '#10b981',
+                backgroundColor: 'rgba(0, 105, 60, 0.7)',
+                borderColor: '#00693C',
                 borderWidth: 1,
                 borderRadius: 6
             }]

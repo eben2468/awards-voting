@@ -4,14 +4,10 @@
             <div class="row">
                 <div class="col-lg-4 mb-4 mb-lg-0">
                     <div class="footer-brand">
-                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo brand-logo-chip">
+                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="footer-logo">
                     </div>
-                    <p class="mb-3">Your trusted platform for transparent and secure online voting. Making every vote count since 2024.</p>
-                    <div class="mb-4">
-                        <span class="badge bg-primary px-3 py-2 rounded-pill fs-6">
-                            <i class="bi bi-phone me-1"></i> USSD: *920*137#
-                        </span>
-                    </div>
+                    <p class="mb-3">Awards voting and event tickets, made in Ghana.</p>
+                    <p class="footer-ussd mb-3"><i class="bi bi-phone me-1"></i>Dial *920*137# to vote</p>
                     <div class="social-links">
                         <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" aria-label="WhatsApp"><i class="bi bi-whatsapp"></i></a>
                         <a href="#" aria-label="Facebook"><i class="bi bi-facebook"></i></a>
@@ -72,6 +68,9 @@
     
     <!-- Custom JS -->
     <script src="<?php echo SITE_URL; ?>/assets/js/main.js?v=<?php echo filemtime(__DIR__ . '/../assets/js/main.js'); ?>"></script>
+    <script src="<?php echo assetUrl('assets/js/theme.js'); ?>"></script>
+    <script src="<?php echo assetUrl('assets/js/pay-modal.js'); ?>"></script>
+    <?php renderSessionTimeoutScript(); ?>
     
     <!-- Notifications JS -->
     <?php if (isLoggedIn()): ?>

@@ -19,7 +19,7 @@ $action = $_GET['action'] ?? '';
 $id = $_GET['id'] ?? 0;
 $is_ajax = isset($_GET['ajax']);
 
-if ($action && $id) {
+if ($action && $id && ($action === 'delete' && !isset($_GET['confirm']) && !$is_ajax || verifyCSRFToken($_GET['token'] ?? ''))) {
     $pdo = getDBConnection();
     
     switch ($action) {
@@ -113,7 +113,7 @@ $count_stmt->execute($params);
 $total_messages = $count_stmt->fetchColumn();
 
 // Pagination
-$page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+$page = max(1, (int) ($_GET['page'] ?? 1));
 $limit = 20;
 $offset = ($page - 1) * $limit;
 $total_pages = ceil($total_messages / $limit);
@@ -148,13 +148,13 @@ $stats = $stats_stmt->fetch();
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -163,6 +163,7 @@ $stats = $stats_stmt->fetch();
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/style.css'); ?>">
     <link rel="stylesheet" href="<?php echo assetUrl('assets/css/admin.css'); ?>">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/portal.css'); ?>">
 </head>
 <body class="admin-body">
     <?php include 'includes/sidebar.php'; ?>
@@ -192,7 +193,7 @@ $stats = $stats_stmt->fetch();
                 <div class="alert alert-warning border-0 shadow-sm mb-4">
                     <h5 class="alert-heading fw-bold"><i class="bi bi-exclamation-triangle me-2"></i>Confirm Deletion</h5>
                     <p class="mb-3">Are you sure you want to delete this contact message? This action cannot be undone.</p>
-                    <a href="?action=delete&id=<?php echo $delete_id; ?>&confirm=1" class="btn btn-danger btn-sm px-3 me-2">Yes, Delete</a>
+                    <a href="?action=delete&id=<?php echo $delete_id; ?>&confirm=1&token=<?php echo generateCSRFToken(); ?>" class="btn btn-danger btn-sm px-3 me-2">Yes, Delete</a>
                     <a href="contact-messages.php" class="btn btn-secondary btn-sm px-3">Cancel</a>
                 </div>
             <?php endif; ?>
@@ -387,9 +388,9 @@ $stats = $stats_stmt->fetch();
                                                         Actions
                                                     </button>
                                                     <ul class="dropdown-menu dropdown-menu-end">
-                                                        <li><a class="dropdown-item" href="?action=mark_read&id=<?php echo $msg['id']; ?>"><i class="bi bi-envelope-open me-2"></i>Mark Read</a></li>
-                                                        <li><a class="dropdown-item" href="?action=mark_replied&id=<?php echo $msg['id']; ?>"><i class="bi bi-reply me-2"></i>Mark Replied</a></li>
-                                                        <li><a class="dropdown-item" href="?action=mark_closed&id=<?php echo $msg['id']; ?>"><i class="bi bi-check-circle me-2"></i>Mark Closed</a></li>
+                                                        <li><a class="dropdown-item" href="?action=mark_read&id=<?php echo $msg['id']; ?>&token=<?php echo generateCSRFToken(); ?>"><i class="bi bi-envelope-open me-2"></i>Mark Read</a></li>
+                                                        <li><a class="dropdown-item" href="?action=mark_replied&id=<?php echo $msg['id']; ?>&token=<?php echo generateCSRFToken(); ?>"><i class="bi bi-reply me-2"></i>Mark Replied</a></li>
+                                                        <li><a class="dropdown-item" href="?action=mark_closed&id=<?php echo $msg['id']; ?>&token=<?php echo generateCSRFToken(); ?>"><i class="bi bi-check-circle me-2"></i>Mark Closed</a></li>
                                                         <li><hr class="dropdown-divider"></li>
                                                         <li><a class="dropdown-item text-danger" href="?action=delete&id=<?php echo $msg['id']; ?>"><i class="bi bi-trash me-2"></i>Delete</a></li>
                                                     </ul>
@@ -549,23 +550,23 @@ $stats = $stats_stmt->fetch();
                 // Configure action buttons in the modal
                 modalDeleteBtn.onclick = function() {
                     if (confirm('Are you sure you want to delete this message?')) {
-                        window.location.href = 'contact-messages.php?action=delete&id=' + id + '&confirm=1';
+                        window.location.href = 'contact-messages.php?action=delete&id=' + id + '&confirm=1&token=<?php echo generateCSRFToken(); ?>';
                     }
                 };
 
                 modalReplyBtn.href = 'mailto:' + email + '?subject=Re: ' + encodeURIComponent(subject);
                 
                 modalMarkRepliedBtn.onclick = function() {
-                    window.location.href = 'contact-messages.php?action=mark_replied&id=' + id;
+                    window.location.href = 'contact-messages.php?action=mark_replied&token=<?php echo generateCSRFToken(); ?>&id=' + id;
                 };
 
                 modalCloseStatusBtn.onclick = function() {
-                    window.location.href = 'contact-messages.php?action=mark_closed&id=' + id;
+                    window.location.href = 'contact-messages.php?action=mark_closed&token=<?php echo generateCSRFToken(); ?>&id=' + id;
                 };
 
                 // If message status is 'new', mark it as read in the background
                 if (status === 'new') {
-                    fetch('contact-messages.php?action=mark_read&id=' + id + '&ajax=1')
+                    fetch('contact-messages.php?action=mark_read&token=<?php echo generateCSRFToken(); ?>&id=' + id + '&ajax=1')
                         .then(response => response.json())
                         .then(data => {
                             if (data.success) {

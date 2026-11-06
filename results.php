@@ -100,8 +100,8 @@ include 'includes/header.php';
                 </h1>
                 <p class="text-white-50 lead mb-3">Watch the votes count up in real-time. Results are updated every 10 seconds.</p>
                 <?php if (!$show_vote_counts): ?>
-                    <a href="nominee-results.php" class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm">
-                        <i class="bi bi-graph-up-arrow me-2"></i>Live Results Portal
+                    <a href="nominee-results.php" class="btn-live">
+                        <span class="btn-live-dot"></span>Live Results Portal
                     </a>
                 <?php endif; ?>
             </div>
@@ -139,7 +139,7 @@ include 'includes/header.php';
             <div class="row">
                 <!-- Event Selection Sidebar -->
                 <div class="col-lg-3 mb-4">
-                    <div class="card sticky-top" style="top: 100px;">
+                    <div class="card sticky-top results-side" style="top: 100px;">
                         <div class="card-header bg-primary text-white">
                             <h5 class="mb-0"><i class="bi bi-trophy me-2"></i>Events</h5>
                         </div>
@@ -172,7 +172,7 @@ include 'includes/header.php';
                                 <div class="d-flex justify-content-between align-items-start">
                                     <div>
                                         <h3 class="mb-1"><?php echo htmlspecialchars($selectedEvent['title']); ?></h3>
-                                        <p class="text-muted mb-0"><?php echo htmlspecialchars($selectedEvent['description']); ?></p>
+                                        <p class="text-muted mb-0"><?php echo htmlspecialchars($selectedEvent['description'], ENT_QUOTES, 'UTF-8', false); ?></p>
                                     </div>
                                     <span class="badge bg-<?php echo $selectedEvent['status'] === 'active' ? 'success' : 'secondary'; ?> fs-6">
                                         <?php echo ucfirst($selectedEvent['status']); ?>
@@ -232,7 +232,7 @@ include 'includes/header.php';
                                                     </div>
                                                     
                                                     <!-- Photo -->
-                                                    <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=6366f1&color=fff&size=60'; ?>" 
+                                                    <img src="<?php echo $nominee['photo'] ? 'uploads/nominees/' . $nominee['photo'] : 'https://ui-avatars.com/api/?name=' . urlencode($nominee['name']) . '&background=0F2C7A&color=fff&size=60'; ?>" 
                                                          alt="<?php echo htmlspecialchars($nominee['name']); ?>"
                                                          class="rounded-circle flex-shrink-0 me-3"
                                                          style="width: 60px; height: 60px; object-fit: cover;">

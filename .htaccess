@@ -12,8 +12,12 @@
     RewriteRule \.(zip|sql|bak|log|ps1)$ - [F,L]
 
     # Deployment copies and local-only scripts
-    RewriteRule ^(update_package|update_temp|scratch)(/|$) - [F,L]
+    RewriteRule ^(update_package|update_temp|scratch|database)(/|$) - [F,L]
+    RewriteRule ^(check_prices|live_migration_helper|migrate_access_codes|run_database_update|run_migration_web)(\.php)?$ - [F,L]
     RewriteRule ^(test-sms|test-nalo-live|debug-pending-sms)(\.php)?$ - [F,L]
+
+    # Uploads are images only. Nothing in there may ever run as code.
+    RewriteRule ^uploads/.*\.(php[0-9]?|phtml|phar|pl|py|cgi|sh)$ - [F,L,NC]
 
     # --- Hide .php from the address bar ------------------------------------
     # Only browser page loads (GET and HEAD) are redirected. POST requests are

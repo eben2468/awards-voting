@@ -159,8 +159,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <title><?php echo $page_title . ' - ' . SITE_NAME; ?></title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
-    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/share-image.png">
+    <link rel="icon" type="image/png" href="<?php echo SITE_URL; ?>/assets/logo/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="<?php echo SITE_URL; ?>/assets/logo/apple-touch-icon.png?v=2">
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -173,44 +173,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <!-- Custom CSS -->
     <link rel="stylesheet" href="<?php echo SITE_URL; ?>/assets/css/style.css?v=<?php echo filemtime(__DIR__ . '/assets/css/style.css'); ?>">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="<?php echo assetUrl('assets/css/theme.css'); ?>">
 </head>
 <body class="auth-body">
-    <div class="auth-page">
-        <div class="container">
-            <div class="auth-card">
-                <div class="auth-logo">
-                    <a href="<?php echo SITE_URL; ?>">
-                        <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="brand-logo">
-                    </a>
-                    <div class="alert alert-info border-0 shadow-sm rounded-4 p-3 mb-4">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="icon-box bg-primary bg-opacity-10 text-primary rounded-circle p-2">
-                                <i class="bi bi-info-circle-fill fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-1">Organizer Registration Only</h6>
-                                <p class="small text-muted mb-0">Voters do not need an account to vote. This registration is strictly for event organizers.</p>
-                            </div>
-                        </div>
-                    </div>
+    <div class="auth-shell">
+        <main class="auth-split">
+            <?php
+            $authHeadline = 'Bring your awards night to VoteHubGH.';
+            $authIntro = 'Create your organizer account and start setting up your event.';
+            $authImage = authPanelImage('register');
+            include 'includes/auth-panel.php';
+            ?>
 
-                    <div class="alert alert-warning border-0 shadow-sm rounded-4 p-3 mb-4 text-start">
-                        <div class="d-flex align-items-start gap-3">
-                            <div class="icon-box bg-warning bg-opacity-25 text-warning-emphasis rounded-circle p-2">
-                                <i class="bi bi-shield-check fs-4"></i>
-                            </div>
-                            <div>
-                                <h6 class="fw-bold mb-1">Accounts are approved by an admin</h6>
-                                <p class="small text-muted mb-0">
-                                    After you sign up, an administrator reviews your account before you can log in.
-                                    You will get an email as soon as it is approved &mdash; or reach us on WhatsApp at
-                                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener" class="fw-semibold text-decoration-none"><?php echo WHATSAPP_NUMBER; ?></a>
-                                    to speed things up.
-                                </p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <section class="auth-form">
+                <a href="<?php echo SITE_URL; ?>" class="auth-brand">
+                    <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" width="150" height="72">
+                </a>
+                <h1>Create your account</h1>
+                <p class="auth-sub">For event organizers. Voters don't need an account.</p>
 
                 <?php if (!empty($errors)): ?>
                     <div class="alert alert-danger">
@@ -224,109 +206,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <form method="POST" action="" id="registerForm">
                     <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
-                    
-                    <div class="mb-3">
-                        <label for="fullname" class="form-label">Full Name</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-person"></i></span>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="fullname" 
-                                   name="fullname" 
-                                   value="<?php echo isset($_POST['fullname']) ? htmlspecialchars($_POST['fullname']) : ''; ?>"
-                                   placeholder="Enter your full name"
-                                   required>
-                        </div>
+
+                    <div class="auth-field">
+                        <label for="fullname" class="visually-hidden">Full name</label>
+                        <input type="text" class="auth-input" id="fullname" name="fullname" placeholder="Full name" autocomplete="name"
+                               value="<?php echo isset($_POST['fullname']) ? htmlspecialchars($_POST['fullname']) : ''; ?>" required>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="email" class="form-label">Email Address</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-envelope"></i></span>
-                            <input type="email" 
-                                   class="form-control" 
-                                   id="email" 
-                                   name="email" 
-                                   value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
-                                   placeholder="Enter your email"
-                                   required>
-                        </div>
+                    <div class="auth-field">
+                        <label for="email" class="visually-hidden">Email address</label>
+                        <input type="email" class="auth-input" id="email" name="email" placeholder="Email address" autocomplete="email"
+                               value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>" required>
                     </div>
 
-                    <div class="mb-3">
-                        <label for="phone" class="form-label">Phone Number</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-phone"></i></span>
-                            <input type="tel"
-                                   class="form-control"
-                                   id="phone"
-                                   name="phone"
-                                   value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>"
-                                   placeholder="e.g. 0244000000"
-                                   inputmode="tel"
-                                   autocomplete="tel"
-                                   required>
-                        </div>
-                        <div class="form-text">We use this to reach you about your account approval.</div>
+                    <div class="auth-field">
+                        <label for="phone" class="visually-hidden">Phone number</label>
+                        <input type="tel" class="auth-input" id="phone" name="phone" placeholder="Phone number, e.g. 0244000000" inputmode="tel" autocomplete="tel"
+                               value="<?php echo isset($_POST['phone']) ? htmlspecialchars($_POST['phone']) : ''; ?>" required>
                     </div>
 
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="password" class="form-label">Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock"></i></span>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="password" 
-                                       name="password" 
-                                       placeholder="Min 8 chars"
-                                       required>
-                            </div>
+                    <div class="auth-pair">
+                        <div class="auth-field auth-password">
+                            <label for="password" class="visually-hidden">Password</label>
+                            <input type="password" class="auth-input" id="password" name="password" placeholder="Password" autocomplete="new-password" required>
+                            <button type="button" class="auth-eye" data-toggle-password="password" aria-label="Show password"><i class="bi bi-eye"></i></button>
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="confirm_password" class="form-label">Confirm Password</label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-check-circle"></i></span>
-                                <input type="password" 
-                                       class="form-control" 
-                                       id="confirm_password" 
-                                       name="confirm_password" 
-                                       placeholder="Repeat password"
-                                       required>
-                            </div>
+                        <div class="auth-field auth-password">
+                            <label for="confirm_password" class="visually-hidden">Confirm password</label>
+                            <input type="password" class="auth-input" id="confirm_password" name="confirm_password" placeholder="Confirm password" autocomplete="new-password" required>
+                            <button type="button" class="auth-eye" data-toggle-password="confirm_password" aria-label="Show password"><i class="bi bi-eye"></i></button>
                         </div>
                     </div>
+                    <p class="auth-hint">At least 8 characters.</p>
 
-                    <div class="mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
-                            <label class="form-check-label" for="terms">
-                                I agree to the <a href="terms.php" class="text-primary">Terms & Conditions</a> and <a href="privacy.php" class="text-primary">Privacy Policy</a>
-                            </label>
-                        </div>
+                    <div class="form-check auth-terms">
+                        <input class="form-check-input" type="checkbox" id="terms" name="terms" required>
+                        <label class="form-check-label" for="terms">
+                            I agree to the <a href="terms.php">Terms &amp; Conditions</a> and <a href="privacy.php">Privacy Policy</a>
+                        </label>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 btn-lg mb-3">
-                        <i class="bi bi-person-plus me-2"></i>Create Account
-                    </button>
-
-                    <div class="text-center">
-                        <p class="mb-0">Already have an account? <a href="login.php" class="text-primary fw-semibold">Login</a></p>
-                    </div>
+                    <button type="submit" class="auth-submit">Create account</button>
                 </form>
 
-                <hr class="my-4">
+                <p class="auth-note">
+                    <i class="bi bi-shield-check"></i>
+                    An admin reviews every new account, and we'll email you once it's approved. To speed things up, message us on WhatsApp at
+                    <a href="<?php echo WHATSAPP_LINK; ?>" target="_blank" rel="noopener"><?php echo WHATSAPP_NUMBER; ?></a>.
+                </p>
 
-                <div class="text-center">
-                    <a href="<?php echo SITE_URL; ?>" class="text-muted">
-                        <i class="bi bi-arrow-left me-1"></i>Back to Home
-                    </a>
-                </div>
-            </div>
-        </div>
+                <p class="auth-switch">Already have an account? <a href="login.php">Log in</a></p>
+                <a href="<?php echo SITE_URL; ?>" class="auth-home"><i class="bi bi-arrow-left"></i> Back to home</a>
+            </section>
+        </main>
     </div>
 
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="<?php echo assetUrl('assets/js/auth.js'); ?>"></script>
 </body>
 </html>

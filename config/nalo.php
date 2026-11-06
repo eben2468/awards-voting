@@ -10,7 +10,7 @@ require_once __DIR__ . '/env.php';
 // Nalo SMS credentials (from .env)
 define('NALO_SMS_KEY', env('NALO_SMS_KEY', ''));
 define('NALO_SMS_SENDER_ID', env('NALO_SMS_SENDER_ID', 'VOTEHUBGH'));
-define('NALO_SMS_URL', 'https://sms.nalosolutions.com/smsbackend/Resl_Nalo/send-message/');
+define('NALO_SMS_URL', env('NALO_SMS_URL', 'https://sms.nalosolutions.com/smsbackend/Resl_Nalo/send-message/'));
 
 // USSD Settings
 define('NALO_USER_ID', env('NALO_USER_ID', ''));
@@ -19,10 +19,40 @@ define('NALO_USER_ID', env('NALO_USER_ID', ''));
 define('NALO_PAY_MERCHANT_ID', env('NALO_PAY_MERCHANT_ID', ''));
 define('NALO_PAY_SECRET_KEY', env('NALO_PAY_SECRET_KEY', ''));
 define('NALO_PAY_BASIC_AUTH', env('NALO_PAY_BASIC_AUTH', ''));
-define('NALO_PAY_BASE_URL', 'https://api.nalopay.com');
+define('NALO_PAY_BASE_URL', env('NALO_PAY_BASE_URL', 'https://api.nalopay.com'));
 define('NALO_PAY_TOKEN_URL', NALO_PAY_BASE_URL . '/clientapi/generate-payment-token/');
 define('NALO_PAY_COLLECTION_URL', NALO_PAY_BASE_URL . '/clientapi/collection/');
 define('NALO_PAY_CHECKOUT_URL', NALO_PAY_BASE_URL . '/checkout/session/');
+
+/**
+ * Reduce a Ghana phone number to its 9 digits, or null if it cannot be one.
+ * Accepts 0241234567, 241234567, 233241234567 and +233 24 123 4567.
+ */
+function normalizeGhanaPhone($phone) {
+    $digits = preg_replace('/[^0-9]/', '', (string) $phone);
+    if (strlen($digits) === 12 && strpos($digits, '233') === 0) {
+        $digits = substr($digits, 3);
+    } elseif (strlen($digits) === 10 && $digits[0] === '0') {
+        $digits = substr($digits, 1);
+    }
+    return preg_match('/^[1-9][0-9]{8}$/', $digits) ? $digits : null;
+}
+
+/**
+ * Pull the human reason out of a NaloPay reply, which uses several shapes.
+ */
+function naloErrorMessage($response) {
+    return $response['error']['description'] ?? $response['message'] ?? 'The payment service did not respond.';
+}
+
+/**
+ * The dial code NaloPay returns with a charge, shown as a fallback for anyone
+ * who does not get a prompt. Its sample reply uses "None*252#" when none is set.
+ */
+function naloApprovalCode($response) {
+    $code = (string) ($response['data']['otp_code'] ?? '');
+    return preg_match('/^\*[0-9*]+#$/', $code) ? $code : '';
+}
 
 /**
  * Generate Nalo Payment Token (JWT)
@@ -43,7 +73,7 @@ function generateNaloPaymentToken() {
         "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Set to false if having SSL issues on local server
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
@@ -112,7 +142,7 @@ function createNaloCheckoutSession($orderId, $customerName, $amount, $reference,
         "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
@@ -170,10 +200,6 @@ function chargeNaloMoMo($phoneNumber, $amount, $network, $reference, $metadata =
         'extra_data' => $metadata
     ];
 
-    // Log request for debugging (remove in production)
-    error_log("NaloPay Collection Request: " . json_encode($fields));
-    error_log("NaloPay Hash String: " . $hashString);
-
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_POST, true);
@@ -183,7 +209,7 @@ function chargeNaloMoMo($phoneNumber, $amount, $network, $reference, $metadata =
         "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
@@ -232,7 +258,7 @@ function verifyNaloTransaction($id) {
         "Content-Type: application/json"
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
@@ -240,6 +266,39 @@ function verifyNaloTransaction($id) {
     curl_close($ch);
 
     return json_decode($result, true);
+}
+
+/**
+ * Ask NaloPay whether a transaction has really been paid.
+ *
+ * This is the only proof of payment. A status in a browser request or a callback
+ * can be forged by anyone, so it is never used. An amount below what was owed
+ * is refused; NaloPay may report more if fees are added.
+ *
+ * @return array paid (bool), status (string), data (NaloPay's record)
+ */
+function confirmNaloPayment($transaction) {
+    $ids = array_unique(array_filter([$transaction['external_id'] ?? null, $transaction['reference'] ?? null]));
+
+    foreach ($ids as $id) {
+        $response = verifyNaloTransaction($id);
+        if (empty($response['success'] ?? $response['sucess'] ?? false) || empty($response['data'])) {
+            continue;
+        }
+
+        $data = $response['data'];
+        $status = (string) ($data['status'] ?? '');
+        $paid = $status === 'COMPLETED' || $status === 'SUCCESS';
+
+        if ($paid && isset($data['amount']) && (float) $data['amount'] + 0.01 < (float) $transaction['amount']) {
+            error_log('NaloPay amount too low for ' . $transaction['reference'] . ': ' . $data['amount']);
+            return ['paid' => false, 'status' => 'AMOUNT_MISMATCH', 'data' => $data];
+        }
+
+        return ['paid' => $paid, 'status' => $status, 'data' => $data];
+    }
+
+    return ['paid' => false, 'status' => 'PENDING', 'data' => []];
 }
 
 /**
@@ -388,16 +447,12 @@ function processSuccessfulPayment($pdo, $transaction, $naloData) {
 
                 if ($event) {
                     $catName = $details['category_name'] ?? 'Ticket';
-                    if ($event['organizer_id']) {
-                        createNotification(
-                            $event['organizer_id'],
-                            "New Ticket Sale",
-                            $transaction['quantity'] . "x $catName ticket(s) sold for: " . $event['title'],
-                            "success",
-                            "organizer/events/"
-                        );
-                    }
-                    createNotification(1, "New Ticket Sale", $transaction['quantity'] . "x $catName ticket(s) sold for " . $event['title'], "info", "admin/events/");
+                    notifyEventActivity(
+                        $event['organizer_id'],
+                        'New Ticket Sale',
+                        $transaction['quantity'] . "x $catName ticket(s) sold for " . $event['title'],
+                        'events/'
+                    );
                 }
             } catch (Exception $e) {
                 error_log("Notification Error in processSuccessfulPayment (ticket): " . $e->getMessage());
@@ -474,21 +529,17 @@ function processSuccessfulPayment($pdo, $transaction, $naloData) {
 
             // Create Notifications for votes
             try {
-                $eventStmt = $pdo->prepare("SELECT created_by, title FROM events WHERE id = ?");
+                $eventStmt = $pdo->prepare("SELECT organizer_id, created_by, title FROM events WHERE id = ?");
                 $eventStmt->execute([$transaction['event_id']]);
                 $event = $eventStmt->fetch();
 
                 if ($event) {
-                    if ($event['created_by']) {
-                        createNotification(
-                            $event['created_by'],
-                            "New Vote Recorded",
-                            "A new vote has been cast for " . ($details['nominee_name'] ?? 'Nominee') . " in your event: " . $event['title'],
-                            "success",
-                            "organizer/event-details.php?id=" . $transaction['event_id']
-                        );
-                    }
-                    createNotification(1, "New Vote Recorded", "A new vote has been cast for " . ($details['nominee_name'] ?? 'Nominee') . " in " . $event['title'], "info", "admin/votes.php");
+                    notifyEventActivity(
+                        $event['organizer_id'] ?: $event['created_by'],
+                        'New Vote Recorded',
+                        'A new vote has been cast for ' . ($details['nominee_name'] ?? 'Nominee') . ' in ' . $event['title'],
+                        'votes/?event=' . $transaction['event_id']
+                    );
                 }
             } catch (Exception $e) {
                 error_log("Notification Error in processSuccessfulPayment: " . $e->getMessage());
@@ -540,12 +591,20 @@ function sendNaloSMS($to, $message) {
     curl_setopt($ch, CURLOPT_HTTPHEADER, [
         'Content-Type: application/x-www-form-urlencoded'
     ]);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 15);
     curl_setopt($ch, CURLOPT_TIMEOUT, 30);
     
     $response = curl_exec($ch);
+
+    // These two errors mean the request never reached Nalo, so retrying cannot
+    // send the message twice. Timeouts are left alone for exactly that reason.
+    if (in_array(curl_errno($ch), [CURLE_COULDNT_RESOLVE_HOST, CURLE_COULDNT_CONNECT], true)) {
+        sleep(1);
+        $response = curl_exec($ch);
+    }
+
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $err = curl_error($ch);
     $curlInfo = curl_getinfo($ch);
@@ -557,7 +616,7 @@ function sendNaloSMS($to, $message) {
     }
 
     // Log the full response for debugging
-    error_log("Nalo SMS Request: key=" . substr(NALO_SMS_KEY, 0, 10) . "... to=$formattedPhone message_len=" . strlen($message));
+    error_log("Nalo SMS Request: to=$formattedPhone message_len=" . strlen($message));
     error_log("Nalo SMS Response (HTTP $httpCode): " . (strlen($response) > 500 ? substr($response, 0, 500) . '...' : $response));
 
     // Try to parse as JSON
@@ -624,6 +683,11 @@ function sendNaloSMS($to, $message) {
  * Send Vote Confirmation SMS via Nalo
  */
 function sendVoteConfirmationSMS($phoneNumber, $amount, $currency, $nomineeName, $eventTitle, $categoryName = '', $voteCount = 1, $reference = '') {
+    // Admins can switch this off on the Messages page. Ticket SMS has no switch,
+    // because it carries the code buyers need at the door.
+    if (getSetting('sms_vote_confirmation_enabled', '1') !== '1') {
+        return ['status' => 'skipped', 'message' => 'Vote confirmation SMS is switched off'];
+    }
     // Format the phone number
     $formattedPhone = formatPhoneNumberForNalo($phoneNumber);
     

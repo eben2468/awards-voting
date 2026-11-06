@@ -18,15 +18,16 @@
  *   Arguments: C:\xampp\htdocs\awards-voting\cron\deactivate_expired_events.php
  * 
  * You can also call this via URL for testing:
- *   https://yourdomain.com/cron/deactivate_expired_events.php?key=YOUR_SECRET_KEY
+ *   https://yourdomain.com/cron/deactivate_expired_events.php?key=CRON_KEY_FROM_ENV
  */
 
 // Security: Only allow CLI execution or requests with a valid secret key
 $isCliExecution = (php_sapi_name() === 'cli');
-$secretKey = 'votehub_cron_2025_secure'; // Change this to a strong random key
-$providedKey = $_GET['key'] ?? '';
+require_once __DIR__ . '/../config/env.php';
+$secretKey = (string) env('CRON_KEY', '');
+$providedKey = (string) ($_GET['key'] ?? '');
 
-if (!$isCliExecution && $providedKey !== $secretKey) {
+if (!$isCliExecution && ($secretKey === '' || !hash_equals($secretKey, $providedKey))) {
     http_response_code(403);
     die('Access denied. Provide a valid key or run from CLI.');
 }

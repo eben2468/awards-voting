@@ -2,8 +2,9 @@
 <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-header">
         <a href="<?php echo SITE_URL; ?>/admin/" class="sidebar-brand">
+            <img src="<?php echo assetUrl('assets/logo/site-logo.png'); ?>" alt="VoteHubGH" class="sidebar-logo-full" width="138" height="66">
             <img src="<?php echo assetUrl('assets/logo/favicon.png'); ?>" alt="" class="sidebar-logo me-2">
-            <span>VoteHubGH</span>
+            <span class="sidebar-role">Admin</span>
         </a>
         <button class="btn btn-sm d-lg-none" id="closeSidebar">
             <i class="bi bi-x-lg text-white"></i>
@@ -13,7 +14,7 @@
     <nav class="sidebar-nav">
         <ul class="nav flex-column">
             <li class="nav-item">
-                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' && !isset($_GET['page']) ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/">
+                <a class="nav-link <?php echo substr($_SERVER['PHP_SELF'], -strlen('/admin/index.php')) === '/admin/index.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/">
                     <i class="bi bi-speedometer2 me-2"></i><span>Dashboard</span>
                 </a>
             </li>
@@ -55,7 +56,7 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'pending-notifications.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/pending-notifications.php">
-                    <i class="bi bi-bell-fill me-2"></i><span>Pending Notifications</span>
+                    <i class="bi bi-chat-dots me-2"></i><span>SMS Messages</span>
                 </a>
             </li>
             <li class="nav-item">

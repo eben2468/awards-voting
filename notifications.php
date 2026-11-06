@@ -241,7 +241,7 @@ include 'includes/header.php';
                             <p class="notification-message"><?php echo htmlspecialchars($notification['message']); ?></p>
                             <div class="notification-actions">
                                 <?php if ($notification['link']): ?>
-                                <a href="<?php echo SITE_URL . '/' . $notification['link']; ?>" class="btn btn-sm btn-outline-primary">
+                                <a href="<?php echo htmlspecialchars(notificationUrl($notification['link'])); ?>" class="btn btn-sm btn-outline-primary">
                                     <i class="bi bi-arrow-right me-1"></i> View Details
                                 </a>
                                 <?php endif; ?>
@@ -384,7 +384,7 @@ include 'includes/header.php';
 }
 
 .notification-card.unread {
-    background: linear-gradient(135deg, rgba(99, 102, 241, 0.03) 0%, rgba(236, 72, 153, 0.03) 100%);
+    background: linear-gradient(135deg, rgba(var(--primary-rgb), 0.03) 0%, rgba(var(--secondary-rgb), 0.03) 100%);
     border-left-color: var(--primary);
 }
 
