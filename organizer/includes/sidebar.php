@@ -50,6 +50,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'transactions.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/organizer/transactions.php">
+                    <i class="bi bi-credit-card me-2"></i><span>Transactions</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'ticket-analytics.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/organizer/ticket-analytics.php">
                     <i class="bi bi-ticket-perforated me-2"></i><span>Ticket Analytics</span>
                 </a>
