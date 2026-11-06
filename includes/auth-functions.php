@@ -360,7 +360,8 @@ if (!defined('AUTH_FUNCTIONS_LOADED')) {
      * @return bool true when at least one email went out
      */
     function notifyAdminsOfPendingOrganizer(array $user) {
-        $admins = getAdminNotificationEmails();
+        // The person applying never gets the admin notice, even if their address is on the list
+        $admins = array_diff(getAdminNotificationEmails(), [strtolower(trim($user['email']))]);
         if (empty($admins)) {
             return false;
         }
