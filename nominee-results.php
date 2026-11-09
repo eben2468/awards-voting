@@ -122,7 +122,7 @@ include 'includes/header.php';
                                         <h3 class="fw-bold mb-1"><?php echo e($category['name']); ?></h3>
                                         <p class="text-white-50 mb-0"><?php echo e($category['event_title']); ?></p>
                                         <div class="mt-3">
-                                            <span class="badge bg-white bg-opacity-20 rounded-pill px-3">
+                                            <span class="badge rounded-pill px-3 py-2 text-white" style="background: rgba(255, 255, 255, 0.16); border: 1px solid rgba(255, 255, 255, 0.3);">
                                                 <i class="bi bi-calendar3 me-2"></i>Live Tracking
                                             </span>
                                         </div>
