@@ -72,6 +72,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             }
             redirect('admin/users/');
         }
+
+        if ($action === 'edit_user') {
+            $editId   = intval($_POST['user_id'] ?? 0);
+            $fullname = sanitize($_POST['fullname'] ?? '');
+            $email    = sanitize($_POST['email'] ?? '');
+            $phone    = sanitize($_POST['phone'] ?? '');
+            $role     = sanitize($_POST['role'] ?? 'user');
+            $status   = sanitize($_POST['status'] ?? 'active');
+            $isSelf   = $editId === getCurrentUserId();
+
+            if ($editId <= 0) {
+                setFlash('danger', 'Invalid user selection.');
+            } elseif (empty($fullname) || empty($email)) {
+                setFlash('danger', 'Full Name and Email are required.');
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                setFlash('danger', 'Invalid email format.');
+            } elseif (!in_array($role, ['user', 'organizer', 'admin'], true) || !in_array($status, ['active', 'inactive', 'suspended'], true)) {
+                setFlash('danger', 'Invalid role or status.');
+            } else {
+                // Don't let an admin lock themselves out by changing their own role or status
+                if ($isSelf) {
+                    $role = 'admin';
+                    $status = 'active';
+                }
+
+                $dupeStmt = $pdo->prepare("SELECT id FROM users WHERE email = ? AND id <> ?");
+                $dupeStmt->execute([$email, $editId]);
+
+                if ($dupeStmt->fetch()) {
+                    setFlash('danger', 'Another user already uses this email address.');
+                } else {
+                    try {
+                        $stmt = $pdo->prepare("UPDATE users SET fullname = ?, email = ?, phone = ?, role = ?, status = ? WHERE id = ?");
+                        $stmt->execute([$fullname, $email, $phone ?: null, $role, $status, $editId]);
+                        setFlash('success', $isSelf
+                            ? 'Your details were updated. Your own role and status cannot be changed here.'
+                            : 'User updated successfully.');
+                    } catch (PDOException $e) {
+                        setFlash('danger', 'Failed to update user: ' . $e->getMessage());
+                    }
+                }
+            }
+            redirect('admin/users/');
+        }
     }
 }
 
@@ -296,6 +340,17 @@ $users = $stmt->fetchAll();
                                                         <i class="bi bi-person-check"></i>
                                                     </a>
                                                 <?php endif; ?>
+                                                <button type="button" class="btn btn-outline-primary btn-edit-user"
+                                                        title="Edit User"
+                                                        data-user-id="<?php echo $user['id']; ?>"
+                                                        data-fullname="<?php echo e($user['fullname']); ?>"
+                                                        data-email="<?php echo e($user['email']); ?>"
+                                                        data-phone="<?php echo e($user['phone'] ?? ''); ?>"
+                                                        data-role="<?php echo e($user['role']); ?>"
+                                                        data-status="<?php echo e($user['status']); ?>"
+                                                        data-self="<?php echo $user['id'] === getCurrentUserId() ? '1' : '0'; ?>">
+                                                    <i class="bi bi-pencil"></i>
+                                                </button>
                                                 <a href="reset-password.php?id=<?php echo $user['id']; ?>" class="btn btn-outline-warning" title="Reset Password">
                                                     <i class="bi bi-key"></i>
                                                 </a>
@@ -391,6 +446,60 @@ $users = $stmt->fetchAll();
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST">
+                    <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
+                    <input type="hidden" name="action" value="edit_user">
+                    <input type="hidden" name="user_id" id="editUserId" value="">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Edit User</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" name="fullname" id="editFullname" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email Address</label>
+                            <input type="email" name="email" id="editEmail" class="form-control" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number</label>
+                            <input type="text" name="phone" id="editPhone" class="form-control" placeholder="e.g. 0244000000">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Role</label>
+                            <select name="role" id="editRole" class="form-select" required>
+                                <option value="user">Regular User</option>
+                                <option value="organizer">Organizer</option>
+                                <option value="admin">System Administrator</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Status</label>
+                            <select name="status" id="editStatus" class="form-select" required>
+                                <option value="active">Active</option>
+                                <option value="inactive">Inactive</option>
+                                <option value="suspended">Suspended</option>
+                            </select>
+                        </div>
+                        <div class="alert alert-info small mb-0 d-none" id="editSelfNote">
+                            <i class="bi bi-info-circle me-1"></i>This is your own account, so its role and status stay locked to keep you from losing access.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Hidden Delete User Form -->
     <form id="deleteUserForm" method="POST" action="">
         <input type="hidden" name="csrf_token" value="<?php echo generateCSRFToken(); ?>">
@@ -411,6 +520,28 @@ $users = $stmt->fetchAll();
                     document.getElementById('deleteUserIdInput').value = userId;
                     document.getElementById('deleteUserForm').submit();
                 }
+            });
+        });
+
+        // Fill the edit modal from the clicked row
+        const editModalEl = document.getElementById('editUserModal');
+        const editModal = editModalEl ? new bootstrap.Modal(editModalEl) : null;
+        document.querySelectorAll('.btn-edit-user').forEach(button => {
+            button.addEventListener('click', function() {
+                const isSelf = this.getAttribute('data-self') === '1';
+                document.getElementById('editUserId').value = this.getAttribute('data-user-id');
+                document.getElementById('editFullname').value = this.getAttribute('data-fullname');
+                document.getElementById('editEmail').value = this.getAttribute('data-email');
+                document.getElementById('editPhone').value = this.getAttribute('data-phone');
+                document.getElementById('editRole').value = this.getAttribute('data-role');
+                document.getElementById('editStatus').value = this.getAttribute('data-status');
+
+                // An admin can't change their own role or status, so lock those fields
+                document.getElementById('editRole').disabled = isSelf;
+                document.getElementById('editStatus').disabled = isSelf;
+                document.getElementById('editSelfNote').classList.toggle('d-none', !isSelf);
+
+                editModal.show();
             });
         });
     });
