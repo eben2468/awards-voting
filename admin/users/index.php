@@ -351,6 +351,12 @@ $users = $stmt->fetchAll();
                                                         data-self="<?php echo $user['id'] === getCurrentUserId() ? '1' : '0'; ?>">
                                                     <i class="bi bi-pencil"></i>
                                                 </button>
+                                                <?php if ($user['role'] === 'organizer'): ?>
+                                                    <a href="<?php echo SITE_URL; ?>/admin/view-as.php?start=<?php echo $user['id']; ?>&token=<?php echo generateCSRFToken(); ?>"
+                                                       class="btn btn-outline-secondary" title="View this organizer's portal (read-only)">
+                                                        <i class="bi bi-eye"></i>
+                                                    </a>
+                                                <?php endif; ?>
                                                 <a href="reset-password.php?id=<?php echo $user['id']; ?>" class="btn btn-outline-warning" title="Reset Password">
                                                     <i class="bi bi-key"></i>
                                                 </a>

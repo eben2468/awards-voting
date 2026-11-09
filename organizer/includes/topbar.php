@@ -1,3 +1,4 @@
+<?php echo renderImpersonationBanner(); ?>
 <!-- Organizer Topbar -->
 <header class="admin-topbar">
     <div class="d-flex align-items-center">

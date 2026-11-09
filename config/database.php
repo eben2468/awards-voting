@@ -111,6 +111,10 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
+// A "View as" session may only read, never write. This stops any change before
+// the page it was aimed at can run. Harmless for everyone not impersonating.
+enforceImpersonationReadOnly();
+
 /**
  * Build a URL for a static asset with a cache-busting version stamp.
  *
@@ -210,6 +214,89 @@ function hasAdminAccess() {
 // Get current user ID
 function getCurrentUserId() {
     return $_SESSION['user_id'] ?? null;
+}
+
+/**
+ * True when an administrator is viewing another account ("View as"). The active
+ * session is the viewed account, so isOrganizer() etc. reflect THEM, while the
+ * real admin is remembered in $_SESSION['impersonator'].
+ */
+function isImpersonating() {
+    return !empty($_SESSION['impersonator']['id']);
+}
+
+// The real administrator behind a "View as" session, or null
+function impersonatorInfo() {
+    return isImpersonating() ? $_SESSION['impersonator'] : null;
+}
+
+/**
+ * A "View as" session is strictly read-only: an admin may look at everything in
+ * the account but may not change anything. This refuses every state-changing
+ * request before a page can act on it. It runs on every request, but only does
+ * something while an admin is impersonating.
+ */
+function enforceImpersonationReadOnly() {
+    if (PHP_SAPI === 'cli' || !isImpersonating()) {
+        return;
+    }
+
+    $script = basename($_SERVER['SCRIPT_NAME'] ?? '');
+    // The exit endpoint and logout must always work so the admin can get out
+    if ($script === 'view-as.php' || $script === 'logout.php') {
+        return;
+    }
+
+    $method = strtoupper($_SERVER['REQUEST_METHOD'] ?? 'GET');
+    $writeMethod = in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true);
+    // Some deletes and toggles arrive as GET links carrying these
+    $writeParam = isset($_GET['delete']) || isset($_GET['action']) || isset($_GET['token']);
+
+    if (!$writeMethod && !$writeParam) {
+        return;
+    }
+
+    $path = $_SERVER['REQUEST_URI'] ?? '';
+    $message = 'You are viewing this account as an administrator. It is read-only, so that change was not made.';
+
+    if (strpos($path, '/api/') !== false || strpos($path, '/ajax/') !== false) {
+        if (!headers_sent()) {
+            http_response_code(403);
+            header('Content-Type: application/json');
+        }
+        echo json_encode(['status' => 'error', 'message' => $message]);
+        exit;
+    }
+
+    setFlash('warning', $message);
+    $referer = $_SERVER['HTTP_REFERER'] ?? '';
+    $back = (is_string($referer) && strpos($referer, SITE_URL) === 0) ? $referer : SITE_URL . '/organizer/';
+    if (!headers_sent()) {
+        header('Location: ' . $back);
+    }
+    exit;
+}
+
+/**
+ * The read-only banner shown while an admin is viewing another account, so the
+ * admin always knows they are impersonating and can leave in one click. Returns
+ * '' for everyone else.
+ */
+function renderImpersonationBanner() {
+    if (!isImpersonating()) {
+        return '';
+    }
+    $who = e($_SESSION['user_name'] ?? 'this account');
+    $exit = SITE_URL . '/admin/view-as.php?exit=1';
+
+    return '<div style="position:sticky;top:0;z-index:1080;background:#7a1020;color:#fff;'
+        . 'padding:.5rem 1rem;font-size:.9rem;display:flex;flex-wrap:wrap;gap:.75rem;'
+        . 'align-items:center;justify-content:center;text-align:center;">'
+        . '<span><i class="bi bi-eye-fill me-1"></i>Viewing as <strong>' . $who
+        . '</strong> &mdash; read-only. Changes are blocked.</span>'
+        . '<a href="' . $exit . '" style="background:#fff;color:#7a1020;font-weight:700;'
+        . 'padding:.2rem .85rem;border-radius:999px;text-decoration:none;white-space:nowrap;">'
+        . 'Exit view</a></div>';
 }
 
 /**
