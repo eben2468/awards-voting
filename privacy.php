@@ -43,7 +43,7 @@ include 'includes/header.php';
                             <li><strong>Identity Data:</strong> Includes full name, username or similar identifier.</li>
                             <li><strong>Contact Data:</strong> Includes email address and telephone numbers.</li>
                             <li><strong>Technical Data:</strong> Includes internet protocol (IP) address, approximate location based on that address, the type and model of your device where your browser provides it, your login data, browser type and version, time zone setting and location, browser plug-in types and versions, operating system and platform, and other technology on the devices you use to access this website.</li>
-                            <li><strong>Usage Data:</strong> Includes information about how you use our website and services (e.g., voting history).</li>
+                            <li><strong>Usage Data:</strong> Includes information about how you use our website and services (e.g., voting history), such as the pages you visit, the site that linked you to us, and your screen size and time zone. We use a small cookie to tell new visitors from returning ones, and keep these visit records for 180 days to understand how many people use the site.</li>
                         </ul>
                     </div>
 

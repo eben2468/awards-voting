@@ -91,6 +91,11 @@
                 </a>
             </li>
             <li class="nav-item">
+                <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'visitors.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/visitors.php">
+                    <i class="bi bi-graph-up-arrow me-2"></i><span>Website Visitors</span>
+                </a>
+            </li>
+            <li class="nav-item">
                 <a class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'subscribers.php' ? 'active' : ''; ?>" href="<?php echo SITE_URL; ?>/admin/subscribers.php">
                     <i class="bi bi-envelope-check me-2"></i><span>Subscribers</span>
                 </a>

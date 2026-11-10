@@ -10,6 +10,10 @@ if (!isset($_SESSION['last_event_check']) || (time() - $_SESSION['last_event_che
         error_log("Auto-deactivate check error: " . $e->getMessage());
     }
 }
+
+// Count this page view for the admin Visitors dashboard
+require_once __DIR__ . '/visit-tracker.php';
+$GLOBALS['vh_visit_id'] = trackVisit();
 ?>
 <!DOCTYPE html>
 <html lang="en">

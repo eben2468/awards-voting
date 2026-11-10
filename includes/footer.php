@@ -132,5 +132,6 @@
         });
     });
     </script>
+    <?php echo function_exists('renderVisitBeacon') ? renderVisitBeacon() : ''; ?>
 </body>
 </html>
